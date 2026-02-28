@@ -1,0 +1,102 @@
+version: '3'
+
+tasks:
+  default:
+    desc: List all available tasks
+    cmds:
+      - task --list
+
+  build:
+    desc: Build the mcp-tester CLI
+    cmds:
+      - mkdir -p bin
+      - GOWORK=off go build -o bin/mcp-tester ./cmd/mcp-tester/
+
+  build-test-server:
+    desc: Build the dummy test server
+    cmds:
+      - mkdir -p bin
+      - GOWORK=off go build -o bin/test-server ./cmd/test-server/main.go
+
+  all:
+    desc: Build everything
+    deps: [build, build-test-server]
+
+  test-list:
+    desc: Test the list command
+    deps: [all]
+    cmds:
+      - ./bin/mcp-tester list --command "./bin/test-server"
+
+  test-profile:
+    desc: Test the profile functionality
+    deps: [all]
+    cmds:
+      - ./bin/mcp-tester list --profile local
+
+  test-call:
+    desc: Test the call command
+    deps: [all]
+    cmds:
+      - ./bin/mcp-tester call echo --command "./bin/test-server" --args '{"message":"Task testing"}'
+
+  test-script:
+    desc: Test the script execution
+    deps: [all]
+    cmds:
+      - echo 'call_tool echo "Task script test"' > task_test.mcp
+      - ./bin/mcp-tester test --command "./bin/test-server" --script "task_test.mcp"
+      - rm task_test.mcp
+
+  test-types:
+    desc: Test the type conversion in scripts
+    deps: [all]
+    cmds:
+      - echo 'call_tool add 40 2' > type_test.mcp
+      - ./bin/mcp-tester test --command "./bin/test-server" --script "type_test.mcp"
+      - rm type_test.mcp
+
+  test-assertions:
+    desc: Test the assertion functionality in scripts
+    deps: [all]
+    cmds:
+      - |
+        echo 'call_tool add 10 20' > assert_test.mcp
+        echo 'assert_contains "Result: 30"' >> assert_test.mcp
+      - ./bin/mcp-tester test --command "./bin/test-server" --script "assert_test.mcp"
+      - rm assert_test.mcp
+
+  test-vars:
+    desc: Test the variable and math assertion functionality
+    deps: [all]
+    cmds:
+      - |
+        echo '// Test variables' > vars_test.mcp
+        echo 'call_tool add 5 5' >> vars_test.mcp
+        echo 'set_var raw_sum structuredContent.a' >> vars_test.mcp
+        echo 'assert_number $raw_sum' >> vars_test.mcp
+        echo 'call_tool add $raw_sum $raw_sum' >> vars_test.mcp
+        echo 'assert_contains "Result: 10"' >> vars_test.mcp
+        echo 'assert_gt $raw_sum 4' >> vars_test.mcp
+      - ./bin/mcp-tester test --command "./bin/test-server" --script "vars_test.mcp"
+      - rm vars_test.mcp
+
+  test-scripts:
+    desc: Run the full suite of test scripts
+    deps: [all]
+    cmds:
+      - echo "--- Running Simple Test ---"
+      - ./bin/mcp-tester test --profile local --script tests/01_simple.mcp
+      - echo "--- Running Types Test ---"
+      - ./bin/mcp-tester test --profile local --script tests/02_types_and_equals.mcp
+      - echo "--- Running Variables Test ---"
+      - ./bin/mcp-tester test --profile local --script tests/03_variables_and_math.mcp
+
+  test-all:
+    desc: Run all tests
+    deps: [test-list, test-call, test-script, test-profile, test-types, test-assertions, test-vars, test-scripts]
+
+  clean:
+    desc: Remove binaries and temporary files
+    cmds:
+      - rm -rf bin task_test.mcp type_test.mcp assert_test.mcp *.png

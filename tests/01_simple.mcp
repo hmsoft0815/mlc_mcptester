@@ -1,0 +1,6 @@
+// Einfacher Test für mcp-tester
+// Prüft den Echo-Endpunkt
+
+call_tool echo "Hallo Welt"
+assert_contains "Hallo Welt"
+assert_contains "Echo:"

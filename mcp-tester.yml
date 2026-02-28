@@ -1,0 +1,7 @@
+profiles:
+  local:
+    command: "./bin/test-server"
+  hub-osm:
+    command: "../bin/hub-osm"
+  sys-info:
+    command: "../bin/system-info-server"

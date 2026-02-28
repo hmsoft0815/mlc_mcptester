@@ -1,0 +1,6 @@
+bin/
+*.png
+task_test.mcp
+type_test.mcp
+assert_test.mcp
+vars_test.mcp

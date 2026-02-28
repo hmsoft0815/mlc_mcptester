@@ -1,0 +1,9 @@
+// Test für Typ-Konvertierung und exakte Matches
+// Der Tester muss "10" und "20" als Integer an den Server senden
+
+call_tool add 10 20
+assert_equals "Result: 30" // Prüft den gesamten Antwort-String
+
+// Inline-Kommentar Test
+call_tool echo "ExactMatch" # Dies ist ein Kommentar am Ende
+assert_equals "Echo: ExactMatch"

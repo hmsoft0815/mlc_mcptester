@@ -1,0 +1,18 @@
+// Komplexer Workflow-Test mit Variablen
+// 1. Initialer Call
+call_tool add 100 50
+assert_contains "Result: 150"
+
+// 2. Variable aus StructuredContent extrahieren
+// Der Server liefert: {"sum": 150, "a": 100, "b": 50}
+set_var my_sum structuredContent.sum
+set_var first_val structuredContent.a
+
+// 3. Variablen validieren
+assert_number $my_sum
+assert_gt $my_sum 149
+assert_gt $my_sum $first_val
+
+// 4. Variablen in neuem Call verwenden
+call_tool add $my_sum 10
+assert_equals "Result: 160"

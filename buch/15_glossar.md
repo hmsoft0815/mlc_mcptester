@@ -29,8 +29,11 @@ Vordefinierte Textbausteine oder System-Anweisungen, die vom Server geliefert we
 ### Context Window (Kontext-Fenster)
 Die maximale Menge an Informationen (Token), die ein LLM gleichzeitig verarbeiten kann. MCP-Informationen (Server-Definitionen und Tool-Antworten) belegen Platz in diesem Fenster.
 
+### RPC (Remote Procedure Call)
+Ein technisches Konzept, bei dem ein Computerprogramm eine Funktion in einem anderen Adressraum (häufig auf einem anderen Computer oder in einem anderen Prozess) aufruft, als wäre es ein lokaler Funktionsaufruf. MCP nutzt dieses Prinzip, um Tools auf dem Server für das LLM verfügbar zu machen.
+
 ### JSON-RPC
-Das zugrunde liegende Nachrichtenformat von MCP. Es definiert, wie Anfragen (Requests), Antworten (Responses) und Benachrichtigungen (Notifications) strukturiert sind.
+Das zugrunde liegende Nachrichtenformat von MCP. Es ist eine spezifische Implementierung von RPC, die JSON zur Kodierung der Daten nutzt. MCP verwendet JSON-RPC 2.0 für den Austausch von Anfragen, Antworten und Benachrichtigungen.
 
 ### Handshake (Initialisierung)
 Der erste Datenaustausch zwischen Client und Server, bei dem Versionen und Fähigkeiten (Capabilities) ausgehandelt werden.

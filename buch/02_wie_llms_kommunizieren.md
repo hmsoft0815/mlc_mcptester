@@ -4,6 +4,8 @@ Bevor wir in den Code eintauchen, müssen wir verstehen, wie eine Unterhaltung m
 
 ## Die drei Rollen
 
+![LLM Roles](images/llm_roles.png)
+
 Jede moderne Interaktion mit einem Modell (wie GPT-4 oder Claude) besteht aus einer Liste von Nachrichten, die jeweils einer Rolle zugeordnet sind:
 
 1.  **System-Nachricht (System Prompt)**:

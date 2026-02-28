@@ -15,7 +15,7 @@ Nicht jedes Modell kann "sehen" oder "hören".
 
 ## 2. Die Kontext-Sprengung (Context Window Overflow)
 
-Jedes Modell hat ein "Kontext-Fenster" (z. B. 128k Token bei GPT-4 oder 200k bei Claude). Jede Information, die über MCP reinkommt, verbraucht Platz in diesem Fenster.
+Jedes Modell hat ein "Kontext-Fenster" (z. B. 128k Token bei GPT-4 oder 200k bei modernen SOTA-Modellen). Jede Information, die über MCP reinkommt, verbraucht Platz in diesem Fenster.
 
 ### Die Gefahr großer Ressourcen
 Wenn ein Tool oder eine Ressource eine 5 MB große Logdatei oder ein riesiges JSON-Objekt zurückgibt, passiert Folgendes:

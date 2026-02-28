@@ -67,6 +67,13 @@ profiles:
 ./bin/mcp-tester prompts get chat_init --args '{"user_name": "Alice"}' --profile local
 ```
 
+#### Server Inspektion (Best Practices Check)
+Analysiere einen Server auf Qualität und Vollständigkeit der Metadaten:
+```bash
+./bin/mcp-tester inspect --profile local
+```
+Dieser Befehl prüft u.a. auf fehlende Beschreibungen, fehlende Prompts (System-Kontext) und gibt einen Quality-Score aus.
+
 #### Raw Mode (für Debugging)
 Verwenden Sie `-r` oder `--raw`, wenn ein Server fehlerhafte Antworten sendet (z.B. leere `type`-Felder). Der Tester zeigt dann das rohe JSON an, anstatt mit einem SDK-Fehler abzubrechen.
 ```bash

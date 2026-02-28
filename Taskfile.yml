@@ -92,9 +92,16 @@ tasks:
       - echo "--- Running Variables Test ---"
       - ./bin/mcp-tester test --profile local --script tests/03_variables_and_math.mcp
 
+  test-inspect:
+    desc: Test the server inspection tool
+    deps: [all]
+    cmds:
+      - ./bin/mcp-tester inspect --profile local
+
   test-all:
     desc: Run all tests
-    deps: [test-list, test-call, test-script, test-profile, test-types, test-assertions, test-vars, test-scripts]
+    deps: [test-list, test-call, test-profile, test-types, test-assertions, test-vars, test-scripts, test-inspect]
+
 
   release-test:
     desc: Test the release process locally

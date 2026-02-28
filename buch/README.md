@@ -22,11 +22,15 @@ Datum: 2026-02-28
 11. [Echtzeit-Feedback & Audio: Mehr als nur Text](11_echtzeit_feedback_und_audio.md)
 12. [Die Grenzen der KI: Modell-Limits und Kontext-Sprengung](12_grenzen_und_limitierungen.md)
 13. [Das Artifact-Pattern: Brücke zwischen Modell-Limits und UX](13_das_artifact_pattern.md)
-14. [Glossar: Die Sprache von MCP](14_glossar.md)
+14. [Qualitätssicherung: Der Server-Inspector](14_qualitaetssicherung_inspect.md)
+15. [Glossar: Die Sprache von MCP](15_glossar.md)
 
 ---
 *Erstellt als Teil des mcp-tester Projekts.*
 
+**Lizenz**: Dieses Handbuch steht unter der [CC BY-NC-ND 4.0](LICENSE.md) Lizenz.
+
+Bilder erstellt mit antigravity ai
 
 ---
 *Copyright Michael Lechner - 2026-02-28*

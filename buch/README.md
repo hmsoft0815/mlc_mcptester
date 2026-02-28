@@ -24,6 +24,7 @@ Datum: 2026-02-28
 13. [Das Artifact-Pattern: Brücke zwischen Modell-Limits und UX](13_das_artifact_pattern.md)
 14. [Qualitätssicherung: Der Server-Inspector](14_qualitaetssicherung_inspect.md)
 15. [Glossar: Die Sprache von MCP](15_glossar.md)
+16. [Anhang A: SSE und HTTP/2](16_anhang_sse_http2.md)
 
 ---
 *Erstellt als Teil des mcp-tester Projekts.*

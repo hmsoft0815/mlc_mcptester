@@ -1,5 +1,6 @@
 bin/
 *.png
+!buch/images/*.png
 task_test.mcp
 type_test.mcp
 assert_test.mcp

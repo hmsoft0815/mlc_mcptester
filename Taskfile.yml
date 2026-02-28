@@ -8,12 +8,26 @@ tasks:
 
   build:
     desc: Build the mcp-tester CLI
+    sources:
+      - cmd/mcp-tester/**/*.go
+      - internal/**/*.go
+      - go.mod
+      - go.sum
+    generates:
+      - bin/mcp-tester
     cmds:
       - mkdir -p bin
       - GOWORK=off go build -o bin/mcp-tester ./cmd/mcp-tester/
 
   build-test-server:
     desc: Build the dummy test server
+    sources:
+      - cmd/test-server/**/*.go
+      - internal/**/*.go
+      - go.mod
+      - go.sum
+    generates:
+      - bin/test-server
     cmds:
       - mkdir -p bin
       - GOWORK=off go build -o bin/test-server ./cmd/test-server/main.go
@@ -100,7 +114,48 @@ tasks:
 
   test-all:
     desc: Run all tests
-    deps: [unit-test, test-list, test-call, test-profile, test-types, test-assertions, test-vars, test-scripts, test-inspect]
+    cmds:
+      - task: format
+      - task: vet
+      - task: staticcheck
+      - task: unit-test
+      - task: test-list
+      - task: test-call
+      - task: test-profile
+      - task: test-types
+      - task: test-assertions
+      - task: test-vars
+      - task: test-scripts
+      - task: test-inspect
+
+  format:
+    desc: Format Go source code
+    cmds:
+      - GOWORK=off go fmt ./...
+
+  vet:
+    desc: Examine Go source code and report suspicious constructs
+    cmds:
+      - GOWORK=off go vet ./...
+
+  staticcheck:
+    desc: Advanced static analysis
+    cmds:
+      - 'GOWORK=off staticcheck ./... || echo "Please install staticcheck: go install honnef.co/go/tools/cmd/staticcheck@latest"'
+    ignore_error: true
+
+  complexity:
+    desc: Check cognitive complexity
+    cmds:
+      - 'GOWORK=off gocognit -over 15 . || echo "Please install gocognit: go install github.com/uudashr/gocognit/cmd/gocognit@latest"'
+    ignore_error: true
+
+  test-coverage:
+    desc: Run tests with coverage report
+    cmds:
+      - GOWORK=off go test -coverprofile=coverage.out ./...
+      - GOWORK=off go tool cover -func=coverage.out
+      - GOWORK=off go tool cover -html=coverage.out -o coverage.html
 
   unit-test:
     desc: Run internal unit tests

@@ -1,4 +1,4 @@
-module github.com/mlc-mcptester/mcp-tester
+module github.com/hmsoft0815/mlc_mcptester
 
 go 1.24.2
 

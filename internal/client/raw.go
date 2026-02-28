@@ -35,7 +35,7 @@ func CallToolRaw(ctx context.Context, session *mcp.ClientSession, toolName strin
 	// 3. Call the internal Connection.Call method
 	callMethod := connPtr.MethodByName("Call")
 	if !callMethod.IsValid() {
-		return nil, fmt.Errorf("Call method not found on Connection")
+		return nil, fmt.Errorf("call method not found on Connection")
 	}
 
 	callResults := callMethod.Call([]reflect.Value{

@@ -25,8 +25,19 @@ func main() {
 		},
 	)
 
-	// --- 1. TOOLS ---
+	registerTools(s)
+	registerResources(s)
+	registerPrompts(s)
 
+	transport := &mcp.StdioTransport{}
+	session, err := s.Connect(ctx, transport, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	session.Wait()
+}
+
+func registerTools(s *mcp.Server) {
 	// Echo Tool with Output Schema
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "echo",
@@ -71,8 +82,16 @@ func main() {
 		},
 	}, func(ctx context.Context, request *mcp.CallToolRequest, args map[string]any) (*mcp.CallToolResult, any, error) {
 		var a, b int
-		if v, ok := args["a"].(float64); ok { a = int(v) } else { a, _ = args["a"].(int) }
-		if v, ok := args["b"].(float64); ok { b = int(v) } else { b, _ = args["b"].(int) }
+		if v, ok := args["a"].(float64); ok {
+			a = int(v)
+		} else {
+			a, _ = args["a"].(int)
+		}
+		if v, ok := args["b"].(float64); ok {
+			b = int(v)
+		} else {
+			b, _ = args["b"].(int)
+		}
 		return &mcp.CallToolResult{
 			Content: []mcp.Content{&mcp.TextContent{Text: fmt.Sprintf("Result: %d", a+b)}},
 		}, map[string]any{"sum": a + b, "a": a, "b": b}, nil
@@ -96,7 +115,9 @@ func main() {
 		},
 	}, func(ctx context.Context, request *mcp.CallToolRequest, args map[string]any) (*mcp.CallToolResult, any, error) {
 		seconds := 3
-		if s, ok := args["seconds"].(float64); ok { seconds = int(s) }
+		if s, ok := args["seconds"].(float64); ok {
+			seconds = int(s)
+		}
 
 		_ = request.Session.Log(ctx, &mcp.LoggingMessageParams{
 			Level:  "info",
@@ -120,8 +141,9 @@ func main() {
 			Content: []mcp.Content{&mcp.TextContent{Text: "Task completed"}},
 		}, map[string]any{"status": "success"}, nil
 	})
+}
 
-	// --- 2. RESOURCES ---
+func registerResources(s *mcp.Server) {
 	s.AddResource(&mcp.Resource{
 		Name:        "System Clock",
 		URI:         "mcp://time",
@@ -131,10 +153,9 @@ func main() {
 			Contents: []*mcp.ResourceContents{{URI: "mcp://time", Text: time.Now().String()}},
 		}, nil
 	})
+}
 
-	// --- 3. PROMPTS ---
-	
-	// Best Practice Persona Prompt
+func registerPrompts(s *mcp.Server) {
 	s.AddPrompt(&mcp.Prompt{
 		Name:        "persona_developer",
 		Description: "Sets the LLM persona to an expert Go developer",
@@ -143,8 +164,10 @@ func main() {
 		},
 	}, func(ctx context.Context, request *mcp.GetPromptRequest) (*mcp.GetPromptResult, error) {
 		expertise := request.Params.Arguments["expertise"]
-		if expertise == "" { expertise = "general" }
-		
+		if expertise == "" {
+			expertise = "general"
+		}
+
 		return &mcp.GetPromptResult{
 			Description: "Persona instructions",
 			Messages: []*mcp.PromptMessage{
@@ -157,11 +180,4 @@ func main() {
 			},
 		}, nil
 	})
-
-	transport := &mcp.StdioTransport{}
-	session, err := s.Connect(ctx, transport, nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-	session.Wait()
 }

@@ -36,10 +36,10 @@ func TestReplaceVariables(t *testing.T) {
 func TestExtractValue(t *testing.T) {
 	r := &Runner{
 		lastRawMap: map[string]any{
-			"id": 42,
+			"id":   42,
 			"name": "tester",
 			"nested": map[string]any{
-				"key": "value",
+				"key":  "value",
 				"list": []any{"a", "b", "c"},
 			},
 			"content": []any{

@@ -66,6 +66,7 @@ Execute complex test scenarios:
 - [The MCP Handbook](buch/README.md) - A comprehensive 17-chapter introduction to MCP (German).
   - [Chapter 6: Prompts & System Context](buch/06_prompts_die_anweisungen.md)
   - [Chapter 15: Automation & CI/CD](buch/15_automatisierung_ci_cd.md)
+  - [Chapter 17: SSE and HTTP/2](buch/17_anhang_sse_http2.md)
 
 ---
 

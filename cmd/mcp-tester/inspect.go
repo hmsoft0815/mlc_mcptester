@@ -34,7 +34,7 @@ var inspectCmd = &cobra.Command{
 		defer session.Close()
 
 		fmt.Printf("=== MCP Server Inspection: %s ===\n\n", profile)
-		
+
 		recommendations := []string{}
 		score := 100
 
@@ -47,10 +47,18 @@ var inspectCmd = &cobra.Command{
 		caps := initResult.Capabilities
 		fmt.Print("[i] Capabilities: ")
 		features := []string{}
-		if caps.Logging != nil { features = append(features, "Logging") }
-		if caps.Resources != nil { features = append(features, "Resources") }
-		if caps.Prompts != nil { features = append(features, "Prompts") }
-		if caps.Tools != nil { features = append(features, "Tools") }
+		if caps.Logging != nil {
+			features = append(features, "Logging")
+		}
+		if caps.Resources != nil {
+			features = append(features, "Resources")
+		}
+		if caps.Prompts != nil {
+			features = append(features, "Prompts")
+		}
+		if caps.Tools != nil {
+			features = append(features, "Tools")
+		}
 		fmt.Println(strings.Join(features, ", "))
 
 		// 3. Analyze Prompts (System Context)

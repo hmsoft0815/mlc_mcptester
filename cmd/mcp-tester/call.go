@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/mlc-mcptester/mcp-tester/internal/client"
+	"github.com/hmsoft0815/mlc_mcptester/internal/client"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/spf13/cobra"
 )

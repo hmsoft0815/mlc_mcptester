@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/mlc-mcptester/mcp-tester/internal/scripting"
+	"github.com/hmsoft0815/mlc_mcptester/internal/scripting"
 	"github.com/spf13/cobra"
 )
 

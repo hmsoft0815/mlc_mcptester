@@ -66,6 +66,7 @@ Führe komplexe Test-Szenarien aus:
 - [Das MCP-Handbuch](buch/README.md) - Eine 17-kapitlige, umfassende Einführung in MCP (Deutsch).
   - [Kapitel 6: Prompts & System-Kontext](buch/06_prompts_die_anweisungen.md)
   - [Kapitel 15: Automatisierung & CI/CD](buch/15_automatisierung_ci_cd.md)
+  - [Kapitel 17: SSE und HTTP/2](buch/17_anhang_sse_http2.md)
 
 ---
 

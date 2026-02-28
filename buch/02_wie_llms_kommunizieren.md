@@ -113,6 +113,15 @@ Nachdem der Client die Antwort vom MCP-Server erhalten hat, sendet er eine **neu
 
 Erst jetzt hat das Modell alle Informationen, um die finale Antwort für den Benutzer zu formulieren.
 
+## Tools und Instruktionen (Hand-in-Hand)
+
+Wichtig für das Verständnis: Die reine Injektion der Tool-Definition reicht oft nicht aus. Ein guter Client oder ein MCP-Prompt (siehe Kapitel 6) ergänzt den **System-Prompt** oft um explizite Verhaltensregeln für diese Tools:
+
+*   *"Nutze das Tool `add` immer, wenn der Benutzer eine mathematische Frage stellt."*
+*   *"Frage erst nach Erlaubnis, bevor du das Tool `delete_file` aufrufst."*
+
+Diese Kombination aus **Fähigkeit (Tool)** und **Anweisung (Prompt)** macht MCP-Server so extrem präzise und sicher in der Anwendung.
+
 ## Der Tool-Call-Loop
 ...
 

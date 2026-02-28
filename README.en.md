@@ -23,7 +23,14 @@ This project includes a reference server (`cmd/test-server`) that utilizes all f
 
 ## Usage
 
-### 1. Installation & Build
+### 1. Installation
+
+**Via Curl (Linux/macOS):**
+```bash
+curl -sSL https://raw.githubusercontent.com/hmsoft0815/mlc_mcptester/main/scripts/install.sh | bash
+```
+
+**Manual Build:**
 ```bash
 task all            # Builds the tester and reference server into the bin/ folder
 ```

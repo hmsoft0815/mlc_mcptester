@@ -23,7 +23,14 @@ Im Projekt ist ein Referenz-Server (`cmd/test-server`) enthalten, der alle Mögl
 
 ## Benutzung
 
-### 1. Installation & Build
+### 1. Installation
+
+**Über Curl (Linux/macOS):**
+```bash
+curl -sSL https://raw.githubusercontent.com/hmsoft0815/mlc_mcptester/main/scripts/install.sh | bash
+```
+
+**Manueller Build:**
 ```bash
 task all            # Baut den Tester und Referenz-Server in den bin/ Ordner
 ```

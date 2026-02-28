@@ -96,6 +96,11 @@ tasks:
     desc: Run all tests
     deps: [test-list, test-call, test-script, test-profile, test-types, test-assertions, test-vars, test-scripts]
 
+  release-test:
+    desc: Test the release process locally
+    cmds:
+      - goreleaser release --snapshot --clean
+
   clean:
     desc: Remove binaries and temporary files
     cmds:

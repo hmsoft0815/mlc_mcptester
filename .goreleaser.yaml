@@ -1,0 +1,59 @@
+version: 2
+
+project_name: mcp-tester
+
+builds:
+  - id: mcp-tester
+    main: ./cmd/mcp-tester
+    binary: mcp-tester
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+
+archives:
+  - id: mcp-tester-archive
+    formats: [tar.gz, zip]
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - README.md
+      - PROMPTS.md
+      - INTEGRATION_TESTS.md
+      - LICENSE*
+      - buch/**/*
+
+checksum:
+  name_template: "checksums.txt"
+
+nfpms:
+  - id: mcp-tester-packages
+    package_name: mcp-tester
+    file_name_template: "{{ .PackageName }}_{{ .Version }}_{{ .Arch }}"
+    vendor: Michael Lechner
+    homepage: https://github.com/hmsoft0815/mlc_mcptester
+    maintainer: Michael Lechner <michael@mlcgo.eu>
+    description: A command-line tool to test Model Context Protocol (MCP) servers.
+    license: MIT
+    formats:
+      - deb
+      - rpm
+    contents:
+      - src: README.md
+        dst: /usr/share/doc/mcp-tester/README.md
+      - src: buch/images/*.png
+        dst: /usr/share/doc/mcp-tester/images/
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"

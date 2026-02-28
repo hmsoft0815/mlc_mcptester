@@ -92,3 +92,8 @@ func TestHandleAdd(t *testing.T) {
 ...
 
 Qualitätssicherung bei MCP bedeutet, die Reibungsverluste zwischen Server und KI zu minimieren. Ein Server mit 100/100 Punkten im `inspect`-Check wird in der Praxis deutlich seltener zu Fehlinterpretationen oder Fehlern im Modell-Verlauf führen. Nutze dieses Tool regelmäßig während der Entwicklung, um deine Implementierung zu perfektionieren.
+
+[← Inhaltsverzeichnis](README.md) | [Nächstes Kapitel: Glossar →](15_glossar.md)
+
+---
+*Copyright Michael Lechner - 2026-02-28*

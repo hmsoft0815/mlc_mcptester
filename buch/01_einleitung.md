@@ -14,7 +14,7 @@ Anfangs mussten Benutzer Ergebnisse von API-Abfragen manuell in den Chat kopiere
 ### Die Ära der Plugins & Function Calling
 OpenAI führte 2023 "Function Calling" ein. Entwickler konnten dem Modell beschreiben, welche Funktionen (APIs) verfügbar sind. Das Modell antwortete nicht mehr mit Fließtext, sondern mit einem strukturierten JSON-Objekt: *"Ich möchte die Funktion `get_weather` mit dem Parameter `city: Berlin` aufrufen."*
 
-Der Nachteil: Jeder Anbieter (OpenAI, Anthropic, Google) kochte sein eigenes Süppchen. Ein Plugin für ChatGPT funktionierte nicht in Claude.
+Der Nachteil: Jeder Anbieter kochte sein eigenes Süppchen. Ein Plugin für ein System funktionierte nicht in einem anderen.
 
 ## Was ist MCP?
 

@@ -2,18 +2,27 @@
 
 Bevor wir in den Code eintauchen, müssen wir verstehen, wie eine Unterhaltung mit einem LLM technisch aussieht. Ein LLM "denkt" nicht wie ein Mensch in Echtzeit, sondern verarbeitet eine Sequenz von Nachrichten.
 
-## Die drei Rollen
+## Die drei klassischen Rollen
 
-![LLM Roles](images/llm_roles.png)
+![Die 3 Rollen](images/llm_roles.png)
 
-Jede moderne Interaktion mit einem Modell (wie GPT-4 oder Claude) besteht aus einer Liste von Nachrichten, die jeweils einer Rolle zugeordnet sind:
+Jede moderne Interaktion mit einem Modell (wie GPT-4 oder andere SOTA-Modelle) besteht aus einer Liste von Nachrichten, die jeweils einer Rolle zugeordnet sind:
 
 1.  **System-Nachricht (System Prompt)**:
     Dies ist die "Betriebsanweisung" für das Modell. Hier wird die Identität festgelegt: *"Du bist ein hilfreicher Assistent für Datenanalyse. Antworte immer kurz und bündig."* Hier werden auch Regeln und Einschränkungen definiert.
 2.  **Benutzer-Nachricht (User)**:
     Das ist die Eingabe des Menschen. Die Frage oder die Aufgabe: *"Wie hoch ist die CPU-Last?"*
 3.  **Assistent-Nachricht (Assistant)**:
-    Die Antwort des Modells. Sie baut auf dem System-Prompt und allen bisherigen User-Nachrichten auf.
+    Die Antwort des Modells. Sie baut auf dem System-Prompt und allen bisherigen User-Nachrichten auf. Ein Assistent kann entweder Text antworten **oder** einen Tool-Call (Werkzeugaufruf) anfordern.
+
+## Die vierte Rolle: Das Werkzeug (Tool)
+
+Hier kommt MCP ins Spiel. Um den Loop zu schließen, wurde eine entscheidende vierte Rolle eingeführt:
+
+![Die 4 Rollen](images/llm_roles_detailed.png)
+
+4.  **Tool-Ergebnis (Tool)**:
+    Dies ist die "Antwort" des MCP-Servers an das Modell. Wenn der Assistent ein Tool aufruft, führt der Client dieses aus und sendet das Ergebnis mit der Rolle `tool` zurück in den Chat-Verlauf. Ohne diese vierte Rolle wüsste das Modell nie, was bei seinem Aufruf herausgekommen ist.
 ![MCP Communication Loop](images/communication_loop.png)
 
 ## Wie kommen die Tools ins Modell? (Tool Injection)

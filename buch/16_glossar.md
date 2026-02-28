@@ -1,10 +1,10 @@
-# Kapitel 14: Glossar – Die Sprache von MCP
+# Kapitel 15: Glossar – Die Sprache von MCP
 
 Um in der Welt des Model Context Protocol sicher zu navigieren, hilft ein klares Verständnis der Fachbegriffe. Hier sind die wichtigsten Termini zusammengefasst:
 
 ### MCP-Host (Host)
 Die Anwendung, die das LLM steuert und die Verbindung zu den MCP-Servern verwaltet. 
-*Beispiele: Claude Desktop, IDEs (Cursor, VS Code), mcp-tester.*
+*Beispiele: SOTA-Desktop-Clients, IDEs (Cursor, VS Code), mcp-tester.*
 
 ### MCP-Client (Client)
 Die Komponente innerhalb des Hosts, die die eigentliche Kommunikation mit dem Server übernimmt (via Stdio oder SSE). Oft werden die Begriffe Host und Client synonym verwendet.

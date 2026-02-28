@@ -36,8 +36,6 @@ archives:
     files:
       - README.md
       - README.en.md
-      - PROMPTS.md
-      - INTEGRATION_TESTS.md
       - LICENSE*
       - buch/**/*
 

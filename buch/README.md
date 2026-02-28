@@ -1,11 +1,6 @@
 # Das MCP-Handbuch
 
-![MCP Handbook Cover](images/cover.png)
-
 Eine strukturierte Einführung in das Model Context Protocol (MCP) für Entwickler.
-
-Author: Michael Lechner
-Datum: 2026-02-28
 
 ## Inhaltsverzeichnis
 
@@ -23,15 +18,11 @@ Datum: 2026-02-28
 12. [Die Grenzen der KI: Modell-Limits und Kontext-Sprengung](12_grenzen_und_limitierungen.md)
 13. [Das Artifact-Pattern: Brücke zwischen Modell-Limits und UX](13_das_artifact_pattern.md)
 14. [Qualitätssicherung: Der Server-Inspector](14_qualitaetssicherung_inspect.md)
-15. [Glossar: Die Sprache von MCP](15_glossar.md)
-16. [Anhang A: SSE und HTTP/2](16_anhang_sse_http2.md)
+15. [Automatisierung & CI/CD: Tests im Software-Lebenszyklus](15_automatisierung_ci_cd.md)
+16. [Glossar: Die Sprache von MCP](16_glossar.md)
+17. [Anhang A: SSE und HTTP/2](17_anhang_sse_http2.md)
 
 ---
 *Erstellt als Teil des mcp-tester Projekts.*
 
 **Lizenz**: Dieses Handbuch steht unter der [CC BY-NC-ND 4.0](LICENSE.md) Lizenz.
-
-Bilder erstellt mit antigravity ai
-
----
-*Copyright Michael Lechner - 2026-02-28*

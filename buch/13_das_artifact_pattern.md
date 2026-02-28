@@ -51,7 +51,7 @@ Beispielhaft für die Umsetzung dieses Patterns ist der **mlcartifact** Server. 
 Das Artifact-Pattern verwandelt den MCP-Stack von einer reinen Chat-Erweiterung in eine professionelle **Produktions-Umgebung**. Projekte wie `mlcartifact` zeigen, wie man die kognitiven Fähigkeiten der KI mit der Leistungsfähigkeit klassischer Dateisysteme und Dokumentenmanagement-Systeme verheiratet.
 
 
-[← Inhaltsverzeichnis](README.md) | [Nächstes Kapitel: Glossar →](14_glossar.md)
+[← Inhaltsverzeichnis](README.md) | [Nächstes Kapitel: Qualitätssicherung →](14_qualitaetssicherung_inspect.md)
 
 ---
 *Copyright Michael Lechner - 2026-02-28*

@@ -1,6 +1,6 @@
 # MCP-Tester
 
-A powerful command-line tool for testing, debugging, and validating Model Context Protocol (MCP) servers.
+A  command-line tool for testing, debugging, and validating Model Context Protocol (MCP) servers.
 
 [Deutsche Version](README.md)
 
@@ -53,9 +53,9 @@ Execute complex test scenarios:
 
 ## Documentation
 
-- [The MCP Handbook](buch/README.md) - A 15-chapter introduction to MCP (German).
-- [Integration Testing](INTEGRATION_TESTS.md) - Details on scripting and CI/CD.
-- [Prompts Explained](PROMPTS.md) - Everything about instructions and system context.
+- [The MCP Handbook](buch/README.md) - A comprehensive 17-chapter introduction to MCP (German).
+  - [Chapter 6: Prompts & System Context](buch/06_prompts_die_anweisungen.md)
+  - [Chapter 15: Automation & CI/CD](buch/15_automatisierung_ci_cd.md)
 
 ---
 

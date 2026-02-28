@@ -100,7 +100,12 @@ tasks:
 
   test-all:
     desc: Run all tests
-    deps: [test-list, test-call, test-profile, test-types, test-assertions, test-vars, test-scripts, test-inspect]
+    deps: [unit-test, test-list, test-call, test-profile, test-types, test-assertions, test-vars, test-scripts, test-inspect]
+
+  unit-test:
+    desc: Run internal unit tests
+    cmds:
+      - GOWORK=off go test -v ./internal/...
 
 
   release-test:

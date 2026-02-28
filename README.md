@@ -30,6 +30,9 @@ Im Projekt ist ein Referenz-Server (`cmd/test-server`) enthalten, der alle Mögl
 curl -sSL https://raw.githubusercontent.com/hmsoft0815/mlc_mcptester/main/scripts/install.sh | bash
 ```
 
+**Direkter Download:**
+Vorkompilierte Binaries für Windows, macOS und Linux sowie `.deb` und `.rpm` Pakete finden Sie unter [Releases](https://github.com/hmsoft0815/mlc_mcptester/releases).
+
 **Manueller Build:**
 ```bash
 task all            # Baut den Tester und Referenz-Server in den bin/ Ordner

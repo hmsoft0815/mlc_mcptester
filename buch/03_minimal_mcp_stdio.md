@@ -60,6 +60,20 @@ Mit unserem `mcp-tester` können wir diesen Server sofort validieren:
 
 Selbst wenn der Server noch keine Tools hat, wird der `mcp-tester` den Handshake erfolgreich durchführen und eine (leere) Liste zurückgeben. Damit hast du deinen ersten funktionierenden MCP-Kanal aufgebaut!
 
+## Jenseits von Stdio: Remote-Server (SSE)
+
+Stdio ist perfekt für lokale Workflows, hat aber Grenzen. Wenn dein MCP-Server im Rechenzentrum laufen soll oder von vielen verschiedenen Clients gleichzeitig genutzt wird, kommt der **SSE-Transport (Server-Sent Events)** ins Spiel.
+
+### Warum ein externer Server?
+1.  **Zentralisierung**: Ein einziger MCP-Server kann die gesamte Belegschaft mit Tools versorgen (z. B. Zugriff auf das interne Wiki).
+2.  **Ressourcen**: Rechenintensive Tools (z. B. Video-Rendering oder große Datenbank-Abfragen) können auf starker Hardware laufen, während der Client (z. B. ein Laptop) schlank bleibt.
+3.  **Cloud-Native**: MCP-Server können als Container (Docker) in Kubernetes oder als Serverless-Funktionen betrieben werden.
+
+Der `mcp-tester` ist bereits auf diese Welt vorbereitet. Statt eines Kommandos übergibst du einfach eine URL:
+```bash
+./mcp-tester list --url "https://mcp.meine-firma.de/sse"
+```
+
 
 [← Inhaltsverzeichnis](README.md) | [Nächstes Kapitel: Tools →](04_tools_die_haende_des_modells.md)
 

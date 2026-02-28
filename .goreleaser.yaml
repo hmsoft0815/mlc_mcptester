@@ -16,6 +16,19 @@ builds:
       - amd64
       - arm64
 
+  - id: test-server
+    main: ./cmd/test-server
+    binary: mcp-test-server
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+
 archives:
   - id: mcp-tester-archive
     formats: [tar.gz, zip]

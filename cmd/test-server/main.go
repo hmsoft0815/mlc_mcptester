@@ -2,19 +2,36 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"log"
+	"os"
 	"time"
 
+	"github.com/hmsoft0815/mlc_mcptester/internal/version"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
 func main() {
+	showVersion := flag.Bool("version", false, "print the version and exit")
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, "Ultimate Test Server v%s\n", version.Version)
+		fmt.Fprintf(os.Stderr, "Developed by %s\n\n", version.Author)
+		fmt.Fprintf(os.Stderr, "Usage:\n")
+		flag.PrintDefaults()
+	}
+	flag.Parse()
+
+	if *showVersion {
+		fmt.Printf("Ultimate Test Server v%s\nAuthor: %s\n", version.Version, version.Author)
+		return
+	}
+
 	ctx := context.Background()
 	s := mcp.NewServer(
 		&mcp.Implementation{
 			Name:    "ultimate-test-server",
-			Version: "2.0.0",
+			Version: version.Version,
 		},
 		&mcp.ServerOptions{
 			Capabilities: &mcp.ServerCapabilities{
@@ -29,6 +46,7 @@ func main() {
 	registerResources(s)
 	registerPrompts(s)
 
+	fmt.Printf("Starting Ultimate Test Server v%s (by %s) on stdio...\n", version.Version, version.Author)
 	transport := &mcp.StdioTransport{}
 	session, err := s.Connect(ctx, transport, nil)
 	if err != nil {

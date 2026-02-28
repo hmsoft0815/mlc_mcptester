@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/hmsoft0815/mlc_mcptester/internal/version"
 	"github.com/spf13/cobra"
 )
 
@@ -23,9 +24,10 @@ var (
 
 // rootCmd represents the base command when called without any subcommands.
 var rootCmd = &cobra.Command{
-	Use:   "mcp-tester",
-	Short: "MCP-Tester is a tool to test Model Context Protocol (MCP) servers",
-	Long:  `A command-line tool to test various MCP server transports, list tool schemas, and invoke tools for testing purposes.`,
+	Use:     "mcp-tester",
+	Short:   "MCP-Tester is a tool to test Model Context Protocol (MCP) servers",
+	Long:    fmt.Sprintf("MCP-Tester v%s - Developed by %s\n\nA command-line tool to test various MCP server transports, list tool schemas, and invoke tools for testing purposes.", version.Version, version.Author),
+	Version: version.Version,
 }
 
 func init() {

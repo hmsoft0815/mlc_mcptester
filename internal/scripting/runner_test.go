@@ -2,6 +2,7 @@ package scripting
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -95,6 +96,37 @@ func TestConvertValue(t *testing.T) {
 		result := convertValue(tt.val, tt.schema)
 		if !reflect.DeepEqual(result, tt.expected) {
 			t.Errorf("convertValue(%q, %v) = %v (%T); want %v (%T)", tt.val, tt.schema, result, result, tt.expected, tt.expected)
+		}
+	}
+}
+
+func TestParseComments(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{"call_tool echo # comment", "call_tool echo"},
+		{"call_tool echo // comment", "call_tool echo"},
+		{"  call_tool add 1 2   ", "call_tool add 1 2"},
+		{"# full line comment", ""},
+		{"// another full line", ""},
+	}
+
+	for _, tt := range tests {
+		line := strings.TrimSpace(tt.input)
+		if line == "" || strings.HasPrefix(line, "#") || strings.HasPrefix(line, "//") {
+			line = ""
+		} else {
+			if idx := strings.Index(line, " #"); idx != -1 {
+				line = strings.TrimSpace(line[:idx])
+			}
+			if idx := strings.Index(line, " //"); idx != -1 {
+				line = strings.TrimSpace(line[:idx])
+			}
+		}
+
+		if line != tt.expected {
+			t.Errorf("parsing %q = %q; want %q", tt.input, line, tt.expected)
 		}
 	}
 }

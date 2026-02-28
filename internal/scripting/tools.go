@@ -118,20 +118,18 @@ func (r *Runner) executeRawCall(ctx context.Context, name string, args map[strin
 }
 
 func (r *Runner) executeSDKCall(ctx context.Context, name string, args map[string]any) (map[string]any, string, error) {
-	result, err := r.session.CallTool(ctx, &mcp.CallToolParams{
-		Name:      name,
-		Arguments: args,
-	})
+	rawResponse, err := client.CallToolRaw(ctx, r.session, name, args)
 	if err != nil {
 		return nil, "", err
 	}
 
-	// Fallback to SDK but wrap it into map[string]any for the variable extractor
-	var rawResponse map[string]any
-	data, _ := json.Marshal(result)
-	_ = json.Unmarshal(data, &rawResponse)
+	// Try to unmarshal into SDK result for backward compatibility if needed,
+	// but we mainly need the text for the runner's state.
+	var sdkResult mcp.CallToolResult
+	data, _ := json.Marshal(rawResponse)
+	_ = json.Unmarshal(data, &sdkResult)
 
-	text := r.processSDKResult(result)
+	text := r.processSDKResult(&sdkResult)
 	return rawResponse, text, nil
 }
 

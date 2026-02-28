@@ -19,24 +19,44 @@ func (r *Runner) extractValue(path string) (any, error) {
 		return r.lastResponse, nil
 	}
 
-	trimmedPath := strings.TrimPrefix(path, "structuredContent.")
-	trimmedPath = strings.TrimPrefix(trimmedPath, "$.")
-
 	if r.lastRawMap == nil {
 		return nil, fmt.Errorf("no previous response available")
 	}
 
-	parts := strings.Split(trimmedPath, ".")
+	// 1. Try resolving the path as-is (works for nested structuredContent or top-level $. fields if literally present)
+	if val, err := r.resolvePath(path); err == nil {
+		return val, nil
+	}
+
+	// 2. Try stripping "virtual" prefixes
+	trimmedPath := strings.TrimPrefix(path, "structuredContent.")
+	trimmedPath = strings.TrimPrefix(trimmedPath, "$.")
+
+	if trimmedPath != path {
+		if val, err := r.resolvePath(trimmedPath); err == nil {
+			return val, nil
+		}
+	}
+
+	return nil, fmt.Errorf("path %q not found", path)
+}
+
+func (r *Runner) resolvePath(path string) (any, error) {
+	parts := strings.Split(path, ".")
 	var current any = r.lastRawMap
 
 	for _, part := range parts {
-		if part == "" {
+		if part == "" || part == "$" {
 			continue
 		}
 
 		switch v := current.(type) {
 		case map[string]any:
-			current = v[part]
+			var ok bool
+			current, ok = v[part]
+			if !ok {
+				return nil, fmt.Errorf("key %q not found", part)
+			}
 		case []any:
 			idx, err := strconv.Atoi(part)
 			if err != nil || idx < 0 || idx >= len(v) {
@@ -47,9 +67,8 @@ func (r *Runner) extractValue(path string) (any, error) {
 			return nil, fmt.Errorf("cannot navigate path at %q", part)
 		}
 	}
-
 	if current == nil {
-		return nil, fmt.Errorf("path %q not found", path)
+		return nil, fmt.Errorf("value at path %q is nil", path)
 	}
 	return current, nil
 }

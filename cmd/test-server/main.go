@@ -46,7 +46,7 @@ func main() {
 	registerResources(s)
 	registerPrompts(s)
 
-	fmt.Printf("Starting Ultimate Test Server v%s (by %s) on stdio...\n", version.Version, version.Author)
+	fmt.Fprintf(os.Stderr, "Starting Ultimate Test Server v%s (by %s) on stdio...\n", version.Version, version.Author)
 	transport := &mcp.StdioTransport{}
 	session, err := s.Connect(ctx, transport, nil)
 	if err != nil {

@@ -59,11 +59,12 @@ Führe komplexe Test-Szenarien aus:
 ./bin/mcp-tester test --script tests/03_variables_and_math.mcp --profile local
 ```
 
----
+## Dokumentation
 
-- [The MCP Handbook](buch/README.md) - A comprehensive 17-chapter introduction to MCP (German).
-  - [Chapter 15: Automation & CI/CD](buch/15_automatisierung_ci_cd.md)
-- [Scripting Reference](docs/SCRIPTING.md) - Detailed documentation of the test grammar.
+- [Das MCP-Handbuch](buch/README.md) - Eine 17-kapitlige, umfassende Einführung in MCP (Deutsch).
+  - [Kapitel 15: Automatisierung & CI/CD](buch/15_automatisierung_ci_cd.md)
+- [Scripting Referenz (DE)](docs/SCRIPTING.de.md) - Detaillierte Dokumentation der Test-Grammatik.
+- [Scripting Reference (EN)](docs/SCRIPTING.md) - Detailed documentation of the test grammar.
 
 ---
 

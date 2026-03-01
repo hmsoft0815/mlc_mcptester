@@ -1,0 +1,26 @@
+// Teste Fehlende Parameter für Wollmilchsau
+
+// 1. check_syntax ohne 'code'
+expect_error call_tool check_syntax
+assert_error_code -32602
+assert_contains "missing properties: [\"code\"]"
+
+// 2. execute_script ohne 'code'
+expect_error call_tool execute_script
+assert_error_code -32602
+assert_contains "missing properties: [\"code\"]"
+
+// 3. execute_project ohne 'files'
+expect_error call_tool execute_project entryPoint:"main.ts"
+assert_error_code -32602
+assert_contains "missing properties: [\"files\"]"
+
+// 4. execute_project ohne 'entryPoint'
+expect_error call_tool execute_project files:"[]"
+assert_error_code -32602
+assert_contains "missing properties: [\"entryPoint\"]"
+
+// 5. Unbekanntes Tool
+expect_error call_tool gibts_nicht
+assert_error_code -32602
+assert_contains "unknown tool"

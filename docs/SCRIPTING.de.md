@@ -23,6 +23,21 @@ call_tool <tool_name> [arg1] [arg2] ...
     - **Benannt**: Folgen der Syntax `key:value`. Dies wird empfohlen, um Verwechslungen durch die alphabetische Sortierung zu vermeiden.
     - **Gemischt**: Es können beide Arten gemischt werden; positionale Argumente füllen die verbleibenden Properties in alphabetischer Reihenfolge auf.
 
+### 9. `assert_error_code`
+Prüft den JSON-RPC Fehler-Code des letzten fehlgeschlagenen Befehls. Wird nach `expect_error` verwendet.
+
+```mcp
+expect_error call_tool some_tool invalid:params
+assert_error_code -32602
+```
+
+### Gängige JSON-RPC Fehler-Codes
+- `-32700`: Parse error (ungültiges JSON)
+- `-32600`: Invalid Request (ungültiger Request)
+- `-32601`: Method not found (Methode nicht gefunden)
+- `-32602`: Invalid params (Schema-Validierung fehlgeschlagen)
+- `-32603`: Internal error (Interner Fehler)
+
 ### 2. `set_var`
 Extrahiert einen Wert aus der letzten Tool-Antwort und speichert ihn in einer Variable.
 ```mcp

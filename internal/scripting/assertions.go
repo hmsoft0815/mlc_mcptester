@@ -133,10 +133,28 @@ func (r *Runner) handleAssertStringLengthCommand(lineIdx int, parts []string) er
 }
 
 // string length min,max ?
-func (r *Runner) handleAssertStringLength(lineIdx int, s string, min, max int) error {
-	if len(s) < min || len(s) > max {
-		return fmt.Errorf("line %d: assertion failed: string length %d is not between %d and %d", lineIdx+1, len(s), min, max)
+func (r *Runner) handleAssertStringLength(lineIdx int, val string, min, max int) error {
+	length := len(val)
+	if length < min || length > max {
+		return fmt.Errorf("line %d: assertion failed: string length %d is not between %d and %d", lineIdx+1, length, min, max)
 	}
-	fmt.Printf("Assertion passed: string length %d is between %d and %d\n", len(s), min, max)
+	fmt.Printf("Assertion passed: string length %d is between %d and %d\n", length, min, max)
+	return nil
+}
+
+// assert_error_code <code>
+func (r *Runner) handleAssertErrorCodeCommand(lineIdx int, parts []string) error {
+	if len(parts) != 2 {
+		return fmt.Errorf("line %d: assert_error_code expects 1 argument (code)", lineIdx+1)
+	}
+	code, err := strconv.ParseInt(parts[1], 10, 64)
+	if err != nil {
+		return fmt.Errorf("line %d: invalid error code: %s", lineIdx+1, parts[1])
+	}
+
+	if r.lastErrorCode != code {
+		return fmt.Errorf("line %d: assertion failed: expected error code %d, got %d", lineIdx+1, code, r.lastErrorCode)
+	}
+	fmt.Printf("Assertion passed: error code is %d\n", code)
 	return nil
 }

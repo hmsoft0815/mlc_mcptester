@@ -66,9 +66,25 @@ assert_gt $value1 $value2
 ```
 ### 8. `assert_string_length`
 Checks if the length of a string (or variable) is within a specific range.
+
 ```mcp
 assert_string_length $variable <min> <max>
 ```
+
+### 9. `assert_error_code`
+Verifies the JSON-RPC error code of the last failed command. This is used after `expect_error`.
+
+```mcp
+expect_error call_tool some_tool invalid:params
+assert_error_code -32602
+```
+
+### Common JSON-RPC Error Codes
+- `-32700`: Parse error (invalid JSON)
+- `-32600`: Invalid Request
+- `-32601`: Method not found
+- `-32602`: Invalid params (schema validation failed)
+- `-32603`: Internal error
 - `assert_string_length $var 5 10`
 
 ---

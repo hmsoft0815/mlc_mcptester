@@ -1,0 +1,16 @@
+// Test JSON-RPC error codes
+
+// 1. Invalid params (missing required argument 'a' or 'b' for 'add')
+expect_error call_tool add a:10
+assert_error_code -32602
+assert_contains "invalid params"
+
+// 2. Method not found (Server returns -32602 for unknown tool names in tools/call)
+expect_error call_tool non_existent_tool
+assert_error_code -32602
+assert_contains "unknown tool"
+
+// 3. Success check (should reset error code)
+call_tool add a:1 2
+assert_contains "Result: 3"
+// We don't have a way to assert "no error code" yet, but previous success is implied

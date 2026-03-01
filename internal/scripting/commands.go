@@ -8,6 +8,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/hmsoft0815/mlc_mcptester/internal/client"
 )
 
 // handleCallTool calls a tool with arguments
@@ -104,8 +106,15 @@ func (r *Runner) handleExpectErrorCommand(ctx context.Context, i int, parts []st
 	if err == nil {
 		return fmt.Errorf("line %d: expected error but command succeeded", i+1)
 	}
+
+	// Capture error code if it's an RPCError
+	r.lastErrorCode = 0
+	if rpcErr, ok := err.(*client.RPCError); ok {
+		r.lastErrorCode = rpcErr.Code
+	}
+
 	// Capture error as response for assertions
-	r.updateState(map[string]any{"error": err.Error()}, err.Error())
-	fmt.Printf("Expected error caught: %v\n", err)
+	r.updateState(map[string]any{"error": err.Error(), "code": r.lastErrorCode}, err.Error())
+	fmt.Printf("Expected error caught: %v (code: %d)\n", err, r.lastErrorCode)
 	return nil
 }

@@ -55,22 +55,17 @@ func (r *Runner) callToolPositional(ctx context.Context, name string, args []str
 		}
 	}
 
-	if targetTool == nil {
-		return fmt.Errorf("tool not found: %s", name)
+	var properties map[string]any
+	if targetTool != nil && targetTool.InputSchema != nil {
+		if schema, ok := targetTool.InputSchema.(map[string]any); ok {
+			if props, ok := schema["properties"].(map[string]any); ok {
+				properties = props
+			}
+		}
 	}
 
-	if targetTool.InputSchema == nil {
-		return r.call(ctx, name, nil)
-	}
-
-	schema, ok := targetTool.InputSchema.(map[string]any)
-	if !ok {
-		return r.call(ctx, name, nil)
-	}
-
-	properties, ok := schema["properties"].(map[string]any)
-	if !ok {
-		return r.call(ctx, name, nil)
+	if properties == nil {
+		properties = make(map[string]any)
 	}
 
 	var propNames []string

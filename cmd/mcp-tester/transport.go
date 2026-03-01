@@ -13,6 +13,7 @@ import (
 // getClient returns a new MCP client with optional logging and notification handlers.
 func getClient(verbose bool) *mcp.Client {
 	opts := &mcp.ClientOptions{
+		// sometimes..
 		// Handler for logging notifications from the server
 		LoggingMessageHandler: func(ctx context.Context, req *mcp.LoggingMessageRequest) {
 			fmt.Printf("[SERVER LOG] [%s] %s: %v\n", req.Params.Level, req.Params.Logger, req.Params.Data)
@@ -39,6 +40,7 @@ func getClient(verbose bool) *mcp.Client {
 // It supports CommandTransport for local execution and SSEClientTransport for remote URLs.
 func getTransport(ctx context.Context, command, url string) (mcp.Transport, error) {
 	// If a command is provided, use stdio transport via shell execution.
+	// hmm - win/mac ?
 	if command != "" {
 		return &mcp.CommandTransport{
 			Command: exec.CommandContext(ctx, "sh", "-c", command),

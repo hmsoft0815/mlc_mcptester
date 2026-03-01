@@ -8,7 +8,7 @@ assert_contains "Result: 150"
 set_var my_sum structuredContent.sum
 set_var first_val structuredContent.a
 
-// 3. Variablen validieren
+// 3. Variablen validieren ..
 assert_number $my_sum
 assert_gt $my_sum 149
 assert_gt $my_sum $first_val

@@ -128,11 +128,10 @@ tasks:
     cmds:
       - |
         ./bin/test-server -addr :8081 > sse_server.log 2>&1 &
-        pid=$!
         echo "Waiting for SSE server to start..."
         sleep 2
         # Use trap to ensure server is killed even if tests fail
-        trap "kill $pid" EXIT
+        trap "pkill -f './bin/test-server -addr :8081' || true" EXIT
         ./bin/mcp-tester inspect --url http://localhost:8081/sse
         ./bin/mcp-tester test --url http://localhost:8081/sse --script tests/01_simple.mcp
 

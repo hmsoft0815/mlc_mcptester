@@ -27,6 +27,20 @@ Anstatt 100 spezialisierte Tools anzubieten, bietet der Server ein einziges "Rou
 ### 3. Klare Abgrenzung durch Prompts
 Wie in Kapitel 6 gelernt, können **Prompts** dem Modell helfen, sich zu fokussieren. Ein Prompt kann dem Modell sagen: *"Du bist heute nur für die Buchhaltung zuständig. Ignoriere alle Tools, die nichts mit Finanzen zu tun haben."*
 
+### 4. Slash-Commands & Gezielte Tool-Auswahl
+Ein sehr effektives Muster in modernen Chat-Clients ist die Kombination von Benutzer-Interaktion und technischer Filterung. 
+
+Anstatt dass das LLM aus einer riesigen Liste das richtige Werkzeug erraten muss, gibt der Benutzer durch einen **Slash-Command** (z. B. `/execute_js`) die Richtung vor. Dies ermöglicht einen hochoptimierten Flow:
+
+1.  **Präzise Identifikation**: Sobald der User `/execute_js` tippt, weiß der Client exakt, welches Tool im nächsten Schritt benötigt wird.
+2.  **Context-Anreicherung via `prompts/get`**: Der Client ruft vom Server den passenden Prompt für dieses Tool ab. Dieser enthält oft spezifische System-Anweisungen oder Hilfestellungen.
+3.  **Reduzierter Fokus**: Der Client sendet an das LLM nur noch:
+    - Eine kleine Liste von Standard-Tools (**baseTools**).
+    - Das vom User gewählte Tool als **forcedTool** (das Modell wird angewiesen, genau dieses Tool zu nutzen).
+    - Den Text aus dem Prompt-Abruf als zusätzliche Instruktion.
+
+**Vorteil**: Die Token-Last sinkt drastisch, die Latenz wird minimiert und die Wahrscheinlichkeit, dass das Modell ein falsches Tool wählt, geht gegen Null.
+
 ---
 
 ## Testing der Tool-Überlastung mit `mcp-tester`

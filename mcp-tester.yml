@@ -5,3 +5,5 @@ profiles:
     command: "../bin/hub-osm"
   sys-info:
     command: "../bin/system-info-server"
+  wollmilchsau:
+    command: "../wollmilchsau/build/wollmilchsau"

@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"time"
 
@@ -15,6 +16,7 @@ import (
 
 func main() {
 	showVersion := flag.Bool("version", false, "print the version and exit")
+	addr := flag.String("addr", "", "Listen address for SSE (e.g. ':8080'). If empty, uses stdio.")
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Ultimate Test Server v%s\n", version.Version)
 		fmt.Fprintf(os.Stderr, "Developed by %s\n\n", version.Author)
@@ -48,13 +50,21 @@ func main() {
 	registerResources(s)
 	registerPrompts(s)
 
-	fmt.Fprintf(os.Stderr, "Starting Ultimate Test Server v%s (by %s) on stdio...\n", version.Version, version.Author)
-	transport := &mcp.StdioTransport{}
-	session, err := s.Connect(ctx, transport, nil)
-	if err != nil {
-		log.Fatal(err)
+	if *addr != "" {
+		fmt.Fprintf(os.Stderr, "Starting Ultimate Test Server v%s (by %s) on SSE (%s)...\n", version.Version, version.Author, *addr)
+		handler := mcp.NewSSEHandler(func(*http.Request) *mcp.Server { return s }, nil)
+		if err := http.ListenAndServe(*addr, handler); err != nil {
+			log.Fatalf("SSE server failed: %v", err)
+		}
+	} else {
+		fmt.Fprintf(os.Stderr, "Starting Ultimate Test Server v%s (by %s) on stdio...\n", version.Version, version.Author)
+		transport := &mcp.StdioTransport{}
+		session, err := s.Connect(ctx, transport, nil)
+		if err != nil {
+			log.Fatal(err)
+		}
+		session.Wait()
 	}
-	session.Wait()
 }
 
 func registerBasicTools(s *mcp.Server) {

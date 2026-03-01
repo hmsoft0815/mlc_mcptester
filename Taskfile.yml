@@ -116,6 +116,20 @@ tasks:
     cmds:
       - ./bin/mcp-tester inspect --profile local
 
+  test-sse:
+    desc: Test the SSE transport
+    deps: [all]
+    cmds:
+      - |
+        ./bin/test-server -addr :8081 > sse_server.log 2>&1 &
+        pid=$!
+        echo "Waiting for SSE server to start..."
+        sleep 2
+        # Use trap to ensure server is killed even if tests fail
+        trap "kill $pid" EXIT
+        ./bin/mcp-tester inspect --url http://localhost:8081/sse
+        ./bin/mcp-tester test --url http://localhost:8081/sse --script tests/01_simple.mcp
+
   test-all:
     desc: Run all tests
     cmds:
@@ -131,6 +145,7 @@ tasks:
       - task: test-vars
       - task: test-scripts
       - task: test-inspect
+      - task: test-sse
 
   format:
     desc: Format Go source code
@@ -175,4 +190,4 @@ tasks:
   clean:
     desc: Remove binaries and temporary files
     cmds:
-      - rm -rf bin task_test.mcp type_test.mcp assert_test.mcp *.png
+      - rm -rf bin task_test.mcp type_test.mcp assert_test.mcp *.png sse_server.log

@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -45,21 +44,36 @@ var inspectCmd = &cobra.Command{
 
 		// 2. Check Capabilities
 		caps := initResult.Capabilities
-		fmt.Print("[i] Capabilities: ")
-		features := []string{}
-		if caps.Logging != nil {
-			features = append(features, "Logging")
+		fmt.Println("[i] Capabilities & Features:")
+
+		fmt.Printf("    - Tools:     %v", caps.Tools != nil)
+		if caps.Tools != nil && caps.Tools.ListChanged {
+			fmt.Print(" (Subscription-fähig)")
 		}
+		fmt.Println()
+
+		fmt.Printf("    - Prompts:   %v", caps.Prompts != nil)
+		if caps.Prompts != nil && caps.Prompts.ListChanged {
+			fmt.Print(" (Subscription-fähig)")
+		}
+		fmt.Println()
+
+		fmt.Printf("    - Resources: %v", caps.Resources != nil)
 		if caps.Resources != nil {
-			features = append(features, "Resources")
+			if caps.Resources.ListChanged {
+				fmt.Print(" (ListChanged)")
+			}
+			if caps.Resources.Subscribe {
+				fmt.Print(" (Subscribe)")
+			}
 		}
-		if caps.Prompts != nil {
-			features = append(features, "Prompts")
-		}
-		if caps.Tools != nil {
-			features = append(features, "Tools")
-		}
-		fmt.Println(strings.Join(features, ", "))
+		fmt.Println()
+
+		fmt.Printf("    - Logging:   %v\n", caps.Logging != nil)
+
+		// 2.1 Always available in modern MCP but worth highlighting
+		fmt.Printf("    - Progress:  Unterstützt (Protokoll-Standard)\n")
+		fmt.Printf("    - Cancel:    Unterstützt (Protokoll-Standard)\n")
 
 		// 3. Analyze Prompts (System Context)
 		promptsResult, err := session.ListPrompts(ctx, nil)
@@ -105,6 +119,12 @@ var inspectCmd = &cobra.Command{
 			if len(resourcesResult.Resources) > 0 {
 				fmt.Printf("[✓] %d Ressourcen gefunden.\n", len(resourcesResult.Resources))
 			}
+		}
+
+		// 6. Post-Analysis Recommendations
+		if caps.Logging == nil {
+			recommendations = append(recommendations, "HINWEIS: Der Server unterstützt kein Logging. Server-seitige Logs via MCP helfen dem Client/User bei der Fehlersuche.")
+			score -= 5
 		}
 
 		// Output Report

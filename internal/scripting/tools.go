@@ -2,7 +2,6 @@ package scripting
 
 import (
 	"context"
-	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"sort"
@@ -14,16 +13,34 @@ import (
 )
 
 func (r *Runner) parseArgs(line string) ([]string, error) {
-	rdr := csv.NewReader(strings.NewReader(line))
-	rdr.Comma = ' '
-	rdr.TrimLeadingSpace = true
-	parts, err := rdr.Read()
-	if err != nil {
-		return nil, err
+	var parts []string
+	var current strings.Builder
+	inQuotes := false
+	var quoteChar rune
+
+	for _, char := range line {
+		switch {
+		case (char == '"' || char == '\'') && !inQuotes:
+			inQuotes = true
+			quoteChar = char
+		case char == quoteChar && inQuotes:
+			inQuotes = false
+		case char == ' ' && !inQuotes:
+			if current.Len() > 0 {
+				parts = append(parts, current.String())
+				current.Reset()
+			}
+		default:
+			current.WriteRune(char)
+		}
+	}
+	if current.Len() > 0 {
+		parts = append(parts, current.String())
 	}
 	return parts, nil
 }
 
+// callToolPositional calls the tool with the given name and arguments.
 func (r *Runner) callToolPositional(ctx context.Context, name string, args []string) error {
 	tools, err := r.session.ListTools(ctx, nil)
 	if err != nil {
@@ -63,18 +80,40 @@ func (r *Runner) callToolPositional(ctx context.Context, name string, args []str
 	sort.Strings(propNames)
 
 	toolArgs := make(map[string]any)
-	for i, val := range args {
-		if i >= len(propNames) {
-			break
+	var positionalArgs []string
+
+	// First pass: extract named arguments and collect positional ones
+	for _, arg := range args {
+		if strings.Contains(arg, ":") {
+			parts := strings.SplitN(arg, ":", 2)
+			key := parts[0]
+			val := parts[1]
+			if propSchema, ok := properties[key].(map[string]any); ok {
+				toolArgs[key] = convertValue(val, propSchema)
+				continue
+			}
 		}
-		propName := propNames[i]
-		propSchema, _ := properties[propName].(map[string]any)
-		toolArgs[propName] = convertValue(val, propSchema)
+		// If not a named arg OR the key doesn't exist, treat as positional
+		positionalArgs = append(positionalArgs, arg)
+	}
+
+	// Second pass: fill remaining properties with positional arguments
+	posIdx := 0
+	for _, propName := range propNames {
+		if _, alreadySet := toolArgs[propName]; alreadySet {
+			continue
+		}
+		if posIdx < len(positionalArgs) {
+			propSchema, _ := properties[propName].(map[string]any)
+			toolArgs[propName] = convertValue(positionalArgs[posIdx], propSchema)
+			posIdx++
+		}
 	}
 
 	return r.call(ctx, name, toolArgs)
 }
 
+// convertValue converts a string value to the type specified in the schema.
 func convertValue(val string, schema map[string]any) any {
 	if schema == nil {
 		return val
@@ -105,6 +144,7 @@ func convertValue(val string, schema map[string]any) any {
 	return val
 }
 
+// call calls the tool with the given name and arguments.
 func (r *Runner) call(ctx context.Context, name string, args map[string]any) error {
 	var rawResponse map[string]any
 	var text string
@@ -124,6 +164,7 @@ func (r *Runner) call(ctx context.Context, name string, args map[string]any) err
 	return nil
 }
 
+// executeRawCall calls the tool with the given name and arguments using the raw call method.
 func (r *Runner) executeRawCall(ctx context.Context, name string, args map[string]any) (map[string]any, string, error) {
 	meta := map[string]any{"progressToken": fmt.Sprintf("script-progress-%s", name)}
 	rawResponse, err := client.CallToolRaw(ctx, r.session, name, args, meta)
@@ -135,6 +176,7 @@ func (r *Runner) executeRawCall(ctx context.Context, name string, args map[strin
 	return rawResponse, text, nil
 }
 
+// executeSDKCall calls the tool with the given name and arguments using the SDK call method.
 func (r *Runner) executeSDKCall(ctx context.Context, name string, args map[string]any) (map[string]any, string, error) {
 	meta := map[string]any{"progressToken": fmt.Sprintf("script-progress-%s", name)}
 	rawResponse, err := client.CallToolRaw(ctx, r.session, name, args, meta)
@@ -152,6 +194,7 @@ func (r *Runner) executeSDKCall(ctx context.Context, name string, args map[strin
 	return rawResponse, text, nil
 }
 
+// extractTextFromRaw extracts the text from the raw response. (legacy)
 func extractTextFromRaw(rawResponse map[string]any) string {
 	var textBuilder strings.Builder
 	if contents, ok := rawResponse["content"].([]any); ok {
@@ -166,6 +209,7 @@ func extractTextFromRaw(rawResponse map[string]any) string {
 	return textBuilder.String()
 }
 
+// processSDKResult processes the SDK result and returns the text.
 func (r *Runner) processSDKResult(result *mcp.CallToolResult) string {
 	var textBuilder strings.Builder
 	for _, content := range result.Content {
@@ -180,6 +224,7 @@ func (r *Runner) processSDKResult(result *mcp.CallToolResult) string {
 	return textBuilder.String()
 }
 
+// updateState updates the runner's state with the given raw response and text.
 func (r *Runner) updateState(rawResponse map[string]any, text string) {
 	r.lastText = text
 	r.lastRawMap = rawResponse

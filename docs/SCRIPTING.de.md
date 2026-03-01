@@ -18,7 +18,10 @@ Ruft ein MCP-Tool auf.
 ```mcp
 call_tool <tool_name> [arg1] [arg2] ...
 ```
-- **Argumente**: Werden positional übergeben und automatisch anhand des JSON-Schemas des Tools in den richtigen Typ (integer, boolean, etc.) konvertiert. Die Reihenfolge entspricht der **alphabetischen Sortierung** der Property-Namen im Schema.
+- **Argumente**: Können positional oder als benannte Argumente (`key:value`) übergeben werden.
+    - **Positional**: Werden basierend auf dem JSON-Schema des Tools automatisch in den richtigen Typ (Integer, Boolean etc.) konvertiert. Die Reihenfolge entspricht der **alphabetischen Sortierung** der Property-Namen im Schema.
+    - **Benannt**: Folgen der Syntax `key:value`. Dies wird empfohlen, um Verwechslungen durch die alphabetische Sortierung zu vermeiden.
+    - **Gemischt**: Es können beide Arten gemischt werden; positionale Argumente füllen die verbleibenden Properties in alphabetischer Reihenfolge auf.
 
 ### 2. `set_var`
 Extrahiert einen Wert aus der letzten Tool-Antwort und speichert ihn in einer Variable.

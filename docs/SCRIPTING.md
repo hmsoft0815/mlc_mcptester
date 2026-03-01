@@ -18,7 +18,10 @@ Invokes an MCP tool.
 ```mcp
 call_tool <tool_name> [arg1] [arg2] ...
 ```
-- **Arguments**: Passed positionally and automatically converted to the correct type (integer, boolean, etc.) based on the tool's JSON schema. The order corresponds to the **alphabetical sorting** of the property names in the schema.
+- **Arguments**: Can be passed positionally or as named arguments (`key:value`).
+    - **Positional**: Arguments are automatically converted to the correct type based on the tool's JSON schema. The order corresponds to the **alphabetical sorting** of the property names in the schema.
+    - **Named**: Arguments follow the `key:value` syntax. This is recommended to avoid confusion with alphabetical sorting.
+    - **Mixed**: You can mix both; positional arguments will fill the remaining properties in alphabetical order.
 
 ### 2. `set_var`
 Extracts a value from the last tool response and stores it in a variable.

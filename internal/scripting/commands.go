@@ -5,7 +5,9 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
+	"time"
 )
 
 // handleCallTool calls a tool with arguments
@@ -51,7 +53,14 @@ func (r *Runner) handleInputVarParts(lineIdx int, parts []string) error {
 
 func (r *Runner) handleSetVar(lineIdx int, line string) error {
 	parts, err := r.parseArgs(line)
-	if err != nil || len(parts) != 3 {
+	if err != nil {
+		return err
+	}
+	return r.handleSetVarCommand(lineIdx, parts)
+}
+
+func (r *Runner) handleSetVarCommand(lineIdx int, parts []string) error {
+	if len(parts) != 3 {
 		return fmt.Errorf("line %d: set_var expects <name> <path>", lineIdx+1)
 	}
 	return r.handleSetVarParts(lineIdx, parts[1], parts[2])
@@ -64,5 +73,39 @@ func (r *Runner) handleSetVarParts(lineIdx int, varName, path string) error {
 	}
 	r.variables[varName] = fmt.Sprintf("%v", val)
 	fmt.Printf("Variable set: %s = %s\n", varName, r.variables[varName])
+	return nil
+}
+
+func (r *Runner) handleCallToolParts(ctx context.Context, lineIdx int, parts []string) error {
+	if len(parts) < 2 {
+		return fmt.Errorf("line %d: call_tool expects at least a tool name", lineIdx+1)
+	}
+	return r.callToolPositional(ctx, parts[1], parts[2:])
+}
+
+func (r *Runner) handleTimeoutCommand(ctx context.Context, i int, parts []string) error {
+	if len(parts) < 3 {
+		return fmt.Errorf("line %d: timeout expects <ms> <command>", i+1)
+	}
+	ms, err := strconv.Atoi(parts[1])
+	if err != nil {
+		return fmt.Errorf("line %d: invalid timeout value: %s", i+1, parts[1])
+	}
+	timeoutCtx, cancel := context.WithTimeout(ctx, time.Duration(ms)*time.Millisecond)
+	defer cancel()
+	return r.dispatchParts(timeoutCtx, i, parts[2:])
+}
+
+func (r *Runner) handleExpectErrorCommand(ctx context.Context, i int, parts []string) error {
+	if len(parts) < 2 {
+		return fmt.Errorf("line %d: expect_error expects a command", i+1)
+	}
+	err := r.dispatchParts(ctx, i, parts[1:])
+	if err == nil {
+		return fmt.Errorf("line %d: expected error but command succeeded", i+1)
+	}
+	// Capture error as response for assertions
+	r.updateState(map[string]any{"error": err.Error()}, err.Error())
+	fmt.Printf("Expected error caught: %v\n", err)
 	return nil
 }

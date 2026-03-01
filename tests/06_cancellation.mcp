@@ -1,0 +1,8 @@
+// Test Cancellation
+// We expect a timeout to cause an error (context deadline exceeded)
+timeout 500 expect_error call_tool progressTest 5
+assert_contains "context deadline exceeded"
+
+// Verify that a normal call still works afterwards
+call_tool echo "Still alive"
+assert_contains "Still alive"

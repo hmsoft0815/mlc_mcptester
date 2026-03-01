@@ -87,3 +87,17 @@ func (r *Runner) handleAssertGreaterThan(lineIdx int, s1, s2 string) error {
 	fmt.Printf("Assertion passed: %f > %f\n", v1, v2)
 	return nil
 }
+
+func (r *Runner) handleAssertNumberCommand(lineIdx int, parts []string) error {
+	if len(parts) != 2 {
+		return fmt.Errorf("line %d: assert_number expects 1 argument", lineIdx+1)
+	}
+	return r.handleAssertNumber(lineIdx, parts[1])
+}
+
+func (r *Runner) handleAssertGreaterThanCommand(lineIdx int, parts []string) error {
+	if len(parts) != 3 {
+		return fmt.Errorf("line %d: assert_gt expects 2 arguments", lineIdx+1)
+	}
+	return r.handleAssertGreaterThan(lineIdx, parts[1], parts[2])
+}

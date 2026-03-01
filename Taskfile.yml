@@ -107,6 +107,8 @@ tasks:
       - ./bin/mcp-tester test --profile local --script tests/03_variables_and_math.mcp
       - echo "--- Running Progress Test ---"
       - ./bin/mcp-tester test --profile local --script tests/05_progress.mcp -v
+      - echo "--- Running Cancellation Test ---"
+      - ./bin/mcp-tester test --profile local --script tests/06_cancellation.mcp -v
 
   test-inspect:
     desc: Test the server inspection tool

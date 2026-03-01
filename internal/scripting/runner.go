@@ -123,15 +123,9 @@ func (r *Runner) dispatchParts(ctx context.Context, i int, parts []string) error
 	cmd := parts[0]
 	switch cmd {
 	case "call_tool":
-		if len(parts) < 2 {
-			return fmt.Errorf("line %d: call_tool expects at least a tool name", i+1)
-		}
-		return r.callToolPositional(ctx, parts[1], parts[2:])
+		return r.handleCallToolParts(ctx, i, parts)
 	case "set_var":
-		if len(parts) != 3 {
-			return fmt.Errorf("line %d: set_var expects <name> <path>", i+1)
-		}
-		return r.handleSetVarParts(i, parts[1], parts[2])
+		return r.handleSetVarCommand(i, parts)
 	case "input_var":
 		return r.handleInputVarParts(i, parts)
 	case "assert_contains":
@@ -139,15 +133,13 @@ func (r *Runner) dispatchParts(ctx context.Context, i int, parts []string) error
 	case "assert_equals":
 		return r.handleAssertEqualsParts(i, parts)
 	case "assert_number":
-		if len(parts) != 2 {
-			return fmt.Errorf("line %d: assert_number expects 1 argument", i+1)
-		}
-		return r.handleAssertNumber(i, parts[1])
+		return r.handleAssertNumberCommand(i, parts)
 	case "assert_gt":
-		if len(parts) != 3 {
-			return fmt.Errorf("line %d: assert_gt expects 2 arguments", i+1)
-		}
-		return r.handleAssertGreaterThan(i, parts[1], parts[2])
+		return r.handleAssertGreaterThanCommand(i, parts)
+	case "timeout":
+		return r.handleTimeoutCommand(ctx, i, parts)
+	case "expect_error":
+		return r.handleExpectErrorCommand(ctx, i, parts)
 	default:
 		return fmt.Errorf("line %d: unknown command: %s", i+1, cmd)
 	}

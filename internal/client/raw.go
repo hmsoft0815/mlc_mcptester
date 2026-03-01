@@ -12,7 +12,7 @@ import (
 
 // CallToolRaw performs a tool call and returns the raw map[string]any result,
 // bypassing the strict SDK unmarshaling that fails on missing "type" fields.
-func CallToolRaw(ctx context.Context, session *mcp.ClientSession, toolName string, arguments any) (map[string]any, error) {
+func CallToolRaw(ctx context.Context, session *mcp.ClientSession, toolName string, arguments any, meta map[string]any) (map[string]any, error) {
 	// 1. Get the internal jsonrpc2.Connection via reflection on unexported field
 	sVal := reflect.ValueOf(session).Elem()
 	connField := sVal.FieldByName("conn")
@@ -25,11 +25,13 @@ func CallToolRaw(ctx context.Context, session *mcp.ClientSession, toolName strin
 
 	// 2. Prepare the request
 	params := struct {
-		Name      string `json:"name"`
-		Arguments any    `json:"arguments"`
+		Name      string         `json:"name"`
+		Arguments any            `json:"arguments"`
+		Meta      map[string]any `json:"_meta,omitempty"`
 	}{
 		Name:      toolName,
 		Arguments: arguments,
+		Meta:      meta,
 	}
 
 	// 3. Call the internal Connection.Call method

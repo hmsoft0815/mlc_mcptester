@@ -125,7 +125,8 @@ func (r *Runner) call(ctx context.Context, name string, args map[string]any) err
 }
 
 func (r *Runner) executeRawCall(ctx context.Context, name string, args map[string]any) (map[string]any, string, error) {
-	rawResponse, err := client.CallToolRaw(ctx, r.session, name, args)
+	meta := map[string]any{"progressToken": fmt.Sprintf("script-progress-%s", name)}
+	rawResponse, err := client.CallToolRaw(ctx, r.session, name, args, meta)
 	if err != nil {
 		return nil, "", err
 	}
@@ -135,7 +136,8 @@ func (r *Runner) executeRawCall(ctx context.Context, name string, args map[strin
 }
 
 func (r *Runner) executeSDKCall(ctx context.Context, name string, args map[string]any) (map[string]any, string, error) {
-	rawResponse, err := client.CallToolRaw(ctx, r.session, name, args)
+	meta := map[string]any{"progressToken": fmt.Sprintf("script-progress-%s", name)}
+	rawResponse, err := client.CallToolRaw(ctx, r.session, name, args, meta)
 	if err != nil {
 		return nil, "", err
 	}

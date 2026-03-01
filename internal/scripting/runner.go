@@ -88,10 +88,7 @@ func (r *Runner) processLine(ctx context.Context, i int, line string, state *run
 }
 
 func (r *Runner) finalizeHeredoc(ctx context.Context, i int, state *runState) error {
-	content := state.heredocContent.String()
-	if strings.HasSuffix(content, "\n") {
-		content = content[:len(content)-1]
-	}
+	content := strings.TrimSuffix(state.heredocContent.String(), "\n")
 
 	state.currentCommand = r.replaceVariables(state.currentCommand)
 	parts, err := r.parseArgs(state.currentCommand)

@@ -1,0 +1,3 @@
+// Test Progress Notifications
+call_tool progressTest 3
+assert_contains "Countdown finished!"

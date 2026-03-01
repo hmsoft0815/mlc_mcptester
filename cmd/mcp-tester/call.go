@@ -66,7 +66,8 @@ var callCmd = &cobra.Command{
 
 		if raw {
 			fmt.Println("--- RAW MODE ---")
-			result, err := client.CallToolRaw(ctx, session, toolName, toolArgs)
+			meta := map[string]any{"progressToken": fmt.Sprintf("script-progress-%s", toolName)}
+			result, err := client.CallToolRaw(ctx, session, toolName, toolArgs, meta)
 			if err != nil {
 				return fmt.Errorf("failed to call tool (raw): %w", err)
 			}

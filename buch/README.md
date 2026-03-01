@@ -21,6 +21,7 @@ Eine strukturierte Einführung in das Model Context Protocol (MCP) für Entwickl
 15. [Automatisierung & CI/CD: Tests im Software-Lebenszyklus](15_automatisierung_ci_cd.md)
 16. [Glossar: Die Sprache von MCP](16_glossar.md)
 17. [Anhang A: SSE und HTTP/2](17_anhang_sse_http2.md)
+18. [Erweiterungen: Notifications (Push-Nachrichten)](18_erweiterungen_notifications.md)
 
 ---
 *Erstellt als Teil des mcp-tester Projekts.*

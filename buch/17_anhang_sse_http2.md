@@ -36,3 +36,8 @@ Wenn du einen MCP-Server für den Remote-Einsatz planst:
 *   Nutze **SSE** für die Benachrichtigungen und Tool-Antworten.
 *   Stelle sicher, dass dein Load-Balancer oder Reverse-Proxy (z. B. Nginx, Caddy) **HTTP/2** zwingend unterstützt.
 *   Achte darauf, dass Timeouts für HTTP-Verbindungen hoch genug eingestellt sind, damit die SSE-Leitung nicht mitten im Chat unterbrochen wird.
+
+---
+[← Inhaltsverzeichnis](README.md) | [Nächstes Kapitel: Erweiterungen - Notifications →](18_erweiterungen_notifications.md)
+
+*Copyright Michael Lechner - 2026-03-01*

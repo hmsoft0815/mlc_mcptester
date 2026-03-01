@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
@@ -42,7 +43,8 @@ func main() {
 		},
 	)
 
-	registerTools(s)
+	registerBasicTools(s)
+	registerProcessTools(s)
 	registerResources(s)
 	registerPrompts(s)
 
@@ -55,7 +57,7 @@ func main() {
 	session.Wait()
 }
 
-func registerTools(s *mcp.Server) {
+func registerBasicTools(s *mcp.Server) {
 	// Echo Tool with Output Schema
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "echo",
@@ -114,6 +116,9 @@ func registerTools(s *mcp.Server) {
 			Content: []mcp.Content{&mcp.TextContent{Text: fmt.Sprintf("Result: %d", a+b)}},
 		}, map[string]any{"sum": a + b, "a": a, "b": b}, nil
 	})
+}
+
+func registerProcessTools(s *mcp.Server) {
 
 	// Long Running Task with Output Schema
 	mcp.AddTool(s, &mcp.Tool{
@@ -137,10 +142,11 @@ func registerTools(s *mcp.Server) {
 			seconds = int(s)
 		}
 
+		paramsJSON, _ := json.Marshal(request.Params)
 		_ = request.Session.Log(ctx, &mcp.LoggingMessageParams{
 			Level:  "info",
 			Logger: "task-worker",
-			Data:   fmt.Sprintf("Starting task for %d seconds", seconds),
+			Data:   fmt.Sprintf("Starting task. Params: %s", string(paramsJSON)),
 		})
 
 		for i := 1; i <= seconds; i++ {
@@ -158,6 +164,64 @@ func registerTools(s *mcp.Server) {
 		return &mcp.CallToolResult{
 			Content: []mcp.Content{&mcp.TextContent{Text: "Task completed"}},
 		}, map[string]any{"status": "success"}, nil
+	})
+
+	// Progress & Cancellation Test Tool
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "progressTest",
+		Description: "A tool to test progress notifications and request cancellation. Counts down from a start value.",
+		InputSchema: map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				"count": map[string]any{"type": "integer", "description": "Start value for the countdown", "default": 10},
+			},
+		},
+		OutputSchema: map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				"finalStatus": map[string]any{"type": "string"},
+			},
+		},
+	}, func(ctx context.Context, request *mcp.CallToolRequest, args map[string]any) (*mcp.CallToolResult, any, error) {
+		count := 10
+		if c, ok := args["count"].(float64); ok {
+			count = int(c)
+		}
+
+		fmt.Fprintf(os.Stderr, "[progressTest] Starting countdown from %d\n", count)
+
+		for i := count; i >= 0; i-- {
+			// 1. Check for Cancellation
+			select {
+			case <-ctx.Done():
+				fmt.Fprintf(os.Stderr, "[progressTest] Task cancelled by client at %d\n", i)
+				return nil, nil, ctx.Err()
+			default:
+				// Continue
+			}
+
+			// 2. Log
+			_ = request.Session.Log(ctx, &mcp.LoggingMessageParams{
+				Level: "info",
+				Data:  fmt.Sprintf("Countdown: %d", i),
+			})
+
+			// 3. Notify Progress
+			if request.Params.GetProgressToken() != nil {
+				_ = request.Session.NotifyProgress(ctx, &mcp.ProgressNotificationParams{
+					Progress:      float64(count - i),
+					Total:         float64(count),
+					Message:       fmt.Sprintf("Counting down: %d", i),
+					ProgressToken: request.Params.GetProgressToken(),
+				})
+			}
+
+			time.Sleep(1 * time.Second)
+		}
+
+		return &mcp.CallToolResult{
+			Content: []mcp.Content{&mcp.TextContent{Text: "Countdown finished!"}},
+		}, map[string]any{"finalStatus": "completed"}, nil
 	})
 }
 

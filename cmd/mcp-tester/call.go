@@ -81,7 +81,9 @@ var callCmd = &cobra.Command{
 			Arguments: toolArgs,
 		}
 		if verbose {
-			params.SetProgressToken("call-progress-123")
+			params.Meta = mcp.Meta{
+				"progressToken": "call-progress-123",
+			}
 		}
 
 		callResult, err := session.CallTool(ctx, params)

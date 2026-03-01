@@ -2,6 +2,7 @@ package scripting
 
 import (
 	"context"
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"sort"
@@ -11,6 +12,17 @@ import (
 	"github.com/hmsoft0815/mlc_mcptester/internal/client"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
+
+func (r *Runner) parseArgs(line string) ([]string, error) {
+	rdr := csv.NewReader(strings.NewReader(line))
+	rdr.Comma = ' '
+	rdr.TrimLeadingSpace = true
+	parts, err := rdr.Read()
+	if err != nil {
+		return nil, err
+	}
+	return parts, nil
+}
 
 func (r *Runner) callToolPositional(ctx context.Context, name string, args []string) error {
 	tools, err := r.session.ListTools(ctx, nil)
@@ -83,6 +95,11 @@ func convertValue(val string, schema map[string]any) any {
 		}
 		if strings.ToLower(val) == "false" || val == "0" {
 			return false
+		}
+	case "object", "array":
+		var result any
+		if err := json.Unmarshal([]byte(val), &result); err == nil {
+			return result
 		}
 	}
 	return val

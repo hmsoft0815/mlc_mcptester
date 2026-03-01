@@ -30,6 +30,37 @@ set_var <variable_name> <pfad>
     - `structuredContent.<pfad>`: Navigiert durch die JSON-Struktur (Punkt-Notation).
     - `$.<pfad>`: Kurzform für `structuredContent`.
 
+### `call_tool <tool_name> <arg1> <arg2> ...`
+Ruft ein Tool auf dem MCP-Server mit den angegebenen positionalen Argumenten auf. Argumente mit Leerzeichen müssen in Anführungszeichen gesetzt werden.
+
+**Heredoc Unterstützung:**
+Für mehrzeilige Argumente (z.B. JSON oder Code-Blöcke) kann die Heredoc-Syntax verwendet werden:
+```
+call_tool execute_script <<EOF
+console.log("Hallo vom Heredoc!");
+console.log(1 + 2);
+EOF
+```
+
+---
+
+### `assert_contains <expected>` oder `assert_contains <value> <expected>`
+Prüft, ob die letzte Antwort (Text oder JSON) oder ein spezifischer Wert den erwarteten String enthält.
+- `assert_contains "Execution finished"` (prüft letzte Antwort)
+- `assert_contains $var "expected"` (prüft Variableninhalt)
+
+---
+
+### `assert_equals <expected>` oder `assert_equals <value> <expected>`
+Prüft auf eine exakte Übereinstimmung mit der letzten Antwort oder zwischen zwei Werten.
+- `assert_equals "30"` (prüft letzte Antwort)
+- `assert_equals $var "true"` (prüft Variableninhalt)
+
+---
+```mcp
+assert_equals "Exakter Text"
+```
+
 ### 3. `input_var`
 Fragt den Benutzer während des Tests nach einer Eingabe.
 ```mcp

@@ -34,34 +34,34 @@ func TestAssertionHandlers(t *testing.T) {
 	})
 
 	t.Run("handleAssertNumber", func(t *testing.T) {
-		err := r.handleAssertNumber(0, "assert_number 123.45")
+		err := r.handleAssertNumber(0, "123.45")
 		if err != nil {
 			t.Errorf("expected no error, got %v", err)
 		}
 
-		err = r.handleAssertNumber(0, "assert_number not-a-number")
+		err = r.handleAssertNumber(0, "not-a-number")
 		if err == nil {
 			t.Errorf("expected error for non-number, got nil")
 		}
 	})
 
 	t.Run("handleAssertGreaterThan", func(t *testing.T) {
-		err := r.handleAssertGreaterThan(0, "assert_gt 10 5")
+		err := r.handleAssertGreaterThan(0, "10", "5")
 		if err != nil {
 			t.Errorf("expected no error, got %v", err)
 		}
 
-		err = r.handleAssertGreaterThan(0, "assert_gt 5 10")
+		err = r.handleAssertGreaterThan(0, "5", "10")
 		if err == nil {
 			t.Errorf("expected error for 5 > 10, got nil")
 		}
 
-		err = r.handleAssertGreaterThan(0, "assert_gt 10 10")
+		err = r.handleAssertGreaterThan(0, "10", "10")
 		if err == nil {
 			t.Errorf("expected error for 10 > 10, got nil")
 		}
 
-		err = r.handleAssertGreaterThan(0, "assert_gt inv 10")
+		err = r.handleAssertGreaterThan(0, "inv", "10")
 		if err == nil {
 			t.Errorf("expected error for invalid input, got nil")
 		}

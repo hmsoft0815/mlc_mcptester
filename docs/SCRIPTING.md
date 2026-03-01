@@ -36,17 +36,19 @@ Prompts the user for input during the test.
 input_var <variable_name> ["Interactive Prompt"]
 ```
 
-### 4. `assert_contains`
-Checks if the last response contains a specific text.
-```mcp
-assert_contains "Expected text"
-```
+### `assert_contains <expected>` or `assert_contains <value> <expected>`
+Checks if the last response (text or JSON) or a specific value contains the expected string.
+- `assert_contains "Execution finished"` (checks last response)
+- `assert_contains $var "expected"` (checks variable content)
 
-### 5. `assert_equals`
-Checks for an exact match of the last response.
-```mcp
-assert_equals "Exact text"
-```
+---
+
+### `assert_equals <expected>` or `assert_equals <value> <expected>`
+Checks for an exact match against the last response or between two values.
+- `assert_equals "30"` (checks last response)
+- `assert_equals $var "true"` (checks variable content)
+
+---
 
 ### 6. `assert_number`
 Checks if a value (or a variable) is a valid number.

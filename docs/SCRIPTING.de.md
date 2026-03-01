@@ -90,6 +90,12 @@ Prüft, ob der erste Wert größer als der zweite ist.
 ```mcp
 assert_gt $wert1 $wert2
 ```
+### 8. `assert_string_length`
+Prüft, ob die Länge eines Strings (oder einer Variable) in einem bestimmten Bereich liegt.
+```mcp
+assert_string_length $variable <min> <max>
+```
+- `assert_string_length $var 5 10`
 
 ---
 

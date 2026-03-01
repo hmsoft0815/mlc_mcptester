@@ -61,6 +61,12 @@ Checks if the first value is greater than the second.
 ```mcp
 assert_gt $value1 $value2
 ```
+### 8. `assert_string_length`
+Checks if the length of a string (or variable) is within a specific range.
+```mcp
+assert_string_length $variable <min> <max>
+```
+- `assert_string_length $var 5 10`
 
 ---
 

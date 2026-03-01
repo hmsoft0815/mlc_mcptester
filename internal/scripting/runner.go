@@ -136,6 +136,8 @@ func (r *Runner) dispatchParts(ctx context.Context, i int, parts []string) error
 		return r.handleAssertNumberCommand(i, parts)
 	case "assert_gt":
 		return r.handleAssertGreaterThanCommand(i, parts)
+	case "assert_string_length":
+		return r.handleAssertStringLengthCommand(i, parts)
 	case "timeout":
 		return r.handleTimeoutCommand(ctx, i, parts)
 	case "expect_error":

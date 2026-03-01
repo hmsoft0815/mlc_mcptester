@@ -101,10 +101,25 @@ func TestAssertionHandlers(t *testing.T) {
 			t.Errorf("expected error for invalid path, got nil")
 		}
 
-		// Test invalid arguments
 		err = r.handleSetVar(0, "set_var missing_args")
 		if err == nil {
 			t.Errorf("expected error for missing arguments, got nil")
+		}
+	})
+	t.Run("handleAssertStringLength", func(t *testing.T) {
+		err := r.handleAssertStringLength(0, "hello", 3, 10)
+		if err != nil {
+			t.Errorf("expected no error, got %v", err)
+		}
+
+		err = r.handleAssertStringLength(0, "h", 3, 10)
+		if err == nil {
+			t.Errorf("expected error for too short string, got nil")
+		}
+
+		err = r.handleAssertStringLength(0, "this is a very long string", 3, 10)
+		if err == nil {
+			t.Errorf("expected error for too long string, got nil")
 		}
 	})
 }

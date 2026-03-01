@@ -1,0 +1,13 @@
+// Test assert_string_length assertion
+call_tool echo "Small"
+set_var s content.0.text
+assert_string_length "$s" 1 20
+
+call_tool echo "This is a longer string that should also pass within a larger range"
+set_var l content.0.text
+assert_string_length "$l" 10 100
+
+// Verify it fails with out of range
+// (We expect an error here, so we wrap it in expect_error)
+expect_error assert_string_length "$s" 20 30
+assert_contains "assertion failed: string length 11 is not between 20 and 30"

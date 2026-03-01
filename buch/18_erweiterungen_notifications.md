@@ -77,9 +77,44 @@ Im `mcp-tester` kannst du diese Aushandlung mit dem `inspect` Befehl und dem Ver
 
 ---
 
+## 5. Request Cancellation: Aufgaben abbrechen
+
+Ein besonders mächtiger Aspekt von Notifications ist die **Request Cancellation**. Sie erlaubt es dem Client, eine bereits gesendete, aber noch nicht abgeschlossene Anfrage (z.B. einen langen Tool-Aufruf) abzubrechen.
+
+### Der Mechanismus: `$/cancelRequest`
+
+Wenn ein Client eine Anfrage abbrechen möchte, sendet er eine Notification vom Typ `$/cancelRequest` mit der ursprünglichen `requestId`. 
+
+### Implementierung in Go (Server-Seite)
+
+Unsere Go-Bibliothek macht die Handhabung von Abbrüchen extrem einfach, da sie direkt auf dem Standard-Go-Pattern `context.Context` basiert. Wenn ein Client einen Abbruch sendet, wird der `ctx`, der an den Tool-Handler übergeben wurde, automatisch "cancelled".
+
+**Beispiel für sauberes Stornieren:**
+```go
+func handleCalculations(ctx context.Context, req *mcp.CallToolRequest, args any) (*mcp.CallToolResult, any, error) {
+    for i := 0; i < 100; i++ {
+        // WICHTIG: Prüfen, ob der Chat/Agent abgebrochen hat
+        select {
+        case <-ctx.Done():
+            // Cleanup und schnelles Beenden
+            return nil, nil, ctx.Err()
+        default:
+            // Weiterarbeiten...
+            doHeavyWork()
+        }
+    }
+    return mcp.NewToolResultText("Fertig"), nil, nil
+}
+```
+
+### Warum ist das wichtig?
+Ohne Cancellation würden lang laufende Tools wertvolle Server-Ressourcen (CPU, Memory) verbrauchen, selbst wenn der Agent die Antwort gar nicht mehr benötigt (z.B. weil der User den Chat geschlossen oder eine andere Frage gestellt hat). In einer skalierten Umgebung ist dies essentiell für die Performance und Kosteneffizienz.
+
+---
+
 ## Fazit
 
-Notifications machen MCP lebendig. Sie verwandeln eine statische API in eine interaktive Schnittstelle, die dem Benutzer (und dem Modell) zeigt, was "hinter den Kulissen" passiert.
+Notifications machen MCP lebendig. Vom einfachen Logging über Fortschrittsbalken bis hin zur harten Stornierung von Aufgaben (`cancelRequest`) – sie verwandeln eine statische API in eine interaktive Schnittstelle, die dem Benutzer (und dem Modell) zeigt, was "hinter den Kulissen" passiert.
 
 [← Anhang A: SSE und HTTP/2](17_anhang_sse_http2.md) | [Inhaltsverzeichnis](README.md)
 

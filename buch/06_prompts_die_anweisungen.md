@@ -62,7 +62,31 @@ Wenn der Client diesen Prompt lädt, wird der System-Prompt des LLM wie folgt in
 }
 ```
 
-**Ergebnis:** Das LLM wird nun aufgrund der Anweisung im Prompt erkennen: *"Halt, 150€ ist über 100€, ich muss erst `request_2fa` aufrufen!"* – obwohl der User das nicht explizit gesagt hat.
+
+## Strategien zur Prompt-Einspeisung
+
+Es gibt zwei primäre Wege, wie ein Client diese Server-Anweisungen an das LLM übergeben kann. Beide haben ihre psychologischen und technischen Vorzüge.
+
+### A) System Prompt Assembly (Der "Lego-Turm")
+
+Anstatt den Standard-System-Prompt einfach zu ersetzen, baust du ihn wie einen Lego-Turm zusammen. Stell dir vor, du hast einen "System Prompt Assembly" Flow in Go:
+
+*   **Base Persona:** *"You are a helpful assistant..."*
+*   **Tool Context (Global):** *"You have access to a gRPC Asset Server for long-term storage."*
+*   **Dynamic Tool Rules:** (Hier fügst du die spezifischen Regeln deiner aktuellen Tools ein, die du vom MCP-Server erhalten hast).
+
+**Vorteil:** Das Modell erhält alle Regeln an einem zentralen Ort (der "Verfassung" des Chats) und kann sein Verhalten von Anfang an darauf ausrichten.
+
+### B) Role Assistant Injection (Der "Trick der vollendeten Tatsachen")
+
+Dies ist ein psychologisch cleverer Kniff: Du fügst die Anweisungen nicht in den System-Prompt ein, sondern injizierst sie als eine Nachricht der Rolle `assistant` direkt vor der ersten User-Anfrage.
+
+Das Modell denkt: *"Ich (die KI) habe bereits zugestimmt, Assets so zu verwalten, also muss ich konsistent bleiben."* Während der System-Prompt oft als statische Hintergrundregel wahrgenommen wird, wird eine `assistant`-Nachricht als bereits getroffene Entscheidung der KI interpretiert.
+
+**Vorteil:** Erhöht oft die Befolgung komplexer Regeln, da die KI "ihr eigenes Wort" nicht brechen möchte.
+
+---
+
 
 ## Woher kommen diese Anweisungen? (Vom Server!)
 

@@ -56,6 +56,19 @@ time ./bin/mcp-tester list --profile heavy-server
 ### Ambiguitäts-Test
 Erstelle ein Test-Skript, das versucht, das Modell zu verwirren. Bietet dein Server zwei sehr ähnliche Tools an? Teste mit dem `mcp-tester`, ob das Modell (oder dein Skript-Ablauf) zuverlässig das richtige Tool trifft.
 
+### Caching Problem bei dynamischen Tools
+
+Viele MCP-Server bieten dynamische Tools an, die sich je nach Kontext ändern können. Dies kann zu Problemen führen, wenn der Client die Tools zwischenspeichert. 
+Insebsondere haben Provider unterschiedliche Ansätze, wie sie mit dynamischen Tools umgehen. Und wie sie effektive Caching implementieren.
+Das problem (Chat) . Dort sendet man im grunde den  kompletten Chatverlauf mit.
+Solange sich die Tools nicht ändern ist das kein Problem. Aber wenn sich die Tools ändern, dann muss man den Chatverlauf anpassen - dies führt aber u.U. dazu, dass
+ein evtl. vorhandener Cache nicht wiederverwendet werden kann.
+
+Die Kunst besteht darin, die Tools so zu gestalten, dass sie sich nicht so oft ändern. Und dass man den Chatverlauf so gestalten kann, dass man den Cache wiederverwenden kann.
+Optimierte Chat Workflows achten daher z.Bsp. darauf dass sich die Tools nicht so oft ändern. Und dass man den Chatverlauf so gestalten kann, dass man den Cache wiederverwenden kann.
+
+Es gibt auch "proprietäre" Ansätze, um dieses Problem zu umgehen. Z.B. kann man den Chatverlauf so gestalten, dass man den Cache wiederverwenden kann (z.bsp. Cache hints).
+
 ## Fazit
 
 Ein guter MCP-Server zeichnet sich nicht durch die *Anzahl* der Tools aus, sondern durch deren **Qualität und Eindeutigkeit**. Jedes Tool sollte einen klaren, einzigartigen Zweck erfüllen. Wenn du merkst, dass dein Modell Fehler macht, ist es oft an der Zeit, die Tool-Liste zu entschlacken oder die Beschreibungen präziser zu formulieren.

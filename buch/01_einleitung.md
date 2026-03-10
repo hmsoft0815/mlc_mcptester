@@ -22,6 +22,14 @@ Das **Model Context Protocol (MCP)** ist der Versuch, einen universellen Standar
 
 Jeder kompatible Client (wie Claude Desktop, IDEs oder unser `mcp-tester`) kann sich mit diesem Server verbinden und sofort dessen Tools, Daten (Resources) und Vorlagen (Prompts) nutzen. MCP ist für LLMs das, was USB für Computer oder HTTP für das Web ist: Ein einheitlicher Stecker für alles.
 
+## Ziele dieses Handbuchs
+
+Dieses Buch bietet eine praxisorientierte Einführung in die Welt von MCP. Es ist wichtig zu verstehen, dass MCP ein **stark expandierender Bereich** ist. Die Spezifikation entwickelt sich rasant weiter (wie die Neuerungen Ende 2025 mit Tasks und Sampling zeigen).
+
+Wir beleuchten in diesem Werk die **häufigsten und wichtigsten Aspekte** eines MCP-Servers, um Ihnen einen soliden Start zu ermöglichen. Aufgrund der Dynamik des Protokolls wird dieses Buch nicht jede Nische abdecken können, aber es vermittelt die fundamentalen Muster.
+
+Ein zentraler Punkt bei der Entwicklung ist die **strikte Einhaltung der offiziellen Spezifikation**. Da viele verschiedene Clients (KIs) auf Ihren Server zugreifen werden, führen kleinste Abweichungen im JSON-Format oder im Handshake zu Fehlern. Genau aus diesem Grund haben wir den **`mcp-tester`** entwickelt: Er hilft Ihnen dabei, Ihren Server gegen die Spec zu validieren und sicherzustellen, dass er in der "echten Welt" stabil funktioniert.
+
 
 [← Inhaltsverzeichnis](README.md) | [Nächstes Kapitel: Wie LLMs kommunizieren →](02_wie_llms_kommunizieren.md)
 

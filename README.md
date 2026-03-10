@@ -1,13 +1,14 @@
 # MCP-Tester
 
-Ein   Command-Line Tool zum Testen, Debuggen und Validieren von Model Context Protocol (MCP) Servern.
+Ein Command-Line Tool zum Testen, Debuggen und Validieren von Model Context Protocol (MCP) Servern nach der Spezifikation vom 2025-03-26.
 
 [English Version](README.en.md)
 
 ## Kern-Features
 
 - **Multi-Transport**: Unterstützt lokale Prozesse (`stdio`) und Remote-Server (`sse`).
-- **Full Spec Support**: Testet Tools, Resources (statisch & Templates) sowie Prompts.
+- **Full Spec Support**: Testet Tools, Resources (statisch & Templates), Subscriptions sowie Prompts.
+- **Pagination Support**: Unterstützt das Durchblättern langer Listen (`list`) mittels Cursor.
 - **Scripting Engine**: Automatisierte Test-Abläufe mit Variablen, Typ-Konvertierung und Assertions.
 - **Server Inspector**: Analysiert Server auf Best Practices und gibt einen Quality-Score aus.
 - **Raw Mode**: Umgeht SDK-Validierungen für tiefgreifendes Debugging.
@@ -30,27 +31,26 @@ Im Projekt ist ein Referenz-Server (`cmd/test-server`) enthalten, der alle Mögl
 curl -sSL https://raw.githubusercontent.com/hmsoft0815/mlc_mcptester/main/scripts/install.sh | bash
 ```
 
-**Direkter Download:**
-Vorkompilierte Binaries für Windows, macOS und Linux sowie `.deb` und `.rpm` Pakete finden Sie unter [Releases](https://github.com/hmsoft0815/mlc_mcptester/releases).
-
 **Manueller Build:**
 ```bash
 task all            # Baut den Tester und Referenz-Server in den bin/ Ordner
 ```
 
-### 2. Kommandos
+### 2. Kommandos (Auszug)
 
-#### Server Inspektion (NEU)
+#### Server Inspektion
 Analysiere einen Server auf Qualität (Metadaten, Prompts, Struktur):
 ```bash
 ./bin/mcp-tester inspect --profile local
 ```
 
-#### Tools & Resources
+#### Tools, Resources & Prompts
 ```bash
-./bin/mcp-tester list --profile local
-./bin/mcp-tester call add --args '{"a": 1, "b": 2}' --profile local
-./bin/mcp-tester resources read "mcp://time" --profile local
+./bin/mcp-tester tools list --profile local
+./bin/mcp-tester resources list --cursor "NEXT_TOKEN" --profile local
+./bin/mcp-tester resources templates --profile local
+./bin/mcp-tester resources read "file:///config.json" --profile local
+./bin/mcp-tester prompts get code_review --args '{"file_path": "main.go"}'
 ```
 
 #### Test-Skripte (Automatisierung)
@@ -61,8 +61,10 @@ Führe komplexe Test-Szenarien aus:
 
 ## Dokumentation
 
-- [Das MCP-Handbuch](buch/README.md) - Eine 17-kapitlige, umfassende Einführung in MCP (Deutsch).
-  - [Kapitel 15: Automatisierung & CI/CD](buch/15_automatisierung_ci_cd.md)
+- [Das MCP-Handbuch](buch/README.md) - Eine umfassende Einführung in MCP (Deutsch).
+  - [Kapitel 4: Tools – Die Hände des Modells](buch/04_tools_die_haende_des_modells.md)
+  - [Kapitel 5: Resources – Das Gedächtnis des Modells](buch/05_resources_das_gedaechtnis.md)
+  - [Kapitel 6: Prompts – Die Anweisungen](buch/06_prompts_die_anweisungen.md)
 - [Scripting Referenz (DE)](docs/SCRIPTING.de.md) - Detaillierte Dokumentation der Test-Grammatik.
 - [Scripting Reference (EN)](docs/SCRIPTING.md) - Detailed documentation of the test grammar.
 
@@ -73,4 +75,4 @@ Führe komplexe Test-Szenarien aus:
 - Handbuch: [CC BY-NC-ND 4.0](buch/LICENSE.md)
 
 ---
-*Copyright Michael Lechner - 2026-02-28*
+*Copyright Michael Lechner - 2026-03-09*

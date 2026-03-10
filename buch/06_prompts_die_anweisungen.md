@@ -1,37 +1,36 @@
-# Kapitel 6: Prompts – Die Anweisungen und der System-Kontext
+# Kapitel 6: Prompts – Die Anweisungen und Vorlagen
 
-*Hinweis zur Terminologie: Der englische Begriff **Prompt** wird im Deutschen oft treffend mit **Anweisung** oder **Aufforderung** übersetzt.*
+Ein **Prompt** im MCP (Model Context Protocol) ist weit mehr als nur ein Textbaustein. Er ist eine serverseitig definierte Vorlage für Nachrichten, die dem LLM eine Identität, Regeln oder spezifischen Kontext geben können. In der aktuellen Spezifikation (Stand 2025-11-25) sind Prompts ein mächtiges Werkzeug zur Steuerung der Interaktion.
 
-Ein **Prompt** im MCP ist weit mehr als nur ein kurzer Textbaustein. Er ist die primäre Methode, um dem LLM eine **Identität**, Regeln und den notwendigen **Kontext** zu geben. Technisch gesehen dient ein Prompt oft dazu, den **System-Prompt** des Modells zu definieren oder zu erweitern.
+## Was ist ein MCP Prompt?
 
-## Strategische Prompts: Die "Bedienungsanleitung" für Tools
+Prompts werden in der Regel durch explizite Benutzeraktionen ausgelöst (z. B. durch "Slash-Commands" wie `/debug` in einem Client). Sie bestehen aus:
+*   **Name & Beschreibung**: Zur Identifikation und Erklärung für den Nutzer.
+*   **Argumente**: Dynamische Platzhalter. Neu seit November 2025: Unterstützung für Default-Werte (SEP-1034).
+*   **Icons (Neu 2025-11)**: Optionale visuelle Metadaten (SEP-973).
+*   **Nachrichten**: Eine Liste von Nachrichten, die an das Modell gesendet werden sollen.
 
-Das LLM kennt zwar die technischen Definitionen deiner Tools (Name, Parameter), aber es kennt nicht deine **Geschäftsregeln**. Hier kommen strategische Prompts ins Spiel. Sie geben dem Modell Anweisungen, *wann* und *wie* ein Tool genutzt werden muss.
+## Implementierung in Go
 
-**Beispiele für solche Anweisungen in einem MCP-Prompt:**
-*   *"Nutze das Tool `delete_file` NIEMALS, ohne vorher den User um Bestätigung zu bitten."*
-*   *"Bevor du das Tool `send_email` aufrufst, nutze IMMER erst `check_spam_score`, um den Text zu prüfen."*
-*   *"Falls das Tool `get_weather` einen Fehler liefert, versuche es automatisch mit dem Tool `get_forecast` erneut."*
+Das Go-SDK stellt die Methode `s.AddPrompt` zur Verfügung.
 
-## Beispiel: Der "Sicherheits-Check" Prompt
-
-Stellen wir uns einen Server vor, der Zugriff auf ein Bankkonto hat. Ein strategischer Prompt namens `secure_transfer` könnte so aussehen:
-
-### 1. Implementierung im MCP-Server (Go)
 ```go
-s.AddPrompt(mcp.NewPrompt("secure_transfer",
-    mcp.WithPromptDescription("Anweisungen für sichere Überweisungen"),
-), func(ctx context.Context, request mcp.GetPromptRequest) (*mcp.GetPromptResult, error) {
+s.AddPrompt(&mcp.Prompt{
+    Name:        "code_review",
+    Description: "Analysiert den Code in einer bestimmten Datei",
+    Arguments: []*mcp.PromptArgument{
+        {Name: "file_path", Description: "Pfad zur Datei", Required: true},
+    },
+}, func(ctx context.Context, request *mcp.GetPromptRequest) (*mcp.GetPromptResult, error) {
+    path := request.Params.Arguments["file_path"]
+    
     return &mcp.GetPromptResult{
-        Messages: []mcp.PromptMessage{
+        Description: "Code-Review Anweisungen",
+        Messages: []*mcp.PromptMessage{
             {
-                Role: mcp.RoleSystem,
-                Content: mcp.TextContent{
-                    Text: `Du bist ein Sicherheits-Assistent für Finanzen.
-                           WICHTIGE REGELN:
-                           1. Nutze das Tool 'execute_transfer' NUR, wenn der Betrag unter 100€ liegt.
-                           2. Für Beträge ÜBER 100€ musst du IMMER erst das Tool 'request_2fa' aufrufen.
-                           3. Antworte dem User erst, wenn die Transaktion bestätigt wurde.`,
+                Role: "user", // "user" oder "assistant" gemäß Spec
+                Content: &mcp.TextContent{
+                    Text: fmt.Sprintf("Bitte analysiere den Code in: %s", path),
                 },
             },
         },
@@ -39,73 +38,46 @@ s.AddPrompt(mcp.NewPrompt("secure_transfer",
 })
 ```
 
-### 2. Was das LLM im JSON-Flow sieht
-Wenn der Client diesen Prompt lädt, wird der System-Prompt des LLM wie folgt injiziert:
+## Neue Elicitation-Möglichkeiten (SEP-1036)
 
-```json
-{
-  "model": "gpt-4",
-  "messages": [
-    {
-      "role": "system",
-      "content": "Du bist ein Sicherheits-Assistent für Finanzen. WICHTIGE REGELN: 1. Nutze das Tool 'execute_transfer' NUR... [gekürzt]"
+Seit Ende 2025 unterstützt MCP erweiterte Abfragen (Elicitations). Ein Server kann nun spezifisch nach **URLs** fragen oder komplexe Enums mit Standardwerten nutzen. Dies ermöglicht es, Prompts noch interaktiver zu gestalten, indem der Client gezielt Informationen vom Nutzer oder aus dessen Umgebung (z. B. eine Browser-URL) einfordert.
+
+## Rollen und Inhalte (Spezifikation 2025-11-25)
+
+In der aktuellen Revision sind die Rollen innerhalb eines Prompts streng definiert:
+*   **`user`**: Nachrichten, die den Benutzer oder Anweisungen repräsentieren.
+*   **`assistant`**: Nachrichten, die eine Antwort der KI simulieren.
+
+**Wichtig**: Der klassische `system`-Prompt wird in dieser Version nicht als Nachrichtentyp in der Liste geführt. Anweisungen mit System-Charakter werden stattdessen als `user`-Nachrichten mit klaren Instruktionen formuliert.
+
+### Reiche Inhalte: Bilder und Ressourcen
+Ein Prompt kann nicht nur Text enthalten. Seit dem 26.03.2025 (und bestätigt im Nov 2025) können Prompts direkt auf **Resources** verweisen:
+
+```go
+&mcp.PromptMessage{
+    Role: "user",
+    Content: &mcp.EmbeddedResource{
+        Resource: &mcp.ResourceContents{
+            URI:  "file:///logs/error.log",
+            Text: "Log-Inhalt hier...",
+        },
     },
-    {
-      "role": "user",
-      "content": "Überweise 150€ an Max."
-    }
-  ],
-  "tools": [
-    { "name": "execute_transfer", "parameters": { ... } },
-    { "name": "request_2fa", "parameters": { ... } }
-  ]
 }
 ```
 
-
-## Strategien zur Prompt-Einspeisung
-
-Es gibt zwei primäre Wege, wie ein Client diese Server-Anweisungen an das LLM übergeben kann. Beide haben ihre psychologischen und technischen Vorzüge.
-
-### A) System Prompt Assembly (Der "Lego-Turm")
-
-Anstatt den Standard-System-Prompt einfach zu ersetzen, baust du ihn wie einen Lego-Turm zusammen. Stell dir vor, du hast einen "System Prompt Assembly" Flow in Go:
-
-*   **Base Persona:** *"You are a helpful assistant..."*
-*   **Tool Context (Global):** *"You have access to a gRPC Asset Server for long-term storage."*
-*   **Dynamic Tool Rules:** (Hier fügst du die spezifischen Regeln deiner aktuellen Tools ein, die du vom MCP-Server erhalten hast).
-
-**Vorteil:** Das Modell erhält alle Regeln an einem zentralen Ort (der "Verfassung" des Chats) und kann sein Verhalten von Anfang an darauf ausrichten.
-
-### B) Role Assistant Injection (Der "Trick der vollendeten Tatsachen")
-
-Dies ist ein psychologisch cleverer Kniff: Du fügst die Anweisungen nicht in den System-Prompt ein, sondern injizierst sie als eine Nachricht der Rolle `assistant` direkt vor der ersten User-Anfrage.
-
-Das Modell denkt: *"Ich (die KI) habe bereits zugestimmt, Assets so zu verwalten, also muss ich konsistent bleiben."* Während der System-Prompt oft als statische Hintergrundregel wahrgenommen wird, wird eine `assistant`-Nachricht als bereits getroffene Entscheidung der KI interpretiert.
-
-**Vorteil:** Erhöht oft die Befolgung komplexer Regeln, da die KI "ihr eigenes Wort" nicht brechen möchte.
-
----
-
-
-## Woher kommen diese Anweisungen? (Vom Server!)
-
-Diese strategischen Anweisungen werden **nicht im Client programmiert**. Sie werden vom **MCP-Server** definiert. Der Server liefert also das **Werkzeug (Tool)** und die **Fachkunde (Prompt)** aus einer Hand.
-
-Das macht das System extrem wartungsfreundlich: Wenn sich die Sicherheitsregeln ändern (z. B. 2FA erst ab 500€), änderst du nur den Prompt auf dem Server. Alle angeschlossenen KIs verhalten sich sofort korrekt.
-
 ## Prompts testen mit `mcp-tester`
 
-Nutze den Tester, um sicherzustellen, dass deine "Guiderails" (Leitplanken) im Prompt klar und unmissverständlich formuliert sind:
+Nutzen Sie den Tester, um sicherzustellen, dass Ihre Vorlagen korrekt mit Argumenten arbeiten:
 
 ```bash
-./bin/mcp-tester prompts get secure_transfer --profile local
+# Verfügbare Prompts auflisten (inkl. Pagination Support mit -C)
+./bin/mcp-tester prompts list --profile local
+
+# Prompt abrufen (mit Argumenten)
+./bin/mcp-tester prompts get code_review --args '{"file_path": "main.go"}' --profile local
 ```
 
-Prüfe in der Ausgabe, ob die Regeln vollständig und korrekt als `system` oder `user` Nachricht erscheinen. Nur wenn der Prompt sitzt, wird das LLM deine Tools sicher und effizient orchestrieren.
-
-
-[← Inhaltsverzeichnis](README.md) | [Nächstes Kapitel: Multi-Server Orchestrierung →](07_die_macht_der_kombination.md)
+[← Inhaltsverzeichnis](README.md) | [Nächstes Kapitel: Die Macht der Kombination →](07_die_macht_der_kombination.md)
 
 ---
-*Copyright Michael Lechner - 2026-02-28*
+*Copyright Michael Lechner - 2026-03-09*

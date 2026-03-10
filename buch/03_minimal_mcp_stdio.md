@@ -49,6 +49,17 @@ func main() {
 }
 ```
 
+## Verbindung prüfen: Der Ping-Mechanismus (Neu 2025-11)
+
+In produktiven Umgebungen, besonders über das Netzwerk (SSE), ist es wichtig zu wissen, ob der Partner (Server oder Client) noch erreichbar ist. Hierfür bietet MCP den **Ping**-Mechanismus.
+
+### Das Prinzip
+*   **Request**: Der Client (oder Server) sendet einen `ping` Request.
+*   **Response**: Der Empfänger antwortet sofort mit einem leeren Ergebnis `{}`.
+*   **Timeout**: Erfolgt keine Antwort innerhalb einer definierten Zeit, gilt die Verbindung als "tot" (stale) und sollte neu aufgebaut werden.
+
+Dies ist besonders bei SSE wichtig, um "Geisterverbindungen" zu vermeiden, bei denen der Client denkt, er sei noch verbunden, während der Server den Socket bereits geschlossen hat.
+
 ## Den Server testen
 
 Mit unserem `mcp-tester` können wir diesen Server sofort validieren:

@@ -1,91 +1,93 @@
-# Kapitel 11: Echtzeit-Feedback & Audio – Mehr als nur Text
+# Kapitel 11: Echtzeit-Feedback & Abbruch – Interaktive Tools
 
-Bisher haben wir MCP als ein Anfrage-Antwort-System betrachtet. Doch MCP kann mehr: Es ermöglicht dem Server, dem Client während einer laufenden Aufgabe Feedback zu geben (Push-Prinzip) und unterstützt neben Bildern auch Audio-Inhalte.
+Bisher haben wir MCP als ein einfaches Anfrage-Antwort-System betrachtet. Doch für produktive Anwendungen, die länger dauern, bietet MCP mächtige **Utilities**: Echtzeit-Feedback (Logging, Progress) und die Möglichkeit, laufende Aufgaben abzubrechen (**Cancellation**).
 
-## 1. Echtzeit-Feedback vom Server
+## 1. Fortschritt & Feedback (Progress & Logging)
 
-Wenn ein Tool eine längere Berechnung durchführt, möchte der Benutzer nicht vor einem leeren Bildschirm warten. MCP bietet hierfür zwei Mechanismen:
+Wenn ein Tool eine längere Berechnung durchführt (z. B. ein Datenexport oder eine Video-Konvertierung), sollte der Server dem Client Status-Updates senden.
 
-### Logging (Benachrichtigungen)
-Der Server kann jederzeit Log-Nachrichten an den Client senden. Dies ist ideal für Debugging-Informationen oder Status-Updates.
-*   **Technisch**: Der Server sendet eine `notifications/message`.
-*   **Im Tester**: Sichtbar als `[SERVER LOG] [info] ...`.
+### Logging (Strukturiertes Protokollieren)
+Der Server kann jederzeit Log-Nachrichten an den Client senden. MCP nutzt hierfür ein standardisiertes System basierend auf RFC 5424.
+
+*   **Technisch**: Eine `notifications/message` mit Level, optionalem Logger-Namen und Daten.
+*   **Log-Levels**: MCP definiert acht Stufen: `debug`, `info`, `notice`, `warning`, `error`, `critical`, `alert`, `emergency`.
+*   **Steuerung durch den Client**: Ein Client kann dem Server via `logging/setLevel` mitteilen, ab welcher Stufe er Logs empfangen möchte. Dies schont die Bandbreite bei SSE-Verbindungen.
 
 ### Progress (Fortschrittsanzeige)
+
 Für lang laufende Tools kann der Server einen Fortschrittsbalken füttern.
 *   **Voraussetzung**: Der Client sendet ein `progressToken` beim Aufruf mit.
-*   **Technisch**: Der Server sendet regelmäßig Updates mit `progress` (aktueller Wert) und `total` (Zielwert).
+*   **Update**: Der Server sendet regelmäßig `progress` (aktueller Wert) und `total` (Zielwert).
 
 ---
 
-## 2. Audio in MCP
+## 2. Cancellation: Den Stecker ziehen (Neu 2025-11)
 
-Neben Text und Bildern unterstützt die MCP-Spezifikation auch **AudioContent**. Dies ist besonders wichtig für die nächste Generation von KI-Modellen, die direkt mit Stimme interagieren können.
+Was passiert, wenn der Nutzer eine laufende Tool-Anfrage abbricht? In der MCP-Spezifikation (Stand 2025-11-25) gibt es hierfür den Mechanismus **Cancellation**.
 
-### Das AudioContent Objekt
-Ähnlich wie Bilder werden Audio-Daten als Base64-String übertragen.
+### Das Prinzip
+Sowohl der Client als auch der Server können eine laufende Anfrage stornieren. Dies geschieht über die Benachrichtigung `notifications/cancelled`.
+*   **ID-basiert**: Die Benachrichtigung enthält die `requestId` der ursprünglichen Anfrage.
+*   **Grund**: Optional kann ein Grund (z. B. "User clicked cancel") mitgegeben werden.
+*   **Fire-and-Forget**: Die Stornierung erwartet keine Antwort. Der Empfänger sollte die Verarbeitung so schnell wie möglich einstellen.
 
-**Beispiel für eine Antwort mit Audio:**
-```json
-{
-  "content": [
-    {
-      "type": "audio",
-      "data": "UklGRiYAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=",
-      "mimeType": "audio/wav"
-    }
-  ]
-}
-```
-
-### Warum Audio?
-1.  **Sprachausgabe**: Ein Tool könnte Text-to-Speech (TTS) auf dem Server ausführen und das Ergebnis direkt als Audio-Datei an das LLM (oder den Client) zurückgeben.
-2.  **Sound-Analyse**: Das Modell kann Audio-Ressourcen "hören" und analysieren (z. B. Geräusche in einer Maschinenhalle zur Fehlerdiagnose).
+### Warum ist das wichtig?
+Ohne Cancellation würden lang laufende Prozesse auf dem Server wertvolle Ressourcen (CPU, DB-Verbindungen) verbrauchen, obwohl das Ergebnis vom Client gar nicht mehr erwartet wird.
 
 ---
 
 ## Implementierung in Go
 
-So sendest du Log-Nachrichten und Progress-Updates in einem Tool-Handler:
+Das Go-SDK macht uns die Stornierung sehr einfach: Es nutzt den Standard-Go-**`context.Context`**. Wenn ein Client eine Anfrage abbricht, wird der `ctx` des Tool-Handlers automatisch geschlossen (`ctx.Done()`).
 
 ```go
 func handleLongTask(ctx context.Context, request *mcp.CallToolRequest, args any) (*mcp.CallToolResult, any, error) {
-    // 1. Log senden
-    request.Session.Log(ctx, &mcp.LoggingMessageParams{
-        Level: "info",
-        Data:  "Starte Prozess...",
-    })
-
-    // 2. Fortschritt melden
-    if request.Params.GetProgressToken() != nil {
+    // 1. Fortschritt melden (falls Token vorhanden)
+    if token := request.Params.GetProgressToken(); token != nil {
         request.Session.NotifyProgress(ctx, &mcp.ProgressNotificationParams{
-            Progress: 50,
-            Total:    100,
-            Message:  "Halbzeit!",
-            ProgressToken: request.Params.GetProgressToken(),
+            Progress: 10, Total: 100, ProgressToken: token,
         })
     }
+
+    // 2. Lang laufende Schleife mit Abbruch-Check
+    for i := 0; i < 100; i++ {
+        select {
+        case <-ctx.Done():
+            // WICHTIG: Hier Ressourcen aufräumen!
+            log.Println("Anfrage vom Client abgebrochen.")
+            return nil, nil, ctx.Err()
+        default:
+            // Simuliere Arbeit
+            time.Sleep(100 * time.Millisecond)
+        }
+    }
     
-    return mcp.NewToolResultText("Fertig"), nil, nil
+    return &mcp.CallToolResult{
+        Content: []mcp.Content{&mcp.TextContent{Text: "Fertig!"}},
+    }, nil, nil
 }
 ```
 
 ## Validierung mit `mcp-tester`
 
-Unser `mcp-tester` unterstützt diese Funktionen im Verbose-Modus (`-v`):
+Der `mcp-tester` kann Fortschritt und Logs im Verbose-Modus (`-v`) anzeigen. In Test-Skripten können Sie zudem mit dem Befehl **`timeout`** eine Stornierung auf Client-Seite erzwingen:
 
-```bash
-./bin/mcp-tester call long_task --profile local -v
+```text
+# Bricht den Tool-Call nach 500ms ab
+timeout 500 call_tool progressTest 10
 ```
 
-Du siehst dann live im Terminal, wie der Server seine Logs und Fortschrittsmeldungen "pusht", noch bevor das eigentliche Tool-Ergebnis eintrifft.
+Dies ist ideal, um das robuste Verhalten Ihres Servers bei einem Abbruch durch den Benutzer zu validieren.
 
 ## Fazit
 
-Mit Logging, Progress, Bildern und Audio wird MCP zu einer **vollständigen Multimedia-Schnittstelle**. Es erlaubt eine nahtlose Integration von KI in komplexe, interaktive Systeme, die weit über einfaches Chatten hinausgehen.
+
+## Fazit
+
+Mit Progress, Logging und **Cancellation** wird MCP zu einem robusten Protokoll für professionelle Anwendungen. Es stellt sicher, dass Serverressourcen effizient genutzt werden und der Benutzer stets über den Zustand seiner Anfragen informiert bleibt.
 
 
 [← Inhaltsverzeichnis](README.md) | [Nächstes Kapitel: Grenzen & Limits →](12_grenzen_und_limitierungen.md)
 
 ---
-*Copyright Michael Lechner - 2026-02-28*
+*Copyright Michael Lechner - 2026-03-09*

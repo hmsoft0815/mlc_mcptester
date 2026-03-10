@@ -2,10 +2,23 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
+	"github.com/hmsoft0815/mlc_mcptester/internal/i18n"
 	"github.com/spf13/cobra"
 )
+
+type InspectionReport struct {
+	ServerName      string   `json:"serverName"`
+	ServerVersion   string   `json:"serverVersion"`
+	ProtocolVersion string   `json:"protocolVersion"`
+	Score           int      `json:"score"`
+	Recommendations []string `json:"recommendations"`
+	ToolsFound      int      `json:"toolsFound"`
+	PromptsFound      int      `json:"promptsFound"`
+	ResourcesFound    int      `json:"resourcesFound"`
+}
 
 func init() {
 	rootCmd.AddCommand(inspectCmd)
@@ -32,108 +45,106 @@ var inspectCmd = &cobra.Command{
 		}
 		defer session.Close()
 
-		fmt.Printf("=== MCP Server Inspection: %s ===\n\n", profile)
-
+		report := InspectionReport{}
 		recommendations := []string{}
 		score := 100
 
-		// 1. Check Version & Identity
 		initResult := session.InitializeResult()
-		fmt.Printf("[✓] Server: %s (%s)\n", initResult.ServerInfo.Name, initResult.ServerInfo.Version)
-		fmt.Printf("[✓] Protocol Version: %s\n", initResult.ProtocolVersion)
+		report.ServerName = initResult.ServerInfo.Name
+		report.ServerVersion = initResult.ServerInfo.Version
+		report.ProtocolVersion = initResult.ProtocolVersion
 
-		// 2. Check Capabilities
+		if format == "text" {
+			fmt.Print(i18n.T(i18n.MsgInspectionTitle, profile))
+			fmt.Print(i18n.T(i18n.MsgServerInfo, report.ServerName, report.ServerVersion))
+			fmt.Print(i18n.T(i18n.MsgProtocolVersion, report.ProtocolVersion))
+			fmt.Println(i18n.T(i18n.MsgCapabilities))
+		}
+
 		caps := initResult.Capabilities
-		fmt.Println("[i] Capabilities & Features:")
-
-		fmt.Printf("    - Tools:     %v", caps.Tools != nil)
-		if caps.Tools != nil && caps.Tools.ListChanged {
-			fmt.Print(" (Subscription-fähig)")
-		}
-		fmt.Println()
-
-		fmt.Printf("    - Prompts:   %v", caps.Prompts != nil)
-		if caps.Prompts != nil && caps.Prompts.ListChanged {
-			fmt.Print(" (Subscription-fähig)")
-		}
-		fmt.Println()
-
-		fmt.Printf("    - Resources: %v", caps.Resources != nil)
-		if caps.Resources != nil {
-			if caps.Resources.ListChanged {
-				fmt.Print(" (ListChanged)")
+		if format == "text" {
+			fmt.Printf(i18n.T(i18n.MsgTools, caps.Tools != nil))
+			if caps.Tools != nil && caps.Tools.ListChanged {
+				fmt.Print(i18n.T(i18n.MsgSubscription))
 			}
-			if caps.Resources.Subscribe {
-				fmt.Print(" (Subscribe)")
+			fmt.Println()
+
+			fmt.Printf(i18n.T(i18n.MsgPrompts, caps.Prompts != nil))
+			if caps.Prompts != nil && caps.Prompts.ListChanged {
+				fmt.Print(i18n.T(i18n.MsgSubscription))
 			}
+			fmt.Println()
+
+			fmt.Printf(i18n.T(i18n.MsgResources, caps.Resources != nil))
+			fmt.Println()
+
+			fmt.Printf(i18n.T(i18n.MsgLogging, caps.Logging != nil))
+			fmt.Print(i18n.T(i18n.MsgProgress))
+			fmt.Print(i18n.T(i18n.MsgCancel))
 		}
-		fmt.Println()
 
-		fmt.Printf("    - Logging:   %v\n", caps.Logging != nil)
-
-		// 2.1 Always available in modern MCP but worth highlighting
-		fmt.Printf("    - Progress:  Unterstützt (Protokoll-Standard)\n")
-		fmt.Printf("    - Cancel:    Unterstützt (Protokoll-Standard)\n")
-
-		// 3. Analyze Prompts (System Context)
 		promptsResult, err := session.ListPrompts(ctx, nil)
 		if err == nil {
-			if len(promptsResult.Prompts) == 0 {
-				recommendations = append(recommendations, "WARNUNG: Keine Prompts definiert. Prompts werden dringend empfohlen, um den System-Kontext und die Persona des Servers für das LLM festzulegen.")
+			report.PromptsFound = len(promptsResult.Prompts)
+			if report.PromptsFound == 0 {
+				recommendations = append(recommendations, i18n.T(i18n.MsgNoPrompts))
 				score -= 20
-			} else {
-				fmt.Printf("[✓] %d Prompts gefunden.\n", len(promptsResult.Prompts))
+			} else if format == "text" {
+				fmt.Print(i18n.T(i18n.MsgFound, report.PromptsFound, "prompts"))
 			}
-		} else {
-			recommendations = append(recommendations, "WARNUNG: Der Server unterstützt keine Prompts (oder Fehler beim Abrufen).")
-			score -= 10
 		}
 
-		// 4. Analyze Tools
 		toolsResult, err := session.ListTools(ctx, nil)
 		if err == nil {
-			if len(toolsResult.Tools) == 0 {
-				recommendations = append(recommendations, "INFO: Der Server bietet keine Tools an.")
-			} else {
-				fmt.Printf("[✓] %d Tools gefunden.\n", len(toolsResult.Tools))
+			report.ToolsFound = len(toolsResult.Tools)
+			if report.ToolsFound > 0 {
+				if format == "text" {
+					fmt.Print(i18n.T(i18n.MsgFound, report.ToolsFound, "tools"))
+				}
 				for _, t := range toolsResult.Tools {
 					if t.Description == "" {
-						recommendations = append(recommendations, fmt.Sprintf("WARNUNG: Tool '%s' hat keine Beschreibung. Das LLM benötigt diese, um den Zweck des Tools zu verstehen.", t.Name))
+						recommendations = append(recommendations, i18n.T(i18n.MsgNoDescription, t.Name))
 						score -= 5
 					}
 					if t.InputSchema == nil {
-						recommendations = append(recommendations, fmt.Sprintf("FEHLER: Tool '%s' hat kein Input-Schema.", t.Name))
+						recommendations = append(recommendations, i18n.T(i18n.MsgNoInputSchema, t.Name))
 						score -= 10
 					}
 					if t.OutputSchema == nil {
-						recommendations = append(recommendations, fmt.Sprintf("HINWEIS: Tool '%s' hat kein Output-Schema. Strukturierte Rückgaben helfen dem LLM, die Ergebnisse präziser zu verarbeiten.", t.Name))
+						recommendations = append(recommendations, i18n.T(i18n.MsgNoOutputSchema, t.Name))
 						score -= 2
 					}
 				}
 			}
 		}
 
-		// 5. Analyze Resources
 		resourcesResult, err := session.ListResources(ctx, nil)
 		if err == nil {
-			if len(resourcesResult.Resources) > 0 {
-				fmt.Printf("[✓] %d Ressourcen gefunden.\n", len(resourcesResult.Resources))
+			report.ResourcesFound = len(resourcesResult.Resources)
+			if report.ResourcesFound > 0 && format == "text" {
+				fmt.Print(i18n.T(i18n.MsgFound, report.ResourcesFound, "resources"))
 			}
 		}
 
-		// 6. Post-Analysis Recommendations
 		if caps.Logging == nil {
-			recommendations = append(recommendations, "HINWEIS: Der Server unterstützt kein Logging. Server-seitige Logs via MCP helfen dem Client/User bei der Fehlersuche.")
+			recommendations = append(recommendations, i18n.T(i18n.MsgNoLogging))
 			score -= 5
 		}
 
-		// Output Report
-		fmt.Printf("\n--- Quality Report (Score: %d/100) ---\n", score)
-		if len(recommendations) == 0 {
-			fmt.Println("Perfekt! Der Server folgt allen Best Practices.")
+		report.Score = score
+		report.Recommendations = recommendations
+
+		if format == "json" {
+			out, _ := json.MarshalIndent(report, "", "  ")
+			fmt.Println(string(out))
 		} else {
-			for _, rec := range recommendations {
-				fmt.Println("- " + rec)
+			fmt.Println(i18n.T(i18n.MsgScore, score))
+			if len(recommendations) == 0 {
+				fmt.Println(i18n.T(i18n.MsgPerfect))
+			} else {
+				for _, rec := range recommendations {
+					fmt.Println("- " + rec)
+				}
 			}
 		}
 

@@ -25,7 +25,24 @@ Der Tester vergibt einen Score von 0 bis 100 basierend auf folgenden Punkten:
 
 1.  **Vollständigkeit der Features (-20 Pkt bei fehlenden Prompts)**: Ein professioneller Server sollte Prompts anbieten, um dem LLM zu erklären, wie die Tools im Verbund genutzt werden sollen.
 2.  **Dokumentation (-5 Pkt pro fehlende Tool-Beschreibung)**: Jedes Tool muss dem Modell seinen Zweck erklären.
-3.  **Strukturierte Daten (-2 Pkt pro fehlendes Output-Schema)**: Tools sollten nicht nur Text, sondern strukturierte JSON-Objekte zurückgeben. Dies erhöht die Zuverlässigkeit bei Folge-Aktionen (Turn-based Loops).
+3.  **Strukturierte Daten (-2 Pkt pro fehlendes Output-Schema)**: Tools sollten nicht nur Text, sondern strukturierte JSON-Objekte zurückgeben.
+4.  **Visuelle Metadaten (Icons)**: Seit der Spezifikation vom November 2025 können Tools, Ressourcen und Prompts Icons enthalten. Der `mcp-tester` prüft nun, ob diese Icons erreichbar sind.
+
+---
+
+## Validierung von Icons
+
+Mit den neuen Flags des Testers können Sie sicherstellen, dass Ihre visuellen Metadaten keine Sackgassen sind:
+
+```bash
+# Prüft Erreichbarkeit der Icon-URIs
+./bin/mcp-tester list --check-icons --profile my-server
+
+# Lädt alle Icons in einen Ordner herunter (zur manuellen Sichtung)
+./bin/mcp-tester list --download-icons "./icons_export" --profile my-server
+```
+
+Dies ist besonders wichtig für Clients, die eine hochwertige Benutzeroberfläche bieten möchten (z. B. IDE-Integrations oder Desktop-Apps). Ein "gebrochenes" Icon-Link führt zwar nicht zu einem Absturz der KI, hinterlässt aber einen unprofessionellen Eindruck beim Benutzer.
 
 ---
 

@@ -6,4 +6,4 @@ profiles:
   sys-info:
     command: "../bin/system-info-server"
   wollmilchsau:
-    command: "../wollmilchsau/build/wollmilchsau"
+    command: "../wollmilchsau/build/wollmilchsau --enable-artifacts"

@@ -1,0 +1,8 @@
+// Teste Cancellation (Abbruch)
+// Wir rufen ein Tool auf, das 10 Sekunden dauert,
+// brechen es aber nach 500ms ab.
+
+expect_error timeout 500 call_tool progressTest 10
+// Die Fehlermeldung sollte den Timeout enthalten
+assert_contains "context deadline exceeded"
+ping

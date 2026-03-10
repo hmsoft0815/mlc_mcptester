@@ -3,9 +3,11 @@ package scripting
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 
+	"github.com/hmsoft0815/mlc_mcptester/internal/i18n"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
@@ -18,6 +20,13 @@ type Runner struct {
 	Raw           bool
 	variables     map[string]string
 	lastErrorCode int64
+}
+
+// TestResult holds numeric summary of test execution
+type TestResult struct {
+	Executed int `json:"executed"`
+	Passed   int `json:"passed"`
+	Failed   int `json:"failed"`
 }
 
 // NewRunner creates a new Runner with the given MCP client session.
@@ -36,25 +45,41 @@ type runState struct {
 	currentCommand string
 	executed       int
 	passed         int
+	failed         int
 }
 
 // Run executes a script string against the established MCP session.
-func (r *Runner) Run(ctx context.Context, script string) error {
+func (r *Runner) Run(ctx context.Context, script string, outputFormat string) (*TestResult, error) {
 	lines := strings.Split(script, "\n")
 	state := &runState{}
 
 	for i, line := range lines {
 		if err := r.processLine(ctx, i, line, state); err != nil {
-			return err
+			state.failed++
+			if outputFormat == "text" {
+				fmt.Printf("Error: %v\n", err)
+			}
 		}
 	}
 
 	if state.accumulating {
-		return fmt.Errorf("error: heredoc marker %q not found", state.heredocMarker)
+		return nil, fmt.Errorf("error: heredoc marker %q not found", state.heredocMarker)
 	}
 
-	fmt.Printf("\nTest Summary: %d commands executed, %d passed, 0 failed\n", state.executed, state.passed)
-	return nil
+	result := &TestResult{
+		Executed: state.executed,
+		Passed:   state.passed,
+		Failed:   state.failed,
+	}
+
+	if outputFormat == "text" {
+		fmt.Print(i18n.T(i18n.MsgTestSummary, result.Executed, result.Passed, result.Failed))
+	} else if outputFormat == "json" {
+		out, _ := json.MarshalIndent(result, "", "  ")
+		fmt.Println(string(out))
+	}
+
+	return result, nil
 }
 
 func (r *Runner) processLine(ctx context.Context, i int, line string, state *runState) error {
@@ -145,6 +170,10 @@ func (r *Runner) dispatchParts(ctx context.Context, i int, parts []string) error
 		return r.handleTimeoutCommand(ctx, i, parts)
 	case "expect_error":
 		return r.handleExpectErrorCommand(ctx, i, parts)
+	case "ping":
+		return r.handlePingCommand(ctx, i)
+	case "logging":
+		return r.handleLoggingCommand(ctx, i, parts)
 	default:
 		return fmt.Errorf("line %d: unknown command: %s", i+1, cmd)
 	}

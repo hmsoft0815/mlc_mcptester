@@ -5,11 +5,15 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/hmsoft0815/mlc_mcptester/internal/i18n"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/spf13/cobra"
 )
 
+var promptCursor string
+
 func init() {
+	promptsListCmd.Flags().StringVarP(&promptCursor, "cursor", "C", "", "Pagination cursor for listing prompts")
 	promptsCmd.AddCommand(promptsListCmd)
 	promptsCmd.AddCommand(promptsGetCmd)
 	rootCmd.AddCommand(promptsCmd)
@@ -41,14 +45,28 @@ var promptsListCmd = &cobra.Command{
 		}
 		defer session.Close()
 
-		res, err := session.ListPrompts(ctx, nil)
+		var params *mcp.ListPromptsParams
+		if promptCursor != "" {
+			params = &mcp.ListPromptsParams{Cursor: promptCursor}
+		}
+
+		res, err := session.ListPrompts(ctx, params)
 		if err != nil {
 			return err
 		}
 
 		for _, p := range res.Prompts {
-			fmt.Printf("Prompt: %s\n", p.Name)
-			fmt.Printf("  Desc: %s\n", p.Description)
+			fmt.Print(i18n.T(i18n.MsgPrompt, p.Name))
+			fmt.Print(i18n.T(i18n.MsgDescription, p.Description))
+			if len(p.Icons) > 0 {
+				fmt.Println(i18n.T(i18n.MsgIcons))
+				for _, icon := range p.Icons {
+					fmt.Printf("    - %s\n", icon.Source)
+				}
+				if checkIcons || downloadIcons != "" {
+					checkAndDownloadIcons(p.Icons, downloadIcons)
+				}
+			}
 			if len(p.Arguments) > 0 {
 				fmt.Println("  Arguments:")
 				for _, arg := range p.Arguments {
@@ -56,6 +74,10 @@ var promptsListCmd = &cobra.Command{
 				}
 			}
 			fmt.Println("---")
+		}
+
+		if res.NextCursor != "" {
+			fmt.Printf("Next Cursor: %s\n", res.NextCursor)
 		}
 		return nil
 	},
@@ -103,8 +125,27 @@ var promptsGetCmd = &cobra.Command{
 			return err
 		}
 
-		output, _ := json.MarshalIndent(res, "", "  ")
-		fmt.Printf("Prompt Result:\n%s\n", string(output))
+		fmt.Printf("Prompt Description: %s\n", res.Description)
+		fmt.Println("Messages:")
+		for i, msg := range res.Messages {
+			fmt.Printf("  [%d] Role: %s\n", i, msg.Role)
+			switch c := msg.Content.(type) {
+			case *mcp.TextContent:
+				fmt.Printf("      Text: %s\n", c.Text)
+			case *mcp.ImageContent:
+				fmt.Printf("      Image: [%s] (%d bytes)\n", c.MIMEType, len(c.Data))
+			case *mcp.EmbeddedResource:
+				if c.Resource != nil {
+					fmt.Printf("      Resource: %s (%s)\n", c.Resource.URI, c.Resource.MIMEType)
+				}
+			case *mcp.ResourceLink:
+				fmt.Printf("      Resource Link: %s (%s)\n", c.URI, c.MIMEType)
+			default:
+				output, _ := json.Marshal(c)
+				fmt.Printf("      Other Content: %s\n", string(output))
+			}
+		}
+
 		return nil
 	},
 }

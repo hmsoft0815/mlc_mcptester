@@ -10,10 +10,10 @@ import (
 	"time"
 
 	"github.com/hmsoft0815/mlc_mcptester/internal/client"
+	"github.com/hmsoft0815/mlc_mcptester/internal/i18n"
+	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
-// handleCallTool calls a tool with arguments
-// expected format: call_tool <tool_name> <arg1> <arg2> ...
 func (r *Runner) handleCallTool(ctx context.Context, lineIdx int, line string) error {
 	parts, err := r.parseArgs(line)
 	if err != nil || len(parts) < 2 {
@@ -21,8 +21,7 @@ func (r *Runner) handleCallTool(ctx context.Context, lineIdx int, line string) e
 	}
 	toolName := parts[1]
 	args := parts[2:]
-
-	fmt.Printf("Executing: %s %v\n", toolName, args)
+	fmt.Print(i18n.T(i18n.MsgExecuting, toolName, args))
 	return r.callToolPositional(ctx, toolName, args)
 }
 
@@ -44,7 +43,6 @@ func (r *Runner) handleInputVarParts(lineIdx int, parts []string) error {
 		prompt = strings.Join(parts[2:], " ")
 		prompt = strings.Trim(prompt, "\"")
 	}
-
 	fmt.Print(prompt)
 	scanner := bufio.NewScanner(os.Stdin)
 	if scanner.Scan() {
@@ -74,7 +72,7 @@ func (r *Runner) handleSetVarParts(lineIdx int, varName, path string) error {
 		return fmt.Errorf("line %d: failed to extract %q: %w", lineIdx+1, path, err)
 	}
 	r.variables[varName] = fmt.Sprintf("%v", val)
-	fmt.Printf("Variable set: %s = %s\n", varName, r.variables[varName])
+	fmt.Print(i18n.T(i18n.MsgVariableSet, varName, r.variables[varName]))
 	return nil
 }
 
@@ -106,15 +104,32 @@ func (r *Runner) handleExpectErrorCommand(ctx context.Context, i int, parts []st
 	if err == nil {
 		return fmt.Errorf("line %d: expected error but command succeeded", i+1)
 	}
-
-	// Capture error code if it's an RPCError
 	r.lastErrorCode = 0
 	if rpcErr, ok := err.(*client.RPCError); ok {
 		r.lastErrorCode = rpcErr.Code
 	}
-
-	// Capture error as response for assertions
 	r.updateState(map[string]any{"error": err.Error(), "code": r.lastErrorCode}, err.Error())
-	fmt.Printf("Expected error caught: %v (code: %d)\n", err, r.lastErrorCode)
+	fmt.Print(i18n.T(i18n.MsgExpectedError, err, r.lastErrorCode))
+	return nil
+}
+
+func (r *Runner) handlePingCommand(ctx context.Context, i int) error {
+	fmt.Println("Ping...")
+	if err := r.session.Ping(ctx, &mcp.PingParams{}); err != nil {
+		return fmt.Errorf("line %d: ping failed: %w", i+1, err)
+	}
+	fmt.Println("Pong!")
+	return nil
+}
+
+func (r *Runner) handleLoggingCommand(ctx context.Context, i int, parts []string) error {
+	if len(parts) < 2 {
+		return fmt.Errorf("line %d: logging expects a level", i+1)
+	}
+	level := parts[1]
+	fmt.Printf("Setting server logging level to %s...\n", level)
+	if err := r.session.SetLoggingLevel(ctx, &mcp.SetLoggingLevelParams{Level: mcp.LoggingLevel(level)}); err != nil {
+		return fmt.Errorf("line %d: failed to set logging level: %w", i+1, err)
+	}
 	return nil
 }

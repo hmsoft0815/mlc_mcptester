@@ -26,6 +26,22 @@ Im Projekt ist ein Referenz-Server (`cmd/test-server`) enthalten, der alle Mögl
 
 ### 1. Installation
 
+**Über Go (Direkt von GitHub):**
+```bash
+go install github.com/hmsoft0815/mlc_mcptester/cmd/mcp-tester@latest
+```
+*Hinweis: Stellt sicher, dass `$GOPATH/bin` (meist `~/go/bin`) in eurem `PATH` liegt.*
+
+**Erste Schritte:**
+Nach der Installation könnt ihr euren ersten Server hinzufügen und sofort testen:
+```bash
+# Server-Profil hinzufügen
+mcp-tester profile add my-server -c "npx -y @modelcontextprotocol/server-everything"
+
+# Verfügbare Tools auflisten
+mcp-tester tools list -p my-server
+```
+
 **Über Curl (Linux/macOS):**
 ```bash
 curl -sSL https://raw.githubusercontent.com/hmsoft0815/mlc_mcptester/main/scripts/install.sh | bash
@@ -38,19 +54,30 @@ task all            # Baut den Tester und Referenz-Server in den bin/ Ordner
 
 ### 2. Kommandos (Auszug)
 
+#### Profilverwaltung
+Verwaltet verschiedene Server-Konfigurationen direkt über die CLI:
+```bash
+mcp-tester profile add my-server -c "npx -y @modelcontextprotocol/server-everything"
+mcp-tester profile list
+mcp-tester profile disable my-server
+mcp-tester profile delete my-server
+```
+
 #### Server Inspektion
 Analysiere einen Server auf Qualität (Metadaten, Prompts, Struktur):
 ```bash
-./bin/mcp-tester inspect --profile local
+# Mit Profil aus mcp-tester.yml
+mcp-tester inspect --profile local
+
+# Direktaufruf ohne Konfigurationsdatei
+mcp-tester inspect -c "npx -y @modelcontextprotocol/server-everything"
 ```
 
 #### Tools, Resources & Prompts
 ```bash
-./bin/mcp-tester tools list --profile local
-./bin/mcp-tester resources list --cursor "NEXT_TOKEN" --profile local
-./bin/mcp-tester resources templates --profile local
-./bin/mcp-tester resources read "file:///config.json" --profile local
-./bin/mcp-tester prompts get code_review --args '{"file_path": "main.go"}'
+mcp-tester tools list -p local
+mcp-tester resources list --cursor "NEXT_TOKEN" -p local
+mcp-tester prompts get code_review --args '{"file_path": "main.go"}' -p local
 ```
 
 #### Test-Skripte (Automatisierung)

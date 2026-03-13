@@ -2,9 +2,9 @@ package scripting
 
 import (
 	"fmt"
+	"github.com/hmsoft0815/mlc_mcptester/internal/i18n"
 	"strconv"
 	"strings"
-	"github.com/hmsoft0815/mlc_mcptester/internal/i18n"
 )
 
 func (r *Runner) handleAssertContains(lineIdx int, line string) error {

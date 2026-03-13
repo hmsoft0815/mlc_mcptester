@@ -39,6 +39,9 @@ const (
 	MsgIcons           MessageKey = "icons"
 	MsgDescription     MessageKey = "description"
 	MsgSchema          MessageKey = "schema"
+	MsgInputSchema     MessageKey = "input_schema"
+	MsgOutputSchema    MessageKey = "output_schema"
+	MsgAnnotations     MessageKey = "annotations"
 )
 
 var messages = map[string]map[MessageKey]string{
@@ -75,6 +78,9 @@ var messages = map[string]map[MessageKey]string{
 		MsgIcons:           "Icons:",
 		MsgDescription:     "Description: %s\n",
 		MsgSchema:          "Schema: %+v\n",
+		MsgInputSchema:     "Input Schema: %+v\n",
+		MsgOutputSchema:    "Output Schema: %+v\n",
+		MsgAnnotations:     "Annotations: %+v\n",
 	},
 	"de": {
 		MsgInspectionTitle: "=== MCP Server Inspektion: %s ===\n",
@@ -109,6 +115,9 @@ var messages = map[string]map[MessageKey]string{
 		MsgIcons:           "Icons:",
 		MsgDescription:     "Beschreibung: %s\n",
 		MsgSchema:          "Schema: %+v\n",
+		MsgInputSchema:     "Input-Schema: %+v\n",
+		MsgOutputSchema:    "Output-Schema: %+v\n",
+		MsgAnnotations:     "Annotationen: %+v\n",
 	},
 }
 

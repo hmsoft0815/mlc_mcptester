@@ -25,6 +25,7 @@ Eine strukturierte Einführung in das Model Context Protocol (MCP) für Entwickl
 19. [Fortgeschritten: Lang laufende Tasks (Experimental)](19_erweiterungen_tasks.md)
 20. [Zukunft: Agentische Server & Sampling](20_agentische_server_sampling.md)
 21. [Benutzerabfragen & Elicitation: Human-in-the-Loop](21_benutzerabfragen_elicitation.md)
+22. [Die Wahl der richtigen Programmiersprache für MCP-Server](22_selbstschreiben.md)
 
 ---
 *Aktualisiert auf Stand März 2026 (Spezifikation 2025-11-25).*

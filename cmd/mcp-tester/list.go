@@ -53,7 +53,13 @@ var listCmd = &cobra.Command{
 					checkAndDownloadIcons(tool.Icons, downloadIcons)
 				}
 			}
-			fmt.Print(i18n.T(i18n.MsgSchema, tool.InputSchema))
+			fmt.Print(i18n.T(i18n.MsgInputSchema, tool.InputSchema))
+			if tool.OutputSchema != nil {
+				fmt.Print(i18n.T(i18n.MsgOutputSchema, tool.OutputSchema))
+			}
+			if tool.Annotations != nil {
+				fmt.Print(i18n.T(i18n.MsgAnnotations, tool.Annotations))
+			}
 			fmt.Println("---")
 		}
 

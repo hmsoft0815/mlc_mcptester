@@ -11,11 +11,11 @@ import (
 )
 
 var (
-	command string
-	url     string
-	profile string
-	verbose bool
-	raw     bool
+	command       string
+	url           string
+	profile       string
+	verbose       bool
+	raw           bool
 	checkIcons    bool
 	downloadIcons string
 	lang          string

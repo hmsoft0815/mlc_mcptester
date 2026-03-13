@@ -70,7 +70,7 @@ call_tool query_data $db_schema
 
 Elicitation schließt die Lücke zwischen Server, KI und Mensch. Es macht MCP zu einer interaktiven Plattform, die auch komplexe Workflows mit Benutzerbeteiligung und sicheren Authentifizierungen (OAuth) souverän beherrscht.
 
-[← Inhaltsverzeichnis](README.md)
+[← Inhaltsverzeichnis](README.md) | [Nächstes Kapitel: Programmiersprachen →](22_selbstschreiben.md)
 
 ---
 *Copyright Michael Lechner - 2026-03-09*

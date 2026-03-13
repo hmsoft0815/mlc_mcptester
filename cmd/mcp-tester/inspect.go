@@ -16,8 +16,8 @@ type InspectionReport struct {
 	Score           int      `json:"score"`
 	Recommendations []string `json:"recommendations"`
 	ToolsFound      int      `json:"toolsFound"`
-	PromptsFound      int      `json:"promptsFound"`
-	ResourcesFound    int      `json:"resourcesFound"`
+	PromptsFound    int      `json:"promptsFound"`
+	ResourcesFound  int      `json:"resourcesFound"`
 }
 
 func init() {
@@ -101,20 +101,49 @@ var inspectCmd = &cobra.Command{
 				if format == "text" {
 					fmt.Print(i18n.T(i18n.MsgFound, report.ToolsFound, "tools"))
 				}
+
+				totalDeductionDescription := 0
+				totalDeductionOutputSchema := 0
+				totalDeductionInputSchema := 0
+				totalBonusSafety := 0
+
 				for _, t := range toolsResult.Tools {
 					if t.Description == "" {
 						recommendations = append(recommendations, i18n.T(i18n.MsgNoDescription, t.Name))
-						score -= 5
+						totalDeductionDescription += 5
 					}
 					if t.InputSchema == nil {
 						recommendations = append(recommendations, i18n.T(i18n.MsgNoInputSchema, t.Name))
-						score -= 10
+						totalDeductionInputSchema += 10
 					}
 					if t.OutputSchema == nil {
 						recommendations = append(recommendations, i18n.T(i18n.MsgNoOutputSchema, t.Name))
-						score -= 2
+						totalDeductionOutputSchema += 1
+					}
+
+					// Bonus for safety annotations (readOnlyHint)
+					if t.Annotations != nil {
+						if t.Annotations.ReadOnlyHint {
+							totalBonusSafety += 2
+						}
 					}
 				}
+
+				// Apply caps to scoring
+				if totalDeductionDescription > 20 {
+					totalDeductionDescription = 20
+				}
+				if totalDeductionOutputSchema > 10 {
+					totalDeductionOutputSchema = 10
+				}
+				if totalBonusSafety > 20 {
+					totalBonusSafety = 20
+				}
+
+				score -= totalDeductionDescription
+				score -= totalDeductionInputSchema
+				score -= totalDeductionOutputSchema
+				score += totalBonusSafety
 			}
 		}
 
@@ -129,6 +158,14 @@ var inspectCmd = &cobra.Command{
 		if caps.Logging == nil {
 			recommendations = append(recommendations, i18n.T(i18n.MsgNoLogging))
 			score -= 5
+		}
+
+		// Clamp score to 0-100
+		if score < 0 {
+			score = 0
+		}
+		if score > 100 {
+			score = 100
 		}
 
 		report.Score = score

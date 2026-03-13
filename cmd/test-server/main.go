@@ -77,6 +77,12 @@ func registerBasicTools(s *mcp.Server) {
 			},
 			"required": []string{"message"},
 		},
+		OutputSchema: map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				"echo": map[string]any{"type": "string", "description": "The echoed text"},
+			},
+		},
 	}, func(ctx context.Context, request *mcp.CallToolRequest, args map[string]any) (*mcp.CallToolResult, any, error) {
 		msg, _ := args["message"].(string)
 		return &mcp.CallToolResult{
@@ -95,6 +101,12 @@ func registerBasicTools(s *mcp.Server) {
 			"type": "object",
 			"properties": map[string]any{
 				"seconds": map[string]any{"type": "integer", "description": "Seconds to run"},
+			},
+		},
+		OutputSchema: map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				"status": map[string]any{"type": "string", "description": "The completion status"},
 			},
 		},
 	}, func(ctx context.Context, request *mcp.CallToolRequest, args map[string]any) (*mcp.CallToolResult, any, error) {
@@ -163,7 +175,7 @@ func registerPrompts(s *mcp.Server) {
 			Description: "Persona instructions",
 			Messages: []*mcp.PromptMessage{
 				{
-					Role: "user",
+					Role:    "user",
 					Content: &mcp.TextContent{Text: "You are an expert Go developer."},
 				},
 			},

@@ -1,0 +1,42 @@
+=== MCP Server Inspection: chrome-devtools ===
+[✓] Server: chrome_devtools (0.20.0)
+[✓] Protocol Version: 2025-06-18
+[i] Capabilities & Features:
+    - Tools:     true (Subscription capable)
+    - Prompts:   false
+    - Resources: false
+    - Logging:   true
+    - Progress:  Supported (Protocol Standard)
+    - Cancel:    Supported (Protocol Standard)
+[✓] 29 tools found.
+
+--- Quality Report (Score: 42/100) ---
+- HINT: Tool 'click' has no output schema. Structured returns help the LLM process results precisely.
+- HINT: Tool 'close_page' has no output schema. Structured returns help the LLM process results precisely.
+- HINT: Tool 'drag' has no output schema. Structured returns help the LLM process results precisely.
+- HINT: Tool 'emulate' has no output schema. Structured returns help the LLM process results precisely.
+- HINT: Tool 'evaluate_script' has no output schema. Structured returns help the LLM process results precisely.
+- HINT: Tool 'fill' has no output schema. Structured returns help the LLM process results precisely.
+- HINT: Tool 'fill_form' has no output schema. Structured returns help the LLM process results precisely.
+- HINT: Tool 'get_console_message' has no output schema. Structured returns help the LLM process results precisely.
+- HINT: Tool 'get_network_request' has no output schema. Structured returns help the LLM process results precisely.
+- HINT: Tool 'handle_dialog' has no output schema. Structured returns help the LLM process results precisely.
+- HINT: Tool 'hover' has no output schema. Structured returns help the LLM process results precisely.
+- HINT: Tool 'lighthouse_audit' has no output schema. Structured returns help the LLM process results precisely.
+- HINT: Tool 'list_console_messages' has no output schema. Structured returns help the LLM process results precisely.
+- HINT: Tool 'list_network_requests' has no output schema. Structured returns help the LLM process results precisely.
+- HINT: Tool 'list_pages' has no output schema. Structured returns help the LLM process results precisely.
+- HINT: Tool 'navigate_page' has no output schema. Structured returns help the LLM process results precisely.
+- HINT: Tool 'new_page' has no output schema. Structured returns help the LLM process results precisely.
+- HINT: Tool 'performance_analyze_insight' has no output schema. Structured returns help the LLM process results precisely.
+- HINT: Tool 'performance_start_trace' has no output schema. Structured returns help the LLM process results precisely.
+- HINT: Tool 'performance_stop_trace' has no output schema. Structured returns help the LLM process results precisely.
+- HINT: Tool 'press_key' has no output schema. Structured returns help the LLM process results precisely.
+- HINT: Tool 'resize_page' has no output schema. Structured returns help the LLM process results precisely.
+- HINT: Tool 'select_page' has no output schema. Structured returns help the LLM process results precisely.
+- HINT: Tool 'take_memory_snapshot' has no output schema. Structured returns help the LLM process results precisely.
+- HINT: Tool 'take_screenshot' has no output schema. Structured returns help the LLM process results precisely.
+- HINT: Tool 'take_snapshot' has no output schema. Structured returns help the LLM process results precisely.
+- HINT: Tool 'type_text' has no output schema. Structured returns help the LLM process results precisely.
+- HINT: Tool 'upload_file' has no output schema. Structured returns help the LLM process results precisely.
+- HINT: Tool 'wait_for' has no output schema. Structured returns help the LLM process results precisely.

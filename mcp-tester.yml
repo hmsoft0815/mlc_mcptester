@@ -1,9 +1,13 @@
 profiles:
-  local:
-    command: "./bin/test-server"
-  hub-osm:
-    command: "../bin/hub-osm"
-  sys-info:
-    command: "../bin/system-info-server"
-  wollmilchsau:
-    command: "../wollmilchsau/build/wollmilchsau --enable-artifacts"
+    chrome-devtools:
+        command: npx -y chrome-devtools-mcp@latest
+    hub-osm:
+        command: ../bin/hub-osm
+    local:
+        command: ./bin/test-server
+    playwright:
+        command: npx -y @playwright/mcp@latest
+    sys-info:
+        command: ../bin/system-info-server
+    wollmilchsau:
+        command: ../wollmilchsau/build/wollmilchsau --enable-artifacts

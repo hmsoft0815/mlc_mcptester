@@ -27,6 +27,22 @@ This project includes a reference server (`cmd/test-server`) that utilizes all f
 
 ### 1. Installation
 
+**Via Go (Direct from GitHub):**
+```bash
+go install github.com/hmsoft0815/mlc_mcptester/cmd/mcp-tester@latest
+```
+*Note: Make sure `$GOPATH/bin` (usually `~/go/bin`) is in your `PATH`.*
+
+**Getting Started:**
+After installation, you can add your first server and test it immediately:
+```bash
+# Add a server profile
+mcp-tester profile add my-server -c "npx -y @modelcontextprotocol/server-everything"
+
+# List available tools
+mcp-tester tools list -p my-server
+```
+
 **Via Curl (Linux/macOS):**
 ```bash
 curl -sSL https://raw.githubusercontent.com/hmsoft0815/mlc_mcptester/main/scripts/install.sh | bash
@@ -39,19 +55,31 @@ task all            # Builds the tester and reference server into the bin/ folde
 
 ### 2. Commands (Excerpt)
 
+#### Profile Management
+Manage different server configurations directly via the CLI:
+```bash
+mcp-tester profile add my-server -c "npx -y @modelcontextprotocol/server-everything"
+mcp-tester profile list
+mcp-tester profile disable my-server
+mcp-tester profile delete my-server
+```
+
 #### Server Inspection
 Analyze a server for quality (metadata, prompts, structure):
 ```bash
-./bin/mcp-tester inspect --profile local
+# Using a profile from mcp-tester.yml
+mcp-tester inspect --profile local
+
+# Direct call without a configuration file
+mcp-tester inspect -c "npx -y @modelcontextprotocol/server-everything"
 ```
 
 #### Tools, Resources & Prompts
 ```bash
-./bin/mcp-tester tools list --profile local
-./bin/mcp-tester ping --profile local
-./bin/mcp-tester logging debug --profile local
-./bin/mcp-tester resources templates --profile local
-./bin/mcp-tester prompts get code_review --args '{"file_path": "main.go"}'
+mcp-tester tools list -p local
+mcp-tester ping -p local
+mcp-tester logging debug -p local
+mcp-tester prompts get code_review --args '{"file_path": "main.go"}' -p local
 ```
 
 #### Test Scripts (Automation)

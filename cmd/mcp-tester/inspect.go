@@ -63,22 +63,22 @@ var inspectCmd = &cobra.Command{
 
 		caps := initResult.Capabilities
 		if format == "text" {
-			fmt.Printf(i18n.T(i18n.MsgTools, caps.Tools != nil))
+			fmt.Print(i18n.T(i18n.MsgTools, caps.Tools != nil))
 			if caps.Tools != nil && caps.Tools.ListChanged {
 				fmt.Print(i18n.T(i18n.MsgSubscription))
 			}
 			fmt.Println()
 
-			fmt.Printf(i18n.T(i18n.MsgPrompts, caps.Prompts != nil))
+			fmt.Print(i18n.T(i18n.MsgPrompts, caps.Prompts != nil))
 			if caps.Prompts != nil && caps.Prompts.ListChanged {
 				fmt.Print(i18n.T(i18n.MsgSubscription))
 			}
 			fmt.Println()
 
-			fmt.Printf(i18n.T(i18n.MsgResources, caps.Resources != nil))
+			fmt.Print(i18n.T(i18n.MsgResources, caps.Resources != nil))
 			fmt.Println()
 
-			fmt.Printf(i18n.T(i18n.MsgLogging, caps.Logging != nil))
+			fmt.Print(i18n.T(i18n.MsgLogging, caps.Logging != nil))
 			fmt.Print(i18n.T(i18n.MsgProgress))
 			fmt.Print(i18n.T(i18n.MsgCancel))
 		}

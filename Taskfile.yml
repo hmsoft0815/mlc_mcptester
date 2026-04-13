@@ -19,6 +19,36 @@ tasks:
       - mkdir -p bin
       - GOWORK=off go build -o bin/mcp-tester ./cmd/mcp-tester/
 
+  build-linux:
+    desc: Build for Linux (amd64)
+    cmds:
+      - mkdir -p bin
+      - GOOS=linux GOARCH=amd64 go build -o bin/mcp-tester-linux-amd64 ./cmd/mcp-tester/
+      - GOOS=linux GOARCH=amd64 go build -o bin/test-server-linux-amd64 ./cmd/test-server/main.go
+
+  build-windows:
+    desc: Build for Windows (amd64)
+    cmds:
+      - mkdir -p bin
+      - GOOS=windows GOARCH=amd64 go build -o bin/mcp-tester-windows-amd64.exe ./cmd/mcp-tester/
+      - GOOS=windows GOARCH=amd64 go build -o bin/test-server-windows-amd64.exe ./cmd/test-server/main.go
+
+  build-macos:
+    desc: Build for macOS (arm64 & amd64)
+    cmds:
+      - mkdir -p bin
+      - GOOS=darwin GOARCH=arm64 go build -o bin/mcp-tester-macos-arm64 ./cmd/mcp-tester/
+      - GOOS=darwin GOARCH=arm64 go build -o bin/test-server-macos-arm64 ./cmd/test-server/main.go
+      - GOOS=darwin GOARCH=amd64 go build -o bin/mcp-tester-macos-amd64 ./cmd/mcp-tester/
+      - GOOS=darwin GOARCH=amd64 go build -o bin/test-server-macos-amd64 ./cmd/test-server/main.go
+
+  build-all:
+    desc: Build all platforms
+    cmds:
+      - task: build-linux
+      - task: build-windows
+      - task: build-macos
+
   build-test-server:
     desc: Build the dummy test server
     sources:

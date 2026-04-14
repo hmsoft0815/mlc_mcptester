@@ -27,11 +27,12 @@ tasks:
       - GOOS=linux GOARCH=amd64 go build -o bin/test-server-linux-amd64 ./cmd/test-server/main.go
 
   build-windows:
-    desc: Build for Windows (amd64)
+    desc: Build for Windows (amd64) + NSIS installer
     cmds:
-      - mkdir -p bin
+      - mkdir -p bin dist
       - GOOS=windows GOARCH=amd64 go build -o bin/mcp-tester-windows-amd64.exe ./cmd/mcp-tester/
       - GOOS=windows GOARCH=amd64 go build -o bin/test-server-windows-amd64.exe ./cmd/test-server/main.go
+      - makensis scripts/windows-installer.nsi
 
   build-macos:
     desc: Build for macOS (arm64 & amd64)

@@ -38,9 +38,9 @@ downloads:
   files:
     - os: "Windows"
       arch: "x64"
-      label_en: "Windows AMD64"
-      label_de: "Windows AMD64"
-      file: "https://mlcgo.eu/downloads/mlc-tester/mcp-tester-windows-amd64.exe"
+      label_en: "Windows Installer (AMD64)"
+      label_de: "Windows-Installer (AMD64)"
+      file: "mcp-tester-setup-v0.2.3-windows-amd64.exe"
     - os: "Linux"
       arch: "x86_64"
       label_en: "Linux AMD64"

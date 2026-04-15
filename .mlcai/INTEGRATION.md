@@ -15,7 +15,9 @@
 ## 3. Schnittstellen-Vertrag
 - **Primäre API:** Implementiert einen MCP-Client, der über `stdio` (lokale Prozesse) oder `sse` (HTTP/SSE) mit Servern kommuniziert.
 - **Scripting Engine:** Eigene DSL (`.mcp`) für automatisierte Testabläufe mit Assertions und Variablen.
-- **Referenz-Server:** Beinhaltet einen `test-server` (SSE), der alle MCP-Features zu Testzwecken exponiert (Standard-Port `:8081`).
+- **Server Inspector:** `inspect`-Command mit Quality Score (0–100) und Recommendations.
+- **Raw Mode:** `--raw` Flag beim `call`-Command umgeht SDK-Validierung für Deep-Level-Debugging.
+- **Referenz-Server:** Beinhaltet einen `test-server` (stdio + SSE), der alle MCP-Features exponiert (Standard-Port `:8081`).
 
 ## 4. Leitplanken & Regeln
 - **Naming:** Go-Standard-Konventionen; CLI-Kommandos folgen dem Cobra-Pattern.
@@ -24,8 +26,8 @@
 
 ## 5. Aktueller Fokus (Status)
 - **Status:** Beta (v0.2.3).
-- **Bekannte Probleme:** Fokus liegt auf der Spec vom 26.03.2025; ältere oder zukünftige Spec-Versionen könnten Inkompatibilitäten aufweisen.
-- **Nächste Schritte:** Erweiterung der Scripting-Engine um komplexere Datenstrukturen und verbesserte Fehlerdiagnose im "Raw Mode".
+- **MCP-Spec:** 2025-11-25 (aktuelle Implementierung; ältere Spec-Versionen könnten Inkompatibilitäten aufweisen).
+- **Nächste Schritte:** Erweiterung der Scripting-Engine um komplexere Datenstrukturen (Maps, Arrays in Variablen).
 
 ---
 

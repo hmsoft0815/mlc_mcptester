@@ -8,3 +8,8 @@ vars_test.mcp
 .task/
 coverage.html
 coverage.out
+dist/
+AGENTS.md
+CLAUDE.md
+GEMINI.md
+.mcp.json

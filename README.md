@@ -1,13 +1,13 @@
 # MCP-Tester
 
-Ein Command-Line Tool zum Testen, Debuggen und Validieren von Model Context Protocol (MCP) Servern nach der Spezifikation vom 2025-03-26.
+Ein Command-Line Tool zum Testen, Debuggen und Validieren von Model Context Protocol (MCP) Servern nach der aktuellen Spezifikation vom 2026-07-28.
 
 [English Version](README.en.md)
 
 ## Kern-Features
 
-- **Multi-Transport**: Unterstützt lokale Prozesse (`stdio`) und Remote-Server (`sse`).
-- **Full Spec Support**: Testet Tools, Resources (statisch & Templates), Subscriptions sowie Prompts.
+- **Multi-Transport**: Unterstützt lokale Prozesse (`stdio`), Remote-Server (`sse`) sowie **Streamable HTTP** (`streamable-http`/`http`).
+- **Full Spec Support**: Testet Tools, Resources (statisch & Templates), Subscriptions sowie Prompts nach neuester Spezifikation.
 - **Pagination Support**: Unterstützt das Durchblättern langer Listen (`list`) mittels Cursor.
 - **Scripting Engine**: Automatisierte Test-Abläufe mit Variablen, Typ-Konvertierung und Assertions.
 - **Server Inspector**: Analysiert Server auf Best Practices und gibt einen Quality-Score aus.
@@ -88,18 +88,15 @@ Führe komplexe Test-Szenarien aus:
 
 ## Dokumentation
 
-- [Das MCP-Handbuch](buch/README.md) - Eine umfassende Einführung in MCP (Deutsch).
-  - [Kapitel 4: Tools – Die Hände des Modells](buch/04_tools_die_haende_des_modells.md)
-  - [Kapitel 5: Resources – Das Gedächtnis des Modells](buch/05_resources_das_gedaechtnis.md)
-  - [Kapitel 6: Prompts – Die Anweisungen](buch/06_prompts_die_anweisungen.md)
-- [Scripting Referenz (DE)](docs/SCRIPTING.de.md) - Detaillierte Dokumentation der Test-Grammatik.
-- [Scripting Reference (EN)](docs/SCRIPTING.md) - Detailed documentation of the test grammar.
+- [Das MCP-Handbuch (Online)](https://mlcgo.eu/books/mcp-handbuch/) — Die umfassende Einführung und Referenz in das Model Context Protocol (Deutsch).
+- [Scripting Referenz (DE)](docs/SCRIPTING.de.md) — Detaillierte Dokumentation der Test-Grammatik.
+- [Scripting Reference (EN)](docs/SCRIPTING.md) — Detailed documentation of the test grammar.
 
 ---
 
 ## Lizenz
-- Code: [MIT](LICENSE)
-- Handbuch: [CC BY-NC-ND 4.0](buch/LICENSE.md)
+
+Dieses Projekt steht unter der [MIT Lizenz](LICENSE).
 
 ---
 *Copyright Michael Lechner - 2026-03-09*

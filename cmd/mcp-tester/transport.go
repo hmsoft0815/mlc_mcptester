@@ -6,14 +6,15 @@ import (
 	"log/slog"
 	"os"
 	"os/exec"
+	"strings"
 
+	"github.com/hmsoft0815/mlc_mcptester/internal/version"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
 // getClient returns a new MCP client with optional logging and notification handlers.
 func getClient(verbose bool) *mcp.Client {
 	opts := &mcp.ClientOptions{
-		// sometimes..
 		// Handler for logging notifications from the server
 		LoggingMessageHandler: func(ctx context.Context, req *mcp.LoggingMessageRequest) {
 			fmt.Printf("[SERVER LOG] [%s] %s: %v\n", req.Params.Level, req.Params.Logger, req.Params.Data)
@@ -29,29 +30,33 @@ func getClient(verbose bool) *mcp.Client {
 
 	return mcp.NewClient(
 		&mcp.Implementation{
-			Name:    "mcp-tester",
-			Version: "0.1.0",
+			Name:    version.AppName,
+			Version: version.Version,
 		},
 		opts,
 	)
 }
 
 // getTransport returns the appropriate MCP transport based on the provided command or URL.
-// It supports CommandTransport for local execution and SSEClientTransport for remote URLs.
+// It supports CommandTransport for local execution, SSEClientTransport for SSE endpoints,
+// and StreamableClientTransport for Streamable HTTP endpoints.
 func getTransport(ctx context.Context, command, url string) (mcp.Transport, error) {
-	// If a command is provided, use stdio transport via shell execution.
-	// hmm - win/mac ?
 	if command != "" {
 		return &mcp.CommandTransport{
 			Command: exec.CommandContext(ctx, "sh", "-c", command),
 		}, nil
 	}
-	// If a URL is provided, use SSE (Server-Sent Events) transport.
 	if url != "" {
-		return &mcp.SSEClientTransport{
+		tType := strings.ToLower(strings.TrimSpace(transportType))
+		if tType == "sse" || (tType == "" && strings.HasSuffix(strings.TrimRight(url, "/"), "/sse")) {
+			return &mcp.SSEClientTransport{
+				Endpoint: url,
+			}, nil
+		}
+		// Default to Streamable HTTP transport for HTTP URLs, or when explicitly requested
+		return &mcp.StreamableClientTransport{
 			Endpoint: url,
 		}, nil
 	}
-	// Return an error if neither transport configuration is provided.
 	return nil, fmt.Errorf("either --command or --url is required")
 }

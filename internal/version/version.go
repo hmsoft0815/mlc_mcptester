@@ -17,4 +17,3 @@ const (
 // whatever was last typed into this file. "dev" is what an unstamped build
 // gets, which is honest.
 var Version = "dev"
-

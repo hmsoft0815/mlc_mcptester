@@ -156,6 +156,14 @@ func (r *Runner) call(ctx context.Context, name string, args map[string]any) err
 	}
 
 	r.updateState(rawResponse, text)
+
+	if isErr, ok := rawResponse["isError"].(bool); ok && isErr {
+		return &client.RPCError{
+			Code:    -32602,
+			Message: text,
+		}
+	}
+
 	return nil
 }
 

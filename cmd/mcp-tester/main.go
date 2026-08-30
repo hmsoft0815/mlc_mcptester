@@ -20,6 +20,7 @@ var (
 	downloadIcons string
 	lang          string
 	format        string
+	transportType string
 )
 
 // rootCmd represents the base command when called without any subcommands.
@@ -36,7 +37,8 @@ var rootCmd = &cobra.Command{
 func init() {
 	// Persistent flags are available to every subcommand.
 	rootCmd.PersistentFlags().StringVarP(&command, "command", "c", "", "Command to run the MCP server (stdio)")
-	rootCmd.PersistentFlags().StringVarP(&url, "url", "u", "", "URL of the MCP server (sse)")
+	rootCmd.PersistentFlags().StringVarP(&url, "url", "u", "", "URL of the MCP server (HTTP/SSE)")
+	rootCmd.PersistentFlags().StringVarP(&transportType, "transport", "t", "", "Transport type: stdio, sse, streamable-http, http (default: auto)")
 	rootCmd.PersistentFlags().StringVarP(&profile, "profile", "p", "", "Profile from mcp-tester.yml to use")
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Enable verbose logging")
 	rootCmd.PersistentFlags().BoolVarP(&raw, "raw", "r", false, "Enable raw mode to bypass strict SDK unmarshaling")

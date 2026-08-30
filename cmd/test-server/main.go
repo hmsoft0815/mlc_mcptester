@@ -18,7 +18,7 @@ const serverIcon = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My
 
 func main() {
 	showVersion := flag.Bool("version", false, "print the version and exit")
-	addr := flag.String("addr", "", "Listen address for SSE (e.g. \":8080\"). If empty, uses stdio.")
+	addr := flag.String("addr", "", "Listen address for HTTP/SSE (e.g. \":8080\"). If empty, uses stdio.")
 	flag.Parse()
 
 	if *showVersion {
@@ -47,10 +47,17 @@ func main() {
 	registerPrompts(s)
 
 	if *addr != "" {
-		fmt.Fprintf(os.Stderr, "Starting Ultimate Test Server on SSE (%s)...\n", *addr)
-		handler := mcp.NewSSEHandler(func(*http.Request) *mcp.Server { return s }, nil)
-		if err := http.ListenAndServe(*addr, handler); err != nil {
-			log.Fatalf("SSE server failed: %v", err)
+		fmt.Fprintf(os.Stderr, "Starting Ultimate Test Server on %s (SSE: /sse, Streamable HTTP: /mcp)...\n", *addr)
+		mux := http.NewServeMux()
+		sseHandler := mcp.NewSSEHandler(func(*http.Request) *mcp.Server { return s }, nil)
+		streamableHandler := mcp.NewStreamableHTTPHandler(func(*http.Request) *mcp.Server { return s }, nil)
+		mux.Handle("/sse", sseHandler)
+		mux.Handle("/sse/", sseHandler)
+		mux.Handle("/mcp", streamableHandler)
+		mux.Handle("/mcp/", streamableHandler)
+		mux.Handle("/", streamableHandler)
+		if err := http.ListenAndServe(*addr, mux); err != nil {
+			log.Fatalf("Server failed: %v", err)
 		}
 	} else {
 		fmt.Fprintf(os.Stderr, "Starting Ultimate Test Server on stdio...\n")
@@ -90,7 +97,52 @@ func registerBasicTools(s *mcp.Server) {
 		}, map[string]any{"echo": msg}, nil
 	})
 
-	// progressTest Tool (Simulation für Cancellation)
+	// Add Tool with Output Schema
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "add",
+		Description: "Adds two numbers together",
+		Icons: []mcp.Icon{
+			{Source: serverIcon, MIMEType: "image/svg+xml"},
+		},
+		InputSchema: map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				"a": map[string]any{"type": "integer", "description": "The first number"},
+				"b": map[string]any{"type": "integer", "description": "The second number"},
+			},
+			"required": []string{"a", "b"},
+		},
+		OutputSchema: map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				"sum": map[string]any{"type": "integer", "description": "The sum of a and b"},
+				"a":   map[string]any{"type": "integer", "description": "The first number"},
+				"b":   map[string]any{"type": "integer", "description": "The second number"},
+			},
+		},
+	}, func(ctx context.Context, request *mcp.CallToolRequest, args map[string]any) (*mcp.CallToolResult, any, error) {
+		aRaw, okA := args["a"]
+		bRaw, okB := args["b"]
+		if !okA || !okB {
+			return nil, nil, fmt.Errorf("invalid params: missing required parameters 'a' and 'b'")
+		}
+		var a, b int
+		if v, ok := aRaw.(float64); ok {
+			a = int(v)
+		} else if v, ok := aRaw.(int); ok {
+			a = v
+		}
+		if v, ok := bRaw.(float64); ok {
+			b = int(v)
+		} else if v, ok := bRaw.(int); ok {
+			b = v
+		}
+		return &mcp.CallToolResult{
+			Content: []mcp.Content{&mcp.TextContent{Text: fmt.Sprintf("Result: %d", a+b)}},
+		}, map[string]any{"sum": a + b, "a": a, "b": b}, nil
+	})
+
+	// progressTest Tool (Simulation für Progress und Cancellation)
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "progressTest",
 		Description: "A long running tool to test progress and cancellation",
@@ -101,6 +153,7 @@ func registerBasicTools(s *mcp.Server) {
 			"type": "object",
 			"properties": map[string]any{
 				"seconds": map[string]any{"type": "integer", "description": "Seconds to run"},
+				"count":   map[string]any{"type": "integer", "description": "Count to run"},
 			},
 		},
 		OutputSchema: map[string]any{
@@ -113,9 +166,11 @@ func registerBasicTools(s *mcp.Server) {
 		seconds := 10
 		if v, ok := args["seconds"].(float64); ok {
 			seconds = int(v)
+		} else if v, ok := args["count"].(float64); ok {
+			seconds = int(v)
 		}
 
-		for i := 0; i < seconds; i++ {
+		for i := 1; i <= seconds; i++ {
 			select {
 			case <-ctx.Done():
 				fmt.Fprintf(os.Stderr, "[Server] Request cancelled!\n")
@@ -123,7 +178,7 @@ func registerBasicTools(s *mcp.Server) {
 			default:
 				if token := request.Params.GetProgressToken(); token != nil {
 					_ = request.Session.NotifyProgress(ctx, &mcp.ProgressNotificationParams{
-						Progress:      float64(i + 1),
+						Progress:      float64(i),
 						Total:         float64(seconds),
 						ProgressToken: token,
 					})
@@ -133,8 +188,8 @@ func registerBasicTools(s *mcp.Server) {
 		}
 
 		return &mcp.CallToolResult{
-			Content: []mcp.Content{&mcp.TextContent{Text: "Task finished"}},
-		}, nil, nil
+			Content: []mcp.Content{&mcp.TextContent{Text: "Countdown finished!"}},
+		}, map[string]any{"status": "completed"}, nil
 	})
 }
 

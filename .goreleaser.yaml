@@ -37,7 +37,6 @@ archives:
       - README.md
       - README.en.md
       - LICENSE*
-      - buch/**/*
 
 checksum:
   name_template: "checksums.txt"
@@ -57,8 +56,6 @@ nfpms:
     contents:
       - src: README.md
         dst: /usr/share/doc/mcp-tester/README.md
-      - src: buch/images/*.png
-        dst: /usr/share/doc/mcp-tester/images/
 
 snapshot:
   version_template: "{{ incpatch .Version }}-next"

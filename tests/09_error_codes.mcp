@@ -3,7 +3,7 @@
 // 1. Invalid params (missing required argument 'a' or 'b' for 'add')
 expect_error call_tool add a:10
 assert_error_code -32602
-assert_contains "invalid params"
+assert_contains "missing properties"
 
 // 2. Method not found (Server returns -32602 for unknown tool names in tools/call)
 expect_error call_tool non_existent_tool

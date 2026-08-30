@@ -1,15 +1,15 @@
 # MCP-Tester
 
-A command-line tool for testing, debugging, and validating Model Context Protocol (MCP) servers based on the 2025-11-25 specification.
+A command-line tool for testing, debugging, and validating Model Context Protocol (MCP) servers based on the latest 2026-07-28 specification.
 
 [Deutsche Version](README.md)
 
 ## Key Features
 
-- **Multi-Transport**: Supports local processes (`stdio`) and remote servers (`sse`).
-- **Full Spec Support**: Tests Tools, Resources (static & templates), Subscriptions, and Prompts.
+- **Multi-Transport**: Supports local processes (`stdio`), remote servers (`sse`), and **Streamable HTTP** (`streamable-http`/`http`).
+- **Full Spec Support**: Tests Tools, Resources (static & templates), Subscriptions, and Prompts according to the latest specification.
 - **Pagination Support**: Supports cursors for navigating large lists (`list`).
-- **Utilities**: Built-in support for Ping, Cancellation, Logging (setLevel), and Progress monitoring.
+- **Utilities**: Built-in support for Ping, Cancellation, Logging, and Progress monitoring.
 - **Scripting Engine**: Automated test workflows with variables, type conversion, and assertions.
 - **Server Inspector**: Analyzes servers for best practices and provides a Quality Score.
 - **Raw Mode**: Bypasses SDK validation for deep-level debugging.
@@ -85,26 +85,22 @@ mcp-tester prompts get code_review --args '{"file_path": "main.go"}' -p local
 #### Test Scripts (Automation)
 Execute complex test scenarios:
 ```bash
-./bin/mcp-tester test --script tests/10_cancellation_demo.mcp --profile local -v
+./bin/mcp-tester test --script tests/03_variables_and_math.mcp --profile local -v
 ```
 
 ---
 
 ## Documentation
 
-- [The MCP Handbook](buch/README.md) - A comprehensive introduction to MCP (German).
-  - [Chapter 4: Tools – The Model's Hands](buch/04_tools_die_haende_des_modells.md)
-  - [Chapter 11: Real-time Feedback & Cancellation](buch/11_echtzeit_feedback_und_audio.md)
-  - [Chapter 19: Advanced: Long-running Tasks](buch/19_erweiterungen_tasks.md)
-  - [Chapter 20: Future: Agentic Servers & Sampling](buch/20_agentische_server_sampling.md)
-  - [Chapter 21: User Input & Elicitation](buch/21_benutzerabfragen_elicitation.md)
-- [Scripting Reference](docs/SCRIPTING.md) - Detailed documentation of the test grammar.
+- [The MCP Handbook (Online)](https://mlcgo.eu/books/mcp-handbuch/) — A comprehensive introduction and reference to Model Context Protocol (German).
+- [Scripting Reference (EN)](docs/SCRIPTING.md) — Detailed documentation of the test grammar.
+- [Scripting Referenz (DE)](docs/SCRIPTING.de.md) — Detailed documentation of the test grammar (German).
 
 ---
 
 ## License
-- Code: [MIT](LICENSE)
-- Handbook: [CC BY-NC-ND 4.0](buch/LICENSE.md)
+
+This project is licensed under the [MIT License](LICENSE).
 
 ---
 *Copyright Michael Lechner - 2026-03-09*

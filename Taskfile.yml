@@ -165,13 +165,26 @@ tasks:
     deps: [all]
     cmds:
       - |
-        ./bin/test-server -addr :8081 > sse_server.log 2>&1 &
+        ./bin/test-server -addr :18081 > sse_server.log 2>&1 &
         echo "Waiting for SSE server to start..."
         sleep 2
         # Use trap to ensure server is killed even if tests fail
-        trap "pkill -f './bin/test-server -addr :8081' || true" EXIT
-        ./bin/mcp-tester inspect --url http://localhost:8081/sse
-        ./bin/mcp-tester test --url http://localhost:8081/sse --script tests/01_simple.mcp
+        trap "pkill -f './bin/test-server -addr :18081' || true" EXIT
+        ./bin/mcp-tester inspect --url http://localhost:18081/sse
+        ./bin/mcp-tester test --url http://localhost:18081/sse --script tests/01_simple.mcp
+
+  test-streamable-http:
+    desc: Test the Streamable HTTP transport
+    deps: [all]
+    cmds:
+      - |
+        ./bin/test-server -addr :18082 > sse_server.log 2>&1 &
+        echo "Waiting for Streamable HTTP server to start..."
+        sleep 2
+        # Use trap to ensure server is killed even if tests fail
+        trap "pkill -f './bin/test-server -addr :18082' || true" EXIT
+        ./bin/mcp-tester inspect --url http://localhost:18082/mcp
+        ./bin/mcp-tester test --url http://localhost:18082/mcp --script tests/01_simple.mcp
 
   test-all:
     desc: Run all tests
@@ -189,6 +202,7 @@ tasks:
       - task: test-scripts
       - task: test-inspect
       - task: test-sse
+      - task: test-streamable-http
 
   format:
     desc: Format Go source code

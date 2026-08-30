@@ -155,10 +155,8 @@ var inspectCmd = &cobra.Command{
 			}
 		}
 
-		if caps.Logging == nil {
-			recommendations = append(recommendations, i18n.T(i18n.MsgNoLogging))
-			score -= 5
-		}
+		// Logging is deprecated as of MCP specification 2026-07-28 (SEP-2577).
+		// No score deduction for servers without logging capabilities.
 
 		// Clamp score to 0-100
 		if score < 0 {

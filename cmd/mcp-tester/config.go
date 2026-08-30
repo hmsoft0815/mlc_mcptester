@@ -9,9 +9,10 @@ import (
 
 // Profile represents a server configuration profile.
 type Profile struct {
-	Command  string `yaml:"command,omitempty"`
-	URL      string `yaml:"url,omitempty"`
-	Disabled bool   `yaml:"disabled,omitempty"`
+	Command   string `yaml:"command,omitempty"`
+	URL       string `yaml:"url,omitempty"`
+	Transport string `yaml:"transport,omitempty"`
+	Disabled  bool   `yaml:"disabled,omitempty"`
 }
 
 // Config represents the tool's configuration file.
@@ -61,6 +62,9 @@ func resolveSettings(config *Config, profileName string, cmdArg, urlArg string) 
 		}
 		if profile.Disabled {
 			return "", "", fmt.Errorf("profile '%s' is disabled", profileName)
+		}
+		if profile.Transport != "" && transportType == "" {
+			transportType = profile.Transport
 		}
 		return profile.Command, profile.URL, nil
 	}

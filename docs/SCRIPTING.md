@@ -42,16 +42,29 @@ EOF
 ```
 
 ### 3. `expect_error`
-Prepended to a command when an error (e.g. invalid parameters or unknown tool) is expected.
+Prepended to a command when an error (tool error or protocol error) is expected.
 ```mcp
-expect_error call_tool some_tool invalid:params
+expect_error call_tool add a:"not_a_number"
+assert_tool_error
+assert_contains "type"
+
+expect_error call_tool unknown_tool
 assert_error_code -32602
-assert_contains "missing properties"
 ```
 
-### 4. `assert_error_code`
-Verifies the JSON-RPC error code of the last failed command (used in combination with `expect_error`).
+### 4. `assert_tool_error` and `assert_error_code`
+The MCP specification strictly distinguishes between application-level tool errors (`isError: true` in the tool result) and JSON-RPC protocol errors (such as invalid request or unknown tool).
+
+- **`assert_tool_error`**: Verifies that the tool returned a result with `isError: true` (alternatively `assert_error_code tool`).
+- **`assert_error_code <code>`**: Verifies the numeric JSON-RPC protocol error code of the last failed request. A tool error (`isError: true`) fails on numeric codes.
+
 ```mcp
+# Tool execution error
+expect_error call_tool validate_script script:"invalid"
+assert_tool_error
+
+# Protocol error (-32602 = Invalid params / unknown tool)
+expect_error call_tool non_existent_tool
 assert_error_code -32602
 ```
 
@@ -59,7 +72,7 @@ assert_error_code -32602
 - `-32700`: Parse error (invalid JSON)
 - `-32600`: Invalid Request
 - `-32601`: Method not found
-- `-32602`: Invalid params (schema validation failed)
+- `-32602`: Invalid params (schema validation on RPC level)
 - `-32603`: Internal error
 
 ### 5. `set_var`

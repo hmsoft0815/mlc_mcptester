@@ -42,16 +42,29 @@ EOF
 ```
 
 ### 3. `expect_error`
-Wird vor einen Befehl gestellt, wenn ein Fehler (z.B. ungültige Parameter oder unbekanntes Tool) erwartet wird.
+Wird vor einen Befehl gestellt, wenn ein Fehler (Werkzeugfehler oder Protokollfehler) erwartet wird.
 ```mcp
-expect_error call_tool some_tool invalid:params
+expect_error call_tool add a:"keine_zahl"
+assert_tool_error
+assert_contains "type"
+
+expect_error call_tool unknown_tool
 assert_error_code -32602
-assert_contains "missing properties"
 ```
 
-### 4. `assert_error_code`
-Prüft den JSON-RPC Fehler-Code des letzten fehlgeschlagenen Befehls (in Kombination mit `expect_error`).
+### 4. `assert_tool_error` und `assert_error_code`
+Die MCP-Spezifikation unterscheidet strikt zwischen Werkzeugfehlern (`isError: true` im Ergebnis) und JSON-RPC Protokollfehlern (wie ungültiger Request oder unbekanntes Tool).
+
+- **`assert_tool_error`**: Prüft, dass der Aufruf ein Tool-Ergebnis mit `isError: true` geliefert hat (alternativ auch `assert_error_code tool`).
+- **`assert_error_code <code>`**: Prüft den numerischen JSON-RPC Protokollfehler-Code des letzten fehlgeschlagenen Requests. Ein Tool-Fehler (`isError: true`) schlägt bei numerischen Codes fehl.
+
 ```mcp
+# Tool-Ausführungsfehler
+expect_error call_tool validate_script script:"ungültig"
+assert_tool_error
+
+# Protokollfehler (-32602 = Invalid params / unknown tool)
+expect_error call_tool kein_werkzeug
 assert_error_code -32602
 ```
 
@@ -59,7 +72,7 @@ assert_error_code -32602
 - `-32700`: Parse error (ungültiges JSON)
 - `-32600`: Invalid Request (ungültiger Request)
 - `-32601`: Method not found (Methode nicht gefunden)
-- `-32602`: Invalid params (Schema-Validierung fehlgeschlagen)
+- `-32602`: Invalid params (Schema-Validierung auf RPC-Ebene)
 - `-32603`: Internal error (Interner Fehler)
 
 ### 5. `set_var`

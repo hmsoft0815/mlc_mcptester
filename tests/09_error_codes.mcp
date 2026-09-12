@@ -1,8 +1,9 @@
 // Test JSON-RPC error codes
 
-// 1. Invalid params (missing required argument 'a' or 'b' for 'add')
+// 1. Tool execution error (isError: true)
 expect_error call_tool add a:10
-assert_error_code -32602
+assert_tool_error
+assert_error_code tool
 assert_contains "missing properties"
 
 // 2. Method not found (Server returns -32602 for unknown tool names in tools/call)

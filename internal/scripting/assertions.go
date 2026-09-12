@@ -131,13 +131,34 @@ func (r *Runner) handleAssertErrorCodeCommand(lineIdx int, parts []string) error
 	if len(parts) != 2 {
 		return fmt.Errorf("line %d: assert_error_code expects 1 argument (code)", lineIdx+1)
 	}
+	if parts[1] == "tool" {
+		if !r.lastIsToolError {
+			return fmt.Errorf("line %d: assertion failed: expected tool error (isError: true), got protocol code %d", lineIdx+1, r.lastErrorCode)
+		}
+		fmt.Print(i18n.T(i18n.MsgAssertionPassed, "tool error (isError: true)"))
+		return nil
+	}
 	code, err := strconv.ParseInt(parts[1], 10, 64)
 	if err != nil {
 		return fmt.Errorf("line %d: invalid error code: %s", lineIdx+1, parts[1])
+	}
+	if r.lastIsToolError {
+		return fmt.Errorf("line %d: assertion failed: expected protocol error code %d, but got a tool execution error (isError: true)", lineIdx+1, code)
 	}
 	if r.lastErrorCode != code {
 		return fmt.Errorf("line %d: assertion failed: expected error code %d, got %d", lineIdx+1, code, r.lastErrorCode)
 	}
 	fmt.Print(i18n.T(i18n.MsgAssertionPassed, fmt.Sprintf("error code is %d", code)))
+	return nil
+}
+
+func (r *Runner) handleAssertToolErrorCommand(lineIdx int, parts []string) error {
+	if !r.lastIsToolError {
+		if r.lastErrorCode != 0 {
+			return fmt.Errorf("line %d: assertion failed: expected tool error (isError: true), but got protocol error code %d", lineIdx+1, r.lastErrorCode)
+		}
+		return fmt.Errorf("line %d: assertion failed: expected tool error (isError: true), but command succeeded", lineIdx+1)
+	}
+	fmt.Print(i18n.T(i18n.MsgAssertionPassed, "tool error (isError: true)"))
 	return nil
 }

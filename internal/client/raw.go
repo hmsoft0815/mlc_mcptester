@@ -21,6 +21,15 @@ func (e *RPCError) Error() string {
 	return fmt.Sprintf("RPC error (%d): %s", e.Code, e.Message)
 }
 
+// ToolError represents an application-level tool error (CallToolResult with isError: true).
+type ToolError struct {
+	Message string
+}
+
+func (e *ToolError) Error() string {
+	return fmt.Sprintf("Tool error: %s", e.Message)
+}
+
 // CallToolRaw performs a tool call and returns the raw map[string]any result,
 // bypassing the strict SDK unmarshaling that fails on missing "type" fields.
 func CallToolRaw(ctx context.Context, session *mcp.ClientSession, toolName string, arguments any, meta map[string]any) (map[string]any, error) {

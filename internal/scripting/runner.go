@@ -13,13 +13,14 @@ import (
 
 // Runner manages the execution of MCP test scripts.
 type Runner struct {
-	session       *mcp.ClientSession
-	lastResponse  string // The full JSON response
-	lastText      string // Just the text content
-	lastRawMap    map[string]any
-	Raw           bool
-	variables     map[string]string
-	lastErrorCode int64
+	session         *mcp.ClientSession
+	lastResponse    string // The full JSON response
+	lastText        string // Just the text content
+	lastRawMap      map[string]any
+	Raw             bool
+	variables       map[string]string
+	lastErrorCode   int64
+	lastIsToolError bool
 }
 
 // TestResult holds numeric summary of test execution
@@ -175,6 +176,8 @@ func (r *Runner) dispatchParts(ctx context.Context, i int, parts []string) error
 		return r.handleAssertStringLengthCommand(i, parts)
 	case "assert_error_code":
 		return r.handleAssertErrorCodeCommand(i, parts)
+	case "assert_tool_error":
+		return r.handleAssertToolErrorCommand(i, parts)
 	case "timeout":
 		return r.handleTimeoutCommand(ctx, i, parts)
 	case "expect_error":

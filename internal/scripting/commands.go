@@ -105,10 +105,13 @@ func (r *Runner) handleExpectErrorCommand(ctx context.Context, i int, parts []st
 		return fmt.Errorf("line %d: expected error but command succeeded", i+1)
 	}
 	r.lastErrorCode = 0
+	r.lastIsToolError = false
 	if rpcErr, ok := err.(*client.RPCError); ok {
 		r.lastErrorCode = rpcErr.Code
+	} else if _, ok := err.(*client.ToolError); ok {
+		r.lastIsToolError = true
 	}
-	r.updateState(map[string]any{"error": err.Error(), "code": r.lastErrorCode}, err.Error())
+	r.updateState(map[string]any{"error": err.Error(), "code": r.lastErrorCode, "isToolError": r.lastIsToolError}, err.Error())
 	fmt.Print(i18n.T(i18n.MsgExpectedError, err, r.lastErrorCode))
 	return nil
 }

@@ -122,4 +122,28 @@ func TestAssertionHandlers(t *testing.T) {
 			t.Errorf("expected error for too long string, got nil")
 		}
 	})
+
+	t.Run("handleAssertToolError", func(t *testing.T) {
+		r.lastIsToolError = true
+		r.lastErrorCode = 0
+		if err := r.handleAssertToolErrorCommand(0, []string{"assert_tool_error"}); err != nil {
+			t.Errorf("expected no error for tool error, got %v", err)
+		}
+		if err := r.handleAssertErrorCodeCommand(0, []string{"assert_error_code", "tool"}); err != nil {
+			t.Errorf("expected no error for assert_error_code tool, got %v", err)
+		}
+		if err := r.handleAssertErrorCodeCommand(0, []string{"assert_error_code", "-32602"}); err == nil {
+			t.Errorf("expected error when checking RPC code on tool error, got nil")
+		}
+
+		// Protocol error case
+		r.lastIsToolError = false
+		r.lastErrorCode = -32602
+		if err := r.handleAssertToolErrorCommand(0, []string{"assert_tool_error"}); err == nil {
+			t.Errorf("expected error for assert_tool_error on protocol error, got nil")
+		}
+		if err := r.handleAssertErrorCodeCommand(0, []string{"assert_error_code", "-32602"}); err != nil {
+			t.Errorf("expected no error for matching RPC code, got %v", err)
+		}
+	})
 }

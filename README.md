@@ -7,6 +7,23 @@ Ein Command-Line Tool zum Testen, Debuggen und Validieren von Model Context Prot
 
 [English Version](README.en.md)
 
+## Warum MCP-Tester?
+
+Klassische Unit-Tests (`go test`, `pytest`, `npm test`) rufen üblicherweise nur die interne Handler-Funktion direkt auf. Sie testen die Geschäftslogik, **nicht aber den MCP-Protokollvertrag**:
+
+- Stimmt die JSON-RPC-Kommunikation und das Handshake-Verhalten?
+- Werden Parameter anhand des JSON-Schemas vom Transport und Validator korrekt durchgereicht?
+- Werden standardisierte Fehler-Codes (wie `-32602` bei ungültigen Argumenten) eingehalten?
+- Funktionieren Progress-Benachrichtigungen, Ping und Cancellation über den echten Transport?
+
+Eine Diskrepanz zwischen deklariertem Schema und tatsächlichem Handler-Verhalten bleibt in reinen Code-Tests unsichtbar – und bricht erst zur Laufzeit, wenn ein echtes LLM oder ein Host-Client das Tool aufruft.
+
+**`mcp-tester` schließt diese Lücke:**
+- **Echte Client-Perspektive:** Testet Server als Blackbox über reale Transports (`stdio`, `sse`, `streamable-http`).
+- **Deklarative `.mcp`-Testskripte:** Schnelle, lesbare Tests mit Variablen, Typumwandlung und Assertions – ohne Test-Boilerplate oder SDK-Mocks.
+- **Spec- & Quality-Validierung:** `inspect` prüft auf Einhaltung der offiziellen Spezifikation und Best Practices (Quality Score).
+- **CI/CD-Integration:** Ideal als abschließender `test:integration`-Schritt in Pipelines und Taskfiles.
+
 ## Kern-Features
 
 - **Multi-Transport**: Unterstützt lokale Prozesse (`stdio`), Remote-Server (`sse`) sowie **Streamable HTTP** (`streamable-http`/`http`).

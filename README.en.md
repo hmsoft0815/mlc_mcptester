@@ -1,5 +1,8 @@
 # MCP-Tester
 
+<img src="docs/assets/hero.jpg" alt="MCP-Tester — illustration" width="820">
+
+
 > **[mlcgo.eu](https://mlcgo.eu)** — tools, libraries and manuals · [Product page](https://mlcgo.eu/products/mlc-tester/)
 
 

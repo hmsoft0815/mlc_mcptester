@@ -2,6 +2,7 @@ package version
 
 import (
 	"runtime/debug"
+	"strings"
 	"testing"
 )
 
@@ -69,5 +70,17 @@ func TestResolveVersion(t *testing.T) {
 				t.Errorf("resolveVersion(%q, bi) = %q, want %q", tt.current, got, tt.expected)
 			}
 		})
+	}
+}
+
+func TestVersionTemplate(t *testing.T) {
+	tmpl := VersionTemplate()
+	if tmpl == "" {
+		t.Errorf("VersionTemplate() should not be empty")
+	}
+	for _, expected := range []string{AppName, Copyright, Website, GitHub} {
+		if !strings.Contains(tmpl, expected) {
+			t.Errorf("VersionTemplate() missing %q", expected)
+		}
 	}
 }

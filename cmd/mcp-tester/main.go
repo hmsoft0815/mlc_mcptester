@@ -35,6 +35,8 @@ var rootCmd = &cobra.Command{
 }
 
 func init() {
+	rootCmd.SetVersionTemplate(version.VersionTemplate())
+
 	// Persistent flags are available to every subcommand.
 	rootCmd.PersistentFlags().StringVarP(&command, "command", "c", "", "Command to run the MCP server (stdio)")
 	rootCmd.PersistentFlags().StringVarP(&url, "url", "u", "", "URL of the MCP server (HTTP/SSE)")

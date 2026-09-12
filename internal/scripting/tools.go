@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
-	"strconv"
 	"strings"
 
 	"github.com/hmsoft0815/mlc_mcptester/internal/client"
@@ -106,37 +105,6 @@ func (r *Runner) callToolPositional(ctx context.Context, name string, args []str
 	}
 
 	return r.call(ctx, name, toolArgs)
-}
-
-// convertValue converts a string value to the type specified in the schema.
-func convertValue(val string, schema map[string]any) any {
-	if schema == nil {
-		return val
-	}
-	typeName, _ := schema["type"].(string)
-	switch typeName {
-	case "integer":
-		if i, err := strconv.Atoi(val); err == nil {
-			return i
-		}
-	case "number":
-		if f, err := strconv.ParseFloat(val, 64); err == nil {
-			return f
-		}
-	case "boolean":
-		if strings.ToLower(val) == "true" || val == "1" {
-			return true
-		}
-		if strings.ToLower(val) == "false" || val == "0" {
-			return false
-		}
-	case "object", "array":
-		var result any
-		if err := json.Unmarshal([]byte(val), &result); err == nil {
-			return result
-		}
-	}
-	return val
 }
 
 // call calls the tool with the given name and arguments.

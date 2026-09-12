@@ -2,15 +2,27 @@ package scripting
 
 import (
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 )
 
-func (r *Runner) replaceVariables(line string) string {
-	for name, val := range r.variables {
-		line = strings.ReplaceAll(line, "$"+name, val)
+var varRegex = regexp.MustCompile(`\$([A-Za-z_][A-Za-z0-9_]*)`)
+
+func (r *Runner) replaceVariables(line string) (string, error) {
+	var unknownVars []string
+	result := varRegex.ReplaceAllStringFunc(line, func(match string) string {
+		name := match[1:]
+		if val, ok := r.variables[name]; ok {
+			return val
+		}
+		unknownVars = append(unknownVars, match)
+		return match
+	})
+	if len(unknownVars) > 0 {
+		return "", fmt.Errorf("unknown variable: %s", strings.Join(unknownVars, ", "))
 	}
-	return line
+	return result, nil
 }
 
 // extractValue finds a value in the last response using dot notation (e.g., "structuredContent.0.id")

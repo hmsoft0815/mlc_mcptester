@@ -16,6 +16,7 @@ tasks:
   build:
     desc: Build the mcp-tester CLI
     sources:
+      - VERSION
       - cmd/mcp-tester/**/*.go
       - internal/**/*.go
       - go.mod
@@ -31,14 +32,14 @@ tasks:
     cmds:
       - mkdir -p bin
       - GOOS=linux GOARCH=amd64 go build -ldflags "{{.LDFLAGS}}" -o bin/mcp-tester-linux-amd64 ./cmd/mcp-tester/
-      - GOOS=linux GOARCH=amd64 go build -o bin/test-server-linux-amd64 ./cmd/test-server/main.go
+      - GOOS=linux GOARCH=amd64 go build -o bin/test-server-linux-amd64 ./cmd/test-server/
 
   build-windows:
     desc: Build for Windows (amd64) + NSIS installer
     cmds:
       - mkdir -p bin dist
       - GOOS=windows GOARCH=amd64 go build -ldflags "{{.LDFLAGS}}" -o bin/mcp-tester-windows-amd64.exe ./cmd/mcp-tester/
-      - GOOS=windows GOARCH=amd64 go build -o bin/test-server-windows-amd64.exe ./cmd/test-server/main.go
+      - GOOS=windows GOARCH=amd64 go build -o bin/test-server-windows-amd64.exe ./cmd/test-server/
       - makensis scripts/windows-installer.nsi
 
   build-macos:
@@ -46,9 +47,9 @@ tasks:
     cmds:
       - mkdir -p bin
       - GOOS=darwin GOARCH=arm64 go build -ldflags "{{.LDFLAGS}}" -o bin/mcp-tester-macos-arm64 ./cmd/mcp-tester/
-      - GOOS=darwin GOARCH=arm64 go build -o bin/test-server-macos-arm64 ./cmd/test-server/main.go
+      - GOOS=darwin GOARCH=arm64 go build -o bin/test-server-macos-arm64 ./cmd/test-server/
       - GOOS=darwin GOARCH=amd64 go build -ldflags "{{.LDFLAGS}}" -o bin/mcp-tester-macos-amd64 ./cmd/mcp-tester/
-      - GOOS=darwin GOARCH=amd64 go build -o bin/test-server-macos-amd64 ./cmd/test-server/main.go
+      - GOOS=darwin GOARCH=amd64 go build -o bin/test-server-macos-amd64 ./cmd/test-server/
 
   build-all:
     desc: Build all platforms
@@ -68,7 +69,7 @@ tasks:
       - bin/test-server
     cmds:
       - mkdir -p bin
-      - GOWORK=off go build -o bin/test-server ./cmd/test-server/main.go
+      - GOWORK=off go build -o bin/test-server ./cmd/test-server/
 
   all:
     desc: Build everything
@@ -143,6 +144,8 @@ tasks:
       - ./bin/mcp-tester test --profile local --script tests/02_types_and_equals.mcp
       - echo "--- Running Variables Test ---"
       - ./bin/mcp-tester test --profile local --script tests/03_variables_and_math.mcp
+      - echo "--- Running Error Handling Test ---"
+      - ./bin/mcp-tester test --profile local --script tests/04_error_handling.mcp
       - echo "--- Running Progress Test ---"
       - ./bin/mcp-tester test --profile local --script tests/05_progress.mcp -v
       - echo "--- Running Cancellation Test ---"
@@ -153,6 +156,8 @@ tasks:
       - ./bin/mcp-tester test --profile local --script tests/08_named_args.mcp -v
       - echo "--- Running Error Codes Test ---"
       - ./bin/mcp-tester test --profile local --script tests/09_error_codes.mcp -v
+      - echo "--- Running Array Arguments & Var Safety Test ---"
+      - ./bin/mcp-tester test --profile local --script tests/11_array_args.mcp -v
 
   test-inspect:
     desc: Test the server inspection tool

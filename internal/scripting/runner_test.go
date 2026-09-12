@@ -11,23 +11,32 @@ func TestReplaceVariables(t *testing.T) {
 		variables: map[string]string{
 			"FOO": "bar",
 			"ID":  "123",
+			"w":   "1024",
+			"w2":  "123",
 		},
 	}
 
 	tests := []struct {
-		input    string
-		expected string
+		input       string
+		expected    string
+		expectError bool
 	}{
-		{"hello $FOO", "hello bar"},
-		{"id is $ID", "id is 123"},
-		{"no var here", "no var here"},
-		{"$FOO$ID", "bar123"},
-		{"mixed $FOO and $UNKNOWN", "mixed bar and $UNKNOWN"},
+		{"hello $FOO", "hello bar", false},
+		{"id is $ID", "id is 123", false},
+		{"no var here", "no var here", false},
+		{"$FOO$ID", "bar123", false},
+		{"$w2 and $w", "123 and 1024", false},
+		{"$w and $w2", "1024 and 123", false},
+		{"mixed $FOO and $UNKNOWN", "", true},
 	}
 
 	for _, tt := range tests {
-		result := r.replaceVariables(tt.input)
-		if result != tt.expected {
+		result, err := r.replaceVariables(tt.input)
+		if (err != nil) != tt.expectError {
+			t.Errorf("replaceVariables(%q) error = %v; expectError %v", tt.input, err, tt.expectError)
+			continue
+		}
+		if !tt.expectError && result != tt.expected {
 			t.Errorf("replaceVariables(%q) = %q; want %q", tt.input, result, tt.expected)
 		}
 	}
@@ -90,6 +99,11 @@ func TestConvertValue(t *testing.T) {
 		{"some string", map[string]any{"type": "string"}, "some string"},
 		{"123", map[string]any{"type": "string"}, "123"},
 		{"not-a-number", map[string]any{"type": "integer"}, "not-a-number"}, // Fallback to string
+		{`["a.png", "b.png"]`, map[string]any{"type": "array"}, []any{"a.png", "b.png"}},
+		{`["a.png", "b.png"]`, map[string]any{"type": []any{"null", "array"}}, []any{"a.png", "b.png"}},
+		{`{"key": "value"}`, map[string]any{"type": "object"}, map[string]any{"key": "value"}},
+		{`{"key": "value"}`, map[string]any{"type": []any{"null", "object"}}, map[string]any{"key": "value"}},
+		{`[literal]`, map[string]any{"type": "string"}, `[literal]`},
 	}
 
 	for _, tt := range tests {
@@ -97,6 +111,13 @@ func TestConvertValue(t *testing.T) {
 		if !reflect.DeepEqual(result, tt.expected) {
 			t.Errorf("convertValue(%q, %v) = %v (%T); want %v (%T)", tt.val, tt.schema, result, result, tt.expected, tt.expected)
 		}
+	}
+}
+
+func TestEchoCommand(t *testing.T) {
+	r := &Runner{}
+	if err := r.dispatchParts(nil, 0, []string{"echo", "Hello", "World"}); err != nil {
+		t.Fatalf("dispatchParts(echo) error = %v", err)
 	}
 }
 

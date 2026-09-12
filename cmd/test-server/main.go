@@ -43,6 +43,7 @@ func main() {
 	)
 
 	registerBasicTools(s)
+	registerExtraTools(s)
 	registerResources(s)
 	registerPrompts(s)
 

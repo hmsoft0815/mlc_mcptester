@@ -133,3 +133,12 @@ func (r *Runner) handleLoggingCommand(ctx context.Context, i int, parts []string
 	}
 	return nil
 }
+
+func (r *Runner) handleEchoCommand(parts []string) error {
+	if len(parts) > 1 {
+		fmt.Println(strings.Join(parts[1:], " "))
+	} else {
+		fmt.Println()
+	}
+	return nil
+}

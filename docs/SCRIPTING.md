@@ -6,24 +6,63 @@ The `mcp-tester` scripting engine enables automated test workflows for MCP serve
 
 - **Commands**: One command per line.
 - **Comments**: Lines starting with `#` or `//` are ignored. Trailing comments are also supported.
-- **Variables**: Referenced with a `$` prefix (e.g., `$name`).
-- **Strings**: Can be enclosed in double quotes if they contain spaces.
+- **Variables**: Referenced with a `$` prefix (e.g., `$name`). Substitution uses regex matching (`\$([A-Za-z_][A-Za-z0-9_]*)`). Referencing an unknown variable aborts execution with a clear line-referenced error.
+- **Strings**: Can be enclosed in double quotes (`"..."`) or single quotes (`'...'`) if they contain spaces or special characters.
+- **Lists / Objects**: JSON arrays (`'["a.png", "b.png"]'`) or JSON objects (`'{"key": "value"}'`) can be passed directly as arguments.
 
 ---
 
 ## Command Overview
 
-### 1. `call_tool`
+### 1. `echo`
+Prints a message to the console. Useful for structuring test output and adding section headers in longer scripts.
+```mcp
+echo "--- Testing user creation workflow ---"
+echo "Current ID: $user_id"
+```
+
+### 2. `call_tool`
 Invokes an MCP tool.
 ```mcp
 call_tool <tool_name> [arg1] [arg2] ...
 ```
 - **Arguments**: Can be passed positionally or as named arguments (`key:value`).
     - **Positional**: Arguments are automatically converted to the correct type based on the tool's JSON schema. The order corresponds to the **alphabetical sorting** of the property names in the schema.
-    - **Named**: Arguments follow the `key:value` syntax. This is recommended to avoid confusion with alphabetical sorting.
+    - **Named**: Arguments follow the `key:value` syntax (e.g. `paths:'["a.png", "b.png"]'`). This is recommended to avoid confusion with alphabetical sorting.
+    - **Arrays and Objects**: Supports schemas with `type: "array"`, `type: "object"` as well as nullable definitions (`type: ["null", "array"]`).
     - **Mixed**: You can mix both; positional arguments will fill the remaining properties in alphabetical order.
 
-### 2. `set_var`
+**Heredoc Support:**
+For multiline arguments (e.g. JSON or code blocks), heredoc syntax can be used:
+```mcp
+call_tool execute_script <<EOF
+console.log("Hello from Heredoc!");
+console.log(1 + 2);
+EOF
+```
+
+### 3. `expect_error`
+Prepended to a command when an error (e.g. invalid parameters or unknown tool) is expected.
+```mcp
+expect_error call_tool some_tool invalid:params
+assert_error_code -32602
+assert_contains "missing properties"
+```
+
+### 4. `assert_error_code`
+Verifies the JSON-RPC error code of the last failed command (used in combination with `expect_error`).
+```mcp
+assert_error_code -32602
+```
+
+#### Common JSON-RPC Error Codes
+- `-32700`: Parse error (invalid JSON)
+- `-32600`: Invalid Request
+- `-32601`: Method not found
+- `-32602`: Invalid params (schema validation failed)
+- `-32603`: Internal error
+
+### 5. `set_var`
 Extracts a value from the last tool response and stores it in a variable.
 ```mcp
 set_var <variable_name> <path>
@@ -33,65 +72,51 @@ set_var <variable_name> <path>
     - `structuredContent.<path>`: Navigates through the JSON structure (dot notation).
     - `$.<path>`: Short form for `structuredContent`.
 
-### 3. `input_var`
+### 6. `input_var`
 Prompts the user for input during the test.
 ```mcp
 input_var <variable_name> ["Interactive Prompt"]
 ```
 
-### `assert_contains <expected>` or `assert_contains <value> <expected>`
+### 7. `assert_contains`
 Checks if the last response (text or JSON) or a specific value contains the expected string.
-- `assert_contains "Execution finished"` (checks last response)
-- `assert_contains $var "expected"` (checks variable content)
+```mcp
+assert_contains "Execution finished"
+assert_contains $var "expected"
+```
 
----
-
-### `assert_equals <expected>` or `assert_equals <value> <expected>`
+### 8. `assert_equals`
 Checks for an exact match against the last response or between two values.
-- `assert_equals "30"` (checks last response)
-- `assert_equals $var "true"` (checks variable content)
+```mcp
+assert_equals "Result: 30"
+assert_equals $var "123"
+```
 
----
-
-### 6. `assert_number`
+### 9. `assert_number`
 Checks if a value (or a variable) is a valid number.
 ```mcp
 assert_number $variable
 ```
 
-### 7. `assert_gt`
+### 10. `assert_gt`
 Checks if the first value is greater than the second.
 ```mcp
 assert_gt $value1 $value2
 ```
-### 8. `assert_string_length`
-Checks if the length of a string (or variable) is within a specific range.
 
+### 11. `assert_string_length`
+Checks if the length of a string (or variable) is within a specific range.
 ```mcp
 assert_string_length $variable <min> <max>
 ```
-
-### 9. `assert_error_code`
-Verifies the JSON-RPC error code of the last failed command. This is used after `expect_error`.
-
-```mcp
-expect_error call_tool some_tool invalid:params
-assert_error_code -32602
-```
-
-### Common JSON-RPC Error Codes
-- `-32700`: Parse error (invalid JSON)
-- `-32600`: Invalid Request
-- `-32601`: Method not found
-- `-32602`: Invalid params (schema validation failed)
-- `-32603`: Internal error
-- `assert_string_length $var 5 10`
 
 ---
 
 ## Example Script
 
 ```mcp
+echo "--- Starting user workflow ---"
+
 # 1. Call tool and store ID
 call_tool create_user "John Doe"
 set_var user_id $.id
@@ -100,7 +125,11 @@ set_var user_id $.id
 call_tool get_user $user_id
 assert_contains "Doe"
 
-# 3. Mathematical check
+# 3. Pass array argument
+call_tool assign_roles user_id:$user_id roles:'["admin", "tester"]'
+assert_contains "Roles assigned"
+
+# 4. Mathematical check
 set_var score $.profile.score
 assert_gt $score 0
 ```

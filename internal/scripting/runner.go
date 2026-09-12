@@ -105,7 +105,10 @@ func (r *Runner) processLine(ctx context.Context, i int, line string, state *run
 	}
 
 	state.executed++
-	finalCmd := r.replaceVariables(processedLine)
+	finalCmd, err := r.replaceVariables(processedLine)
+	if err != nil {
+		return fmt.Errorf("line %d: %w", i+1, err)
+	}
 	if err := r.dispatchCommand(ctx, i, finalCmd); err != nil {
 		return err
 	}
@@ -116,7 +119,11 @@ func (r *Runner) processLine(ctx context.Context, i int, line string, state *run
 func (r *Runner) finalizeHeredoc(ctx context.Context, i int, state *runState) error {
 	content := strings.TrimSuffix(state.heredocContent.String(), "\n")
 
-	state.currentCommand = r.replaceVariables(state.currentCommand)
+	var err error
+	state.currentCommand, err = r.replaceVariables(state.currentCommand)
+	if err != nil {
+		return fmt.Errorf("line %d: %w", i+1, err)
+	}
 	parts, err := r.parseArgs(state.currentCommand)
 	if err != nil {
 		return fmt.Errorf("line %d: failed to parse command prefix: %w", i+1, err)
@@ -148,6 +155,8 @@ func (r *Runner) dispatchParts(ctx context.Context, i int, parts []string) error
 
 	cmd := parts[0]
 	switch cmd {
+	case "echo":
+		return r.handleEchoCommand(parts)
 	case "call_tool":
 		return r.handleCallToolParts(ctx, i, parts)
 	case "set_var":

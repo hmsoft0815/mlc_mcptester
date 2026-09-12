@@ -1,0 +1,18 @@
+// Test array arguments and variable prefix safety
+
+echo "--- Testing array arguments ---"
+call_tool join_strings paths:'["first.png", "second.png"]'
+assert_contains "Joined: first.png, second.png"
+
+call_tool join_strings '["x.png", "y.png"]'
+assert_contains "Joined: x.png, y.png"
+
+echo "--- Testing variable prefix safety ---"
+call_tool echo message:"1024"
+set_var w structuredContent.echo
+call_tool echo message:"123"
+set_var w2 structuredContent.echo
+
+echo "Values: w=$w, w2=$w2"
+assert_equals $w "1024"
+assert_equals $w2 "123"

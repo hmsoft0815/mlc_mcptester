@@ -6,10 +6,10 @@
 // For now, we demonstrate a successful call to the test-server's error trigger
 
 echo "--- Testing standard error response ---"
-call_tool error_trigger '{"code": 500, "message": "Simulated Server Error"}'
+expect_error call_tool error_trigger message:"Simulated Server Error"
 assert_contains "Simulated Server Error"
 
 echo "--- Testing invalid arguments error ---"
 // Passing a string to an integer parameter should be caught by the server's validation
-call_tool add "not_a_number" 10
-assert_contains "invalid"
+expect_error call_tool add "not_a_number" 10
+assert_contains "type: not_a_number has type"

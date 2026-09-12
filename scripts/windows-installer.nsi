@@ -8,7 +8,7 @@
 !cd ".."
 
 !define APP_NAME    "MCP-Tester"
-!define APP_VERSION "0.2.5"
+!define APP_VERSION "1.2.0"
 !define PUBLISHER   "Michael Lechner"
 !define COPYRIGHT   "Copyright (c) 2026 Michael Lechner"
 !define INSTALL_DIR "$PROGRAMFILES64\mcp-tester"

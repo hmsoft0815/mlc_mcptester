@@ -1,7 +1,12 @@
 package version
 
+import (
+	"runtime/debug"
+	"strings"
+)
+
 const (
-	// Name of the software
+	// AppName is the name of the software
 	AppName = "MCP-Tester"
 	// Author of the software
 	Author = "Michael Lechner"
@@ -12,8 +17,23 @@ const (
 // Version is stamped from the VERSION file at build time via
 // `-ldflags -X …/internal/version.Version`.
 //
-// A var rather than a const, and that is the whole point: it was a const here
-// with the number written out, so the released binaries could only ever report
-// whatever was last typed into this file. "dev" is what an unstamped build
-// gets, which is honest.
+// If unstamped ("dev" or empty), it falls back to debug.ReadBuildInfo()
+// to retrieve the module version tag when installed via `go install`.
 var Version = "dev"
+
+func init() {
+	if bi, ok := debug.ReadBuildInfo(); ok {
+		Version = resolveVersion(Version, bi)
+	}
+}
+
+// resolveVersion determines the version using ldflags or Go module build info.
+func resolveVersion(current string, bi *debug.BuildInfo) string {
+	if current != "dev" && current != "" {
+		return current
+	}
+	if bi != nil && bi.Main.Version != "" && bi.Main.Version != "(devel)" {
+		return strings.TrimPrefix(bi.Main.Version, "v")
+	}
+	return "dev"
+}

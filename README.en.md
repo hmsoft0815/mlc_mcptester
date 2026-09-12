@@ -70,8 +70,15 @@ curl -sSL https://raw.githubusercontent.com/hmsoft0815/mlc_mcptester/main/script
 
 **Manual Build:**
 ```bash
+git clone https://github.com/hmsoft0815/mlc_mcptester.git
+cd mlc_mcptester
 task all            # Builds the tester and reference server into the bin/ folder
 ```
+
+> **Clone without `--recursive`.** The repository points at two
+> submodules (`.mlcai`, `mlcprodweb`) that live on an internal server —
+> internal documentation and the product page. Neither is needed to
+> build; `git clone --recursive` fails without access to that server.
 
 ### 2. Commands (Excerpt)
 

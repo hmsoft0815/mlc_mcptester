@@ -83,6 +83,11 @@ task all            # Baut den Tester und Referenz-Server in den bin/ Ordner
 > werden sie nicht gebraucht; `git clone --recursive` bricht ohne
 > Zugang zu diesem Server ab.
 
+<img src="docs/assets/inspect-and-test.png" alt="mcp-tester inspect und test gegen einen MCP-Server" width="820">
+
+*Echte Ausgabe: der Inspektor und ein Testlauf gegen den MCP-Server von
+[mlc OpticScript](https://mlcgo.eu/products/mlc-opticscript/).*
+
 ### 2. Kommandos (Auszug)
 
 #### Profilverwaltung

@@ -83,6 +83,11 @@ task all            # Builds the tester and reference server into the bin/ folde
 > internal documentation and the product page. Neither is needed to
 > build; `git clone --recursive` fails without access to that server.
 
+<img src="docs/assets/inspect-and-test.png" alt="mcp-tester inspect and test against an MCP server" width="820">
+
+*Real output: the inspector and a test run against the
+[mlc OpticScript](https://mlcgo.eu/products/mlc-opticscript/) MCP server.*
+
 ### 2. Commands (Excerpt)
 
 #### Profile Management

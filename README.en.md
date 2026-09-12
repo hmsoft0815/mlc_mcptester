@@ -27,7 +27,7 @@ Discrepancies between declared schema types and actual runtime behavior remain i
 - **Spec & Quality Validation:** Built-in `inspect` command evaluates compliance with the official MCP specification and scores best practices.
 - **CI/CD Integration:** Ideal as a standard `test:integration` step in automated pipelines and Taskfiles.
 
-## Key Features
+## The Key Features
 
 - **Multi-Transport**: Supports local processes (`stdio`), remote servers (`sse`), and **Streamable HTTP** (`streamable-http`/`http`).
 - **Full Spec Support**: Tests Tools, Resources (static & templates), Subscriptions, and Prompts according to the latest specification.

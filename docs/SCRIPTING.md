@@ -31,6 +31,7 @@ call_tool <tool_name> [arg1] [arg2] ...
     - **Named**: Arguments follow the `key:value` syntax (e.g. `paths:'["a.png", "b.png"]'`). This is recommended to avoid confusion with alphabetical sorting.
     - **Arrays and Objects**: Supports schemas with `type: "array"`, `type: "object"` as well as nullable definitions (`type: ["null", "array"]`).
     - **Mixed**: You can mix both; positional arguments will fill the remaining properties in alphabetical order.
+- **Result check**: If the tool declares an `outputSchema`, the call fails unless the result carries `structuredContent` that matches it — the check strict clients make (the official TypeScript SDK, used by OpenCode, rejects such a call with `-32600`). Results with `isError: true` are exempt. The Go SDK this tester is built on does not check this itself, which is why the tester does.
 
 **Heredoc Support:**
 For multiline arguments (e.g. JSON or code blocks), heredoc syntax can be used:

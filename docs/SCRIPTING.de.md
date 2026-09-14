@@ -31,6 +31,7 @@ call_tool <tool_name> [arg1] [arg2] ...
     - **Benannt**: Folgen der Syntax `key:value` (z.B. `paths:'["a.png", "b.png"]'`). Dies wird empfohlen, um Verwechslungen durch die alphabetische Sortierung zu vermeiden.
     - **Arrays und Objekte**: Unterstützt Schemata mit `type: "array"`, `type: "object"` sowie Nullable-Definitionen (`type: ["null", "array"]`).
     - **Gemischt**: Es können beide Arten gemischt werden; positionale Argumente füllen die verbleibenden Properties in alphabetischer Reihenfolge auf.
+- **Ergebnisprüfung**: Gibt das Tool ein `outputSchema` an, schlägt der Aufruf fehl, wenn das Ergebnis kein dazu passendes `structuredContent` enthält — dieselbe Prüfung, die strikte Clients machen (das offizielle TypeScript-SDK, das OpenCode nutzt, lehnt so einen Aufruf mit `-32600` ab). Ergebnisse mit `isError: true` sind ausgenommen. Das Go-SDK, auf dem der Tester aufbaut, prüft das selbst nicht; deshalb tut es der Tester.
 
 **Heredoc-Unterstützung:**
 Für mehrzeilige Argumente (z.B. JSON oder Code-Blöcke) kann die Heredoc-Syntax verwendet werden:

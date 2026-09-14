@@ -4,8 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 
 	"github.com/hmsoft0815/mlc_mcptester/internal/client"
+	"github.com/hmsoft0815/mlc_mcptester/internal/conformance"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/spf13/cobra"
 )
@@ -64,6 +66,13 @@ var callCmd = &cobra.Command{
 			return fmt.Errorf("failed to parse arguments: %w", err)
 		}
 
+		// The result is checked against this the way a strict client checks
+		// it; the Go SDK's client does not.
+		outputSchema, err := outputSchemaOf(ctx, session, toolName)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "warning: could not list tools, the result is not checked against an output schema: %v\n", err)
+		}
+
 		if raw {
 			fmt.Println("--- RAW MODE ---")
 			meta := map[string]any{"progressToken": fmt.Sprintf("script-progress-%s", toolName)}
@@ -73,7 +82,7 @@ var callCmd = &cobra.Command{
 			}
 			output, _ := json.MarshalIndent(result, "", "  ")
 			fmt.Printf("%s\n", string(output))
-			return nil
+			return checkResult(outputSchema, result)
 		}
 
 		// Execute the tool call request.
@@ -114,6 +123,35 @@ var callCmd = &cobra.Command{
 			fmt.Println("Result indicated an error.")
 		}
 
-		return nil
+		data, err := json.Marshal(callResult)
+		if err != nil {
+			return err
+		}
+		var asMap map[string]any
+		if err := json.Unmarshal(data, &asMap); err != nil {
+			return err
+		}
+		return checkResult(outputSchema, asMap)
 	},
+}
+
+// outputSchemaOf returns the output schema the named tool declares, or nil.
+func outputSchemaOf(ctx context.Context, session *mcp.ClientSession, name string) (any, error) {
+	for tool, err := range session.Tools(ctx, nil) {
+		if err != nil {
+			return nil, err
+		}
+		if tool.Name == name {
+			return tool.OutputSchema, nil
+		}
+	}
+	return nil, nil
+}
+
+// checkResult turns a result a strict client would reject into a failed call.
+func checkResult(outputSchema any, result map[string]any) error {
+	if err := conformance.CheckToolResult(outputSchema, result); err != nil {
+		return fmt.Errorf("the result violates the MCP specification: %w", err)
+	}
+	return nil
 }

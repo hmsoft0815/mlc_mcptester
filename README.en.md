@@ -24,7 +24,7 @@ Discrepancies between declared schema types and actual runtime behavior remain i
 **`mcp-tester` closes this gap:**
 - **True Client Perspective:** Tests servers as a black box over real transports (`stdio`, `sse`, `streamable-http`).
 - **Declarative `.mcp` Test Scripts:** Quick, readable test scripts with variables, automatic type coercion, and assertions — zero testing boilerplate or mock harnesses.
-- **Spec & Quality Validation:** Built-in `inspect` command evaluates compliance with the official MCP specification and scores best practices.
+- **Spec & Quality Validation:** Built-in `inspect` command evaluates compliance with the official MCP specification and scores best practices. `call` and test scripts check every result against the tool's `outputSchema`, as strictly as the official TypeScript SDK (OpenCode).
 - **CI/CD Integration:** Ideal as a standard `test:integration` step in automated pipelines and Taskfiles.
 
 ## The Key Features

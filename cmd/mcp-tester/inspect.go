@@ -48,6 +48,10 @@ var inspectCmd = &cobra.Command{
 		report := InspectionReport{}
 		recommendations := []string{}
 		score := 100
+		// inspect never calls a tool — it cannot know which ones are free of
+		// side effects — so a declared schema is all it can see, not whether the
+		// results honour it.
+		declaredOutputSchemas := 0
 
 		initResult := session.InitializeResult()
 		report.ServerName = initResult.ServerInfo.Name
@@ -119,6 +123,8 @@ var inspectCmd = &cobra.Command{
 					if t.OutputSchema == nil {
 						recommendations = append(recommendations, i18n.T(i18n.MsgNoOutputSchema, t.Name))
 						totalDeductionOutputSchema += 1
+					} else {
+						declaredOutputSchemas++
 					}
 
 					// Bonus for safety annotations (readOnlyHint)
@@ -180,6 +186,10 @@ var inspectCmd = &cobra.Command{
 				for _, rec := range recommendations {
 					fmt.Println("- " + rec)
 				}
+			}
+			if declaredOutputSchemas > 0 {
+				fmt.Println()
+				fmt.Println(i18n.T(i18n.MsgOutputSchemaUnchecked, declaredOutputSchemas))
 			}
 		}
 

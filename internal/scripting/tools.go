@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/hmsoft0815/mlc_mcptester/internal/client"
+	"github.com/hmsoft0815/mlc_mcptester/internal/conformance"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
@@ -104,11 +105,17 @@ func (r *Runner) callToolPositional(ctx context.Context, name string, args []str
 		}
 	}
 
-	return r.call(ctx, name, toolArgs)
+	var outputSchema any
+	if targetTool != nil {
+		outputSchema = targetTool.OutputSchema
+	}
+	return r.call(ctx, name, toolArgs, outputSchema)
 }
 
-// call calls the tool with the given name and arguments.
-func (r *Runner) call(ctx context.Context, name string, args map[string]any) error {
+// call calls the tool with the given name and arguments. A result that a strict
+// client would reject against outputSchema fails the call, even though this
+// tester's own SDK would accept it.
+func (r *Runner) call(ctx context.Context, name string, args map[string]any, outputSchema any) error {
 	var rawResponse map[string]any
 	var text string
 	var err error
@@ -129,6 +136,10 @@ func (r *Runner) call(ctx context.Context, name string, args map[string]any) err
 		return &client.ToolError{
 			Message: text,
 		}
+	}
+
+	if err := conformance.CheckToolResult(outputSchema, rawResponse); err != nil {
+		return fmt.Errorf("%s: %w", name, err)
 	}
 
 	return nil

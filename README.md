@@ -24,7 +24,7 @@ Eine Diskrepanz zwischen deklariertem Schema und tatsächlichem Handler-Verhalte
 **`mcp-tester` schließt diese Lücke:**
 - **Echte Client-Perspektive:** Testet Server als Blackbox über reale Transports (`stdio`, `sse`, `streamable-http`).
 - **Deklarative `.mcp`-Testskripte:** Schnelle, lesbare Tests mit Variablen, Typumwandlung und Assertions – ohne Test-Boilerplate oder SDK-Mocks.
-- **Spec- & Quality-Validierung:** `inspect` prüft auf Einhaltung der offiziellen Spezifikation und Best Practices (Quality Score).
+- **Spec- & Quality-Validierung:** `inspect` prüft auf Einhaltung der offiziellen Spezifikation und Best Practices (Quality Score). `call` und Testskripte prüfen jedes Ergebnis gegen das `outputSchema` des Tools, so streng wie das offizielle TypeScript-SDK (OpenCode).
 - **CI/CD-Integration:** Ideal als abschließender `test:integration`-Schritt in Pipelines und Taskfiles.
 
 ## Kern-Features

@@ -25,23 +25,26 @@ const (
 	MsgNoDescription   MessageKey = "no_description"
 	MsgNoInputSchema   MessageKey = "no_input_schema"
 	MsgNoOutputSchema  MessageKey = "no_output_schema"
-	MsgNoPrompts       MessageKey = "no_prompts"
-	MsgNoLogging       MessageKey = "no_logging"
-	MsgTestSummary     MessageKey = "test_summary"
-	MsgExecuting       MessageKey = "executing"
-	MsgVariableSet     MessageKey = "variable_set"
-	MsgExpectedError   MessageKey = "expected_error"
-	MsgAssertionPassed MessageKey = "assertion_passed"
-	MsgResource        MessageKey = "resource"
-	MsgTemplate        MessageKey = "template"
-	MsgPrompt          MessageKey = "prompt"
-	MsgTool            MessageKey = "tool"
-	MsgIcons           MessageKey = "icons"
-	MsgDescription     MessageKey = "description"
-	MsgSchema          MessageKey = "schema"
-	MsgInputSchema     MessageKey = "input_schema"
-	MsgOutputSchema    MessageKey = "output_schema"
-	MsgAnnotations     MessageKey = "annotations"
+	// MsgOutputSchemaUnchecked says what inspect cannot see: whether the
+	// results of tools with a declared schema actually honour it.
+	MsgOutputSchemaUnchecked MessageKey = "output_schema_unchecked"
+	MsgNoPrompts             MessageKey = "no_prompts"
+	MsgNoLogging             MessageKey = "no_logging"
+	MsgTestSummary           MessageKey = "test_summary"
+	MsgExecuting             MessageKey = "executing"
+	MsgVariableSet           MessageKey = "variable_set"
+	MsgExpectedError         MessageKey = "expected_error"
+	MsgAssertionPassed       MessageKey = "assertion_passed"
+	MsgResource              MessageKey = "resource"
+	MsgTemplate              MessageKey = "template"
+	MsgPrompt                MessageKey = "prompt"
+	MsgTool                  MessageKey = "tool"
+	MsgIcons                 MessageKey = "icons"
+	MsgDescription           MessageKey = "description"
+	MsgSchema                MessageKey = "schema"
+	MsgInputSchema           MessageKey = "input_schema"
+	MsgOutputSchema          MessageKey = "output_schema"
+	MsgAnnotations           MessageKey = "annotations"
 )
 
 var messages = map[string]map[MessageKey]string{
@@ -64,6 +67,9 @@ var messages = map[string]map[MessageKey]string{
 		MsgNoDescription:   "WARNING: Tool '%s' has no description. The LLM needs this to understand the tool's purpose.",
 		MsgNoInputSchema:   "ERROR: Tool '%s' has no input schema.",
 		MsgNoOutputSchema:  "HINT: Tool '%s' has no output schema. Structured returns help the LLM process results precisely.",
+		MsgOutputSchemaUnchecked: "NOTE: %d tools declare an output schema. inspect calls no tools, so it cannot tell whether their results " +
+			"carry matching structuredContent; strict clients (official TypeScript SDK, e.g. OpenCode) reject calls that do not. " +
+			"Check with `mcp-tester call <tool>` or a test script.",
 		MsgNoPrompts:       "WARNING: No prompts defined. Prompts are highly recommended to set the system context and persona.",
 		MsgNoLogging:       "HINT: The server does not support logging. Server-side logs via MCP help debugging.",
 		MsgTestSummary:     "\nTest Summary: %d commands executed, %d passed, %d failed\n",
@@ -101,6 +107,9 @@ var messages = map[string]map[MessageKey]string{
 		MsgNoDescription:   "WARNUNG: Tool '%s' hat keine Beschreibung. Das LLM benötigt diese, um den Zweck zu verstehen.",
 		MsgNoInputSchema:   "FEHLER: Tool '%s' hat kein Input-Schema.",
 		MsgNoOutputSchema:  "HINT: Tool '%s' hat kein Output-Schema. Strukturierte Rückgaben helfen dem LLM.",
+		MsgOutputSchemaUnchecked: "HINWEIS: %d Tools geben ein Output-Schema an. inspect ruft keine Tools auf und kann daher nicht prüfen, " +
+			"ob ihre Ergebnisse passendes structuredContent liefern; strikte Clients (offizielles TypeScript-SDK, z. B. OpenCode) " +
+			"lehnen solche Aufrufe ab. Prüfen mit `mcp-tester call <tool>` oder einem Testskript.",
 		MsgNoPrompts:       "WARNUNG: Keine Prompts definiert. Prompts werden dringend empfohlen.",
 		MsgNoLogging:       "HINT: Der Server unterstützt kein Logging. Server-seitige Logs helfen bei der Fehlersuche.",
 		MsgTestSummary:     "\nTest-Zusammenfassung: %d Befehle ausgeführt, %d bestanden, %d fehlgeschlagen\n",

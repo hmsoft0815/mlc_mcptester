@@ -16,7 +16,10 @@ const MONO = "JetBrains Mono";
 const SIZE = 15, CH = SIZE * 0.6, LH = 24;
 
 // ── Fenster ────────────────────────────────────────────────────────
-const img = Engine.createImage(W, H, BG);
+// createImage(w, h) nimmt keine Farbe — ein drittes Argument wird still
+// ignoriert, und das Bild bleibt durchsichtig. Genau das war es: der Rand
+// des ersten Bildes war transparent, auf der Produktseite also weiss.
+const img = Engine.createColoredImage(W, H, BG);
 const cv = Engine.createCanvas(W, H);
 
 function rounded(cvs, x, y, w, h, r, color) {

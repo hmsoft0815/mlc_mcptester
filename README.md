@@ -12,36 +12,65 @@ Ein Command-Line Tool zum Testen, Debuggen und Validieren von Model Context Prot
 
 ## Warum MCP-Tester?
 
-Klassische Unit-Tests (`go test`, `pytest`, `npm test`) rufen üblicherweise nur die interne Handler-Funktion direkt auf. Sie testen die Geschäftslogik, **nicht aber den MCP-Protokollvertrag**:
+Fast täglich erscheinen neue Hosts, Harnesses und Modelle, und die MCP-Spezifikation entwickelt sich laufend weiter. Ein Server, der die Spezifikation nicht genau einhält, läuft dann oft „plötzlich“ nicht mehr sauber: Aufrufe scheitern bei strikteren Clients, Fehlermeldungen helfen dem Modell nicht weiter, oder das Modell verbrennt unnötig Tokens mit Wiederholungen. `mcp-tester` hilft, schnell und mit wenig Aufwand auf dem Stand der Technik zu bleiben.
 
-- Stimmt die JSON-RPC-Kommunikation und das Handshake-Verhalten?
-- Werden Parameter anhand des JSON-Schemas vom Transport und Validator korrekt durchgereicht?
-- Werden standardisierte Fehler-Codes (wie `-32602` bei ungültigen Argumenten) eingehalten?
-- Funktionieren Progress-Benachrichtigungen, Ping und Cancellation über den echten Transport?
+### Tests schreiben statt klicken
 
-Eine Diskrepanz zwischen deklariertem Schema und tatsächlichem Handler-Verhalten bleibt in reinen Code-Tests unsichtbar – und bricht erst zur Laufzeit, wenn ein echtes LLM oder ein Host-Client das Tool aufruft.
+Klassische Unit-Tests (`go test`, `pytest`, `npm test`) rufen die Handler-Funktion direkt auf. Sie prüfen die Geschäftslogik, **nicht den MCP-Protokollvertrag**: Handshake, Schema-Validierung, Fehlercodes, strukturierte Ergebnisse, Fortschritt, Abbruch. Genau dort entstehen die Fehler, die erst auffallen, wenn ein echtes LLM das Tool aufruft.
 
-**`mcp-tester` schließt diese Lücke:**
-- **Echte Client-Perspektive:** Testet Server als Blackbox über reale Transports (`stdio`, `sse`, `streamable-http`).
-- **Deklarative `.mcp`-Testskripte:** Schnelle, lesbare Tests mit Variablen, Typumwandlung und Assertions – ohne Test-Boilerplate oder SDK-Mocks.
-- **Spec- & Quality-Validierung:** `inspect` prüft auf Einhaltung der offiziellen Spezifikation und Best Practices (Quality Score). `call` und Testskripte prüfen jedes Ergebnis gegen das `outputSchema` des Tools, so streng wie das offizielle TypeScript-SDK (OpenCode).
-- **CI/CD-Integration:** Ideal als abschließender `test:integration`-Schritt in Pipelines und Taskfiles.
+Mit den deklarativen **`.mcp`-Testskripten** testet ihr den Server so, wie ein Client ihn sieht: als Blackbox über den echten Transport (`stdio`, SSE, Streamable HTTP), mit Variablen, Typumwandlung und Assertions, ohne Boilerplate und ohne SDK-Mocks. Die Skripte laufen als Gate in CI und Taskfile (Exit-Code, `--format json`).
+
+```mcp
+call_tool generate_image prompt:"a red flower"
+set_var size $.size
+assert_equals $size "512x512"
+
+expect_error call_tool generate_image prompt:""
+assert_tool_error
+```
+
+### Früh wissen, was die nächste Spec-Revision verlangt
+
+`mcp-tester` wird regelmäßig an die neueste MCP-Spezifikation angepasst; was er zu welchem Datum prüft, steht in der [Spec-Abdeckung](docs/SPEC_COVERAGE.de.md). Wer seine Server damit testet, sieht notwendige Anpassungen, bevor Nutzer oder Hosts darüber stolpern, und erkennt auch **veraltete Features**, etwa eine alte Protokollversion, entfernte Methoden wie `ping` oder stillgelegte Fehlercodes.
+
+Wir schreiben selbst viele MCP-Server für die unterschiedlichsten Anwendungen. Gerade dort spart `mcp-tester` wertvolle Zeit: Ein Lauf der Testskripte zeigt nach einem Spec- oder SDK-Update sofort, welche Server angepasst werden müssen und wo es klemmt.
+
+Besonders bei neuen Features lohnt frühes Testen. Fehler in der **Autorisierung** (OAuth, Token, Header) sind nicht nur lästig, sondern können gefährlich und teuer werden. `mcp-tester` spielt den vollständigen OAuth-2.1-Ablauf durch und prüft mit `http-check` die Transportregeln von Streamable HTTP.
+
+### Fremde und Closed-Source-Server vor der Freigabe prüfen
+
+Auch bei MCP-Servern, deren Quellcode ihr nicht kennt, ist eine Analyse sinnvoll, **bevor** ihr sie einem „echten“ LLM zur Verfügung stellt. `inspect` zeigt Protokollversion, Fähigkeiten, Tools mit Schemas und Annotations (z. B. ob ein Tool nur liest), Icons und Auffälligkeiten; `http-check` zeigt, wie sauber der Transport umgesetzt ist.
+
+Unser eigener, interner Harness zeigt genau solche Details an, bevor ein MCP-Server freigeschaltet wird. Für Anwender ist das eine sehr hilfreiche Entscheidungshilfe: verwenden, ja oder nein?
+
+### Findet auch Fehler im SDK
+
+Weil `mcp-tester` den Server von außen gegen die Spezifikation prüft, findet er nicht nur Fehler im eigenen Code. Bei der Anpassung an Spec 2026-07-28 sind uns so auch Fehler und Lücken im verwendeten SDK aufgefallen, zum Beispiel ein Base64-kodierter `Mcp-Name`-Header, den das offizielle Go-SDK v1.8.0 fälschlich ablehnt.
 
 ## Kern-Features
 
-- **Multi-Transport**: Unterstützt lokale Prozesse (`stdio`), Remote-Server (`sse`) sowie **Streamable HTTP** (`streamable-http`/`http`).
-- **Full Spec Support**: Testet Tools, Resources (statisch & Templates), Subscriptions sowie Prompts nach neuester Spezifikation.
-- **Pagination Support**: Unterstützt das Durchblättern langer Listen (`list`) mittels Cursor.
-- **Scripting Engine**: Automatisierte Test-Abläufe mit Variablen, Typ-Konvertierung und Assertions.
-- **Server Inspector**: Analysiert Server auf Best Practices und gibt einen Quality-Score aus.
-- **Raw Mode**: Umgeht SDK-Validierungen für tiefgreifendes Debugging.
-- **Profile**: Einfache Verwaltung verschiedener Server in einer `mcp-tester.yml`.
+- **Echte Client-Perspektive** über `stdio`, SSE und **Streamable HTTP**, mit Profilen in `mcp-tester.yml`.
+- **Scripting Engine** (`.mcp`): Tools, Completion, Elicitation, Sampling, Roots und Notifications skriptbar, mit Assertions und Exit-Code für CI.
+- **Server Inspector** (`inspect`): Spec-Abgleich, Best Practices und Quality Score; `--min-score` als CI-Gate.
+- **HTTP-Konformität** (`http-check`): Pflicht-Header, Fehlercodes, Origin, Sessions nach Spec 2026-07-28.
+- **Autorisierung**: Bearer-Token, eigene Header und der OAuth-2.1-Ablauf (PKCE, Protected Resource Metadata, `iss`-Prüfung).
+- **Strikte Ergebnisprüfung**: Jedes Ergebnis wird gegen das `outputSchema` geprüft, so streng wie das offizielle TypeScript-SDK.
+- **Aktuelle Spezifikation**: Protokoll 2026-07-28 mit Rückfall auf ältere Revisionen; Abdeckung mit Datum dokumentiert.
+- **Raw Mode** für tiefgreifendes Debugging nicht konformer Server.
+
+## Häufige Fragen
+
+**`mcp-tester` meldet Fehler – was tun?**
+Unsere Empfehlung ist klar: gegen die aktuelle Spezifikation testen und die Meldungen ernst nehmen. Die Ausgabe nennt Methode, Feld, Fehlercode und die verletzte Regel. Moderne LLMs wie Claude oder Gemini machen daraus in der Regel schnell konkrete Vorschläge zur Behebung – gebt ihnen die Ausgabe (gern mit `--format json`) einfach mit.
+
+**Muss ich den Quality Score auf 100/100 bringen?**
+Nein. Der Score beruht auf unseren eigenen Erfahrungen und Bewertungen; ein Wert unter 100 muss nicht automatisch eine Änderung am MCP-Server auslösen. Wir halten die Zahl trotzdem für eine sehr hilfreiche Information, deshalb gibt es sie. Anders sind **Protokollfehler** (`inspect`) und **FAIL** (`http-check`): Das sind Verstöße gegen MUST-Regeln der Spezifikation, an denen echte Clients scheitern.
 
 ---
 
 ## Der "Everything" Test-Server
 
-Im Projekt ist ein Referenz-Server (`cmd/test-server`) enthalten, der alle Möglichkeiten des MCP-Protokolls ausschöpft (Tools, Resources, Prompts, Logging, Progress, Output-Schemata).
+Im Projekt ist ein Referenz-Server (`cmd/test-server`) enthalten, der die Möglichkeiten des MCP-Protokolls vorführt: Tools mit Output-Schemata, Resources und Templates, Prompts, Completion, Logging, Progress, Elicitation, Sampling, Roots, Notifications über `subscriptions/listen` und `x-mcp-header`. Mit `-addr :8080` läuft er über HTTP, mit `-auth` zusätzlich OAuth-geschützt mit eingebautem Test-Autorisierungsserver.
 
 ---
 

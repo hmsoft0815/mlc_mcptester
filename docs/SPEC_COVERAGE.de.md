@@ -6,7 +6,7 @@ Die MCP-Spezifikation ändert sich laufend. Diese Seite hält fest, was mcp-test
 
 Quellen: [Changelog 2026-07-28](https://modelcontextprotocol.io/specification/2026-07-28/changelog), [Deprecated-Registry](https://modelcontextprotocol.io/specification/2026-07-28/deprecated), [go-sdk Releases](https://github.com/modelcontextprotocol/go-sdk/releases).
 
-Legende: ✅ abgedeckt · ⚠️ teilweise · ❌ fehlt · — entfällt laut Spec
+Legende: ✅ abgedeckt · ⚠️ teilweise · ❌ fehlt · — nicht anwendbar oder von außen nicht prüfbar
 
 ## Protokoll-Revisionen
 
@@ -65,7 +65,7 @@ Legende: ✅ abgedeckt · ⚠️ teilweise · ❌ fehlt · — entfällt laut Sp
 | Icons | ✅ | `inspect` prüft die URI-Schemata (nur `https`, `data:`) bei Server, Tools, Prompts und Resources; `--check-icons` / `--download-icons` prüfen die Erreichbarkeit |
 | Prompts `list` / `get` | ✅ | |
 | Resources `list` / `read` / `templates` | ✅ | |
-| Resource-not-found `-32602` (statt `-32002`) | ⚠️ | per `assert_error_code` prüfbar, `inspect` prüft es nicht |
+| Resource-not-found `-32602` (statt `-32002`) | ✅ | `http-check`; in Skripten per `assert_error_code -32602` |
 | `subscriptions/listen`, `list_changed`, Resource-Updates | ✅ | Skriptbefehle `subscribe`, `wait_notification`; Befehl `listen`; Skripttest `14_notifications` (stdio und HTTP) |
 | `completion/complete` | ✅ | Befehl `complete`, Skriptbefehl `complete`, Skripttest `12_completion` |
 | Logging | ✅ | bis 2025-11-25 `setLevel`; ab 2026-07-28 pro Request über `_meta` (`call --log-level`, Skriptbefehl `logging`); deprecated seit 2026-07-28 |

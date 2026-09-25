@@ -121,6 +121,9 @@ func (c *Checker) Run(ctx context.Context) *Report {
 	}
 	var discover struct {
 		SupportedVersions []string `json:"supportedVersions"`
+		Capabilities      struct {
+			Resources json.RawMessage `json:"resources"`
+		} `json:"capabilities"`
 	}
 	_ = json.Unmarshal(base.rpc.Result, &discover)
 	rep.SupportedVersions = discover.SupportedVersions
@@ -206,6 +209,19 @@ func (c *Checker) Run(ctx context.Context) *Report {
 	}
 
 	c.checkParamHeaders(ctx, add)
+
+	// Resource not found is -32602 since 2026-07-28; the old -32002 is retired
+	if discover.Capabilities.Resources == nil {
+		add("resource not found", Skip, "the server declares no resources")
+	} else if res, err := c.send(ctx, request{rpcMethod: "resources/read", params: map[string]any{"uri": "mcp-tester://does-not-exist"}, headers: map[string]string{"Mcp-Name": "mcp-tester://does-not-exist"}}); err != nil {
+		add("resource not found", Fail, "request failed: %v", err)
+	} else if res.rpc == nil || res.rpc.Error == nil {
+		add("resource not found", Fail, "got %s, want error %d", describe(res), CodeInvalidParams)
+	} else if res.rpc.Error.Code == CodeInvalidParams {
+		add("resource not found", Pass, "%d", CodeInvalidParams)
+	} else {
+		add("resource not found", Fail, "error %d, want %d (-32002 is retired and must not be sent)", res.rpc.Error.Code, CodeInvalidParams)
+	}
 
 	// Origin: a foreign origin must be refused; which origins count as valid is up to the server
 	if res, err := c.send(ctx, request{rpcMethod: "server/discover", headers: map[string]string{"Origin": "http://mcp-tester.invalid"}}); err != nil {

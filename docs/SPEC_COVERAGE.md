@@ -6,7 +6,7 @@ The MCP specification keeps changing. This page records what mcp-tester can and 
 
 Sources: [changelog 2026-07-28](https://modelcontextprotocol.io/specification/2026-07-28/changelog), [deprecated registry](https://modelcontextprotocol.io/specification/2026-07-28/deprecated), [go-sdk releases](https://github.com/modelcontextprotocol/go-sdk/releases).
 
-Legend: ✅ covered · ⚠️ partial · ❌ missing · — not applicable per spec
+Legend: ✅ covered · ⚠️ partial · ❌ missing · — not applicable or not observable from outside
 
 ## Protocol revisions
 
@@ -65,7 +65,7 @@ Legend: ✅ covered · ⚠️ partial · ❌ missing · — not applicable per s
 | Icons | ✅ | `inspect` checks URI schemes (`https`, `data:` only) on server, tools, prompts and resources; `--check-icons` / `--download-icons` check reachability |
 | Prompts `list` / `get` | ✅ | |
 | Resources `list` / `read` / `templates` | ✅ | |
-| Resource not found `-32602` (was `-32002`) | ⚠️ | checkable via `assert_error_code`, not checked by `inspect` |
+| Resource not found `-32602` (was `-32002`) | ✅ | `http-check`; in scripts via `assert_error_code -32602` |
 | `subscriptions/listen`, `list_changed`, resource updates | ✅ | script commands `subscribe`, `wait_notification`; `listen` command; script test `14_notifications` (stdio and HTTP) |
 | `completion/complete` | ✅ | `complete` command and script command, script test `12_completion` |
 | Logging | ✅ | up to 2025-11-25 `setLevel`; from 2026-07-28 per request via `_meta` (`call --log-level`, script command `logging`); deprecated since 2026-07-28 |

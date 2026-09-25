@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/hmsoft0815/mlc_mcptester/internal/appcheck"
 	mcpclient "github.com/hmsoft0815/mlc_mcptester/internal/client"
 	"github.com/hmsoft0815/mlc_mcptester/internal/scripting"
 	"github.com/spf13/cobra"
@@ -44,7 +45,8 @@ var testCmd = &cobra.Command{
 		// Scripts must say how to answer input requests; an unexpected one fails
 		responder := &mcpclient.Responder{Strict: true}
 		notes := &mcpclient.Notifications{}
-		client := newClient(verbose, responder, notes)
+		// Announced as a UI-capable host, so verify_apps sees UI tools
+		client := newClient(verbose, responder, notes, appcheck.Declare)
 		session, err := client.Connect(ctx, transport, nil)
 		if err != nil {
 			return fmt.Errorf("failed to connect: %w", err)

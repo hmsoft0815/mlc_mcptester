@@ -25,7 +25,7 @@ func getClient(verbose bool) *mcp.Client {
 // newClient builds the client with responder answering input requests and the
 // roots given by --root. With notes, list-changed and resource-updated
 // notifications are recorded, which makes the SDK open subscriptions/listen.
-func newClient(verbose bool, responder *mcpclient.Responder, notes *mcpclient.Notifications) *mcp.Client {
+func newClient(verbose bool, responder *mcpclient.Responder, notes *mcpclient.Notifications, configure ...func(*mcp.ClientOptions)) *mcp.Client {
 	opts := &mcp.ClientOptions{
 		// Handler for logging notifications from the server
 		LoggingMessageHandler: func(ctx context.Context, req *mcp.LoggingMessageRequest) {
@@ -43,6 +43,9 @@ func newClient(verbose bool, responder *mcpclient.Responder, notes *mcpclient.No
 	responder.Install(opts)
 	if notes != nil {
 		notes.Install(opts)
+	}
+	for _, f := range configure {
+		f(opts)
 	}
 
 	c := mcp.NewClient(

@@ -258,6 +258,8 @@ func (r *Runner) dispatchParts(ctx context.Context, i int, parts []string) error
 		return r.handleCancelTaskCommand(ctx, i, parts)
 	case "assert_task_status":
 		return r.handleAssertTaskStatusCommand(i, parts)
+	case "verify_apps":
+		return r.handleVerifyAppsCommand(ctx, i)
 	case "list_skills":
 		return r.handleListSkillsCommand(ctx, i)
 	case "verify_skills":

@@ -87,12 +87,13 @@ Legende: ✅ abgedeckt · ⚠️ teilweise · ❌ fehlt · — nicht anwendbar o
 | OAuth Client Credentials (ext-auth, Draft) | ✅ | `--oauth-client-credentials` über den Handler des go-sdk (Client-Secret); `auth-check` prüft `token_endpoint_auth_methods_supported`. `private_key_jwt` kann das go-sdk nicht |
 | Enterprise-Managed Authorization (ext-auth, ID-JAG) | ✅ | `--oauth-enterprise` (ID-Token → Token-Exchange beim IdP → JWT-Bearer); Autorisierungsserver und Resource aus den Protected Resource Metadata; `auth-check` erkennt `authorization_grant_profiles_supported`. Den SSO-Login selbst übernimmt der Tester nicht (`--id-token`) |
 | `auth-check` | ✅ | 401-Challenge, Protected Resource Metadata, Metadaten des Autorisierungsservers (issuer, PKCE S256, `iss`), angebotene Flows |
-| Apps (`io.modelcontextprotocol/ui`) | ❌ | in Arbeit |
+| Apps (`io.modelcontextprotocol/ui`, stabil 2026-01-26) | ⚠️ | Server-Seite: Befehl `apps`, Skriptbefehl `verify_apps` – Tool-Verknüpfung (`_meta.ui.resourceUri`, veraltetes `ui/resourceUri`), `ui://`-Schema, Resource vorhanden, MIME-Typ `text/html;profile=mcp-app`, HTML5-Dokument, `visibility`, CSP-Domains, Berechtigungen, Deklaration der Extension. Der Tester meldet sich als UI-fähiger Host an. Nicht prüfbar: die View↔Host-Kommunikation per postMessage (braucht einen Browser-Host) |
 
 ## Verlauf
 
 | Datum | Spec | Änderung |
 |---|---|---|
 | 25.09.2026 | 2026-07-28 | Erster Abgleich. go-sdk v1.7.0 → v1.8.0 |
+| 25.09.2026 | 2026-07-28 | Auth-Extensions (Client Credentials, Enterprise/ID-JAG), `auth-check`; MCP Apps (`apps`, `verify_apps`) |
 | 25.09.2026 | 2026-07-28 | `complete`; Multi Round-Trip (Elicitation, Sampling, Roots); Notifications über `subscriptions/listen`; OAuth, Bearer, Header; `ping`/`logging` für 2026-07-28; `http-check`; `x-mcp-header` |
 | 25.09.2026 | 2026-07-28 | `inspect`: Protokoll-Rückstand, Tool-Namen, `title`, Schema-Typ, Reihenfolge, Icon-Schemata, Cache-Angaben, Extensions; Pagination überall |

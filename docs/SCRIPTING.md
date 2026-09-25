@@ -201,6 +201,17 @@ On the command line, `mcp-tester skills [--verify]` lists name, description, lic
 
 ---
 
+### 17. MCP Apps: `verify_apps`
+For servers delivering interactive UIs via MCP Apps (`io.modelcontextprotocol/ui`). Scripts announce the tester as a UI-capable host, so such servers expose their UI tools.
+```mcp
+verify_apps                 # ui:// resources, MIME type, HTML, visibility, CSP; fails on any violation
+assert_contains "ui://clock"
+set_var n count
+```
+On the command line, `mcp-tester apps` lists every app with its tools, tools hidden from the model, external domains (CSP) and requested permissions.
+
+---
+
 ## Example Script
 
 ```mcp

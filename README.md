@@ -51,6 +51,8 @@ Weil `mcp-tester` den Server von außen gegen die Spezifikation prüft, findet e
 
 - **Echte Client-Perspektive** über `stdio`, SSE und **Streamable HTTP**, mit Profilen in `mcp-tester.yml`.
 - **Scripting Engine** (`.mcp`): Tools, Tasks, Completion, Elicitation, Sampling, Roots und Notifications skriptbar, mit Assertions und Exit-Code für CI.
+- **MCP Apps**: interaktive Oberflächen eines Servers auflisten und prüfen (`apps`): Tool-Verknüpfung, `ui://`-Resources, externe Domains (CSP) und angeforderte Berechtigungen wie Kamera oder Mikrofon – wichtig vor der Freigabe.
+- **Auth-Extensions**: Client Credentials (Maschine-zu-Maschine) und Enterprise-Login per ID-JAG; `auth-check` zeigt, welche Flows ein Server anbietet.
 - **Skills-Extension**: Skills eines Servers auflisten und verifizieren (`skills --verify`): Manifest, Digests, Frontmatter, Namensregeln. Das Go-Paket [`pkg/mcpskills`](pkg/mcpskills) stellt Skills aus einem Verzeichnis bereit.
 - **Tasks-Extension**: lang laufende Tool-Aufrufe als Task starten, pollen, abbrechen, Eingaben nachreichen. Für Server-Autoren gibt es das Go-Paket [`pkg/mcptasks`](pkg/mcptasks), das die Extension auf Servern mit dem offiziellen go-sdk nachrüstet.
 - **Server Inspector** (`inspect`): Spec-Abgleich, Best Practices und Quality Score; `--min-score` als CI-Gate.

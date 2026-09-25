@@ -39,6 +39,7 @@ func main() {
 	}
 	mcptasks.Declare(caps)
 	mcpskills.Declare(caps, true)
+	caps.AddExtension("io.modelcontextprotocol/ui", map[string]any{}) // MCP Apps, see app_tools.go
 	s := mcp.NewServer(
 		&mcp.Implementation{
 			Name:    "ultimate-test-server",
@@ -59,6 +60,7 @@ func main() {
 	registerHeaderTools(s)
 	registerTaskTools(s)
 	registerSkills(s)
+	registerApps(s)
 	registerResources(s)
 	registerPrompts(s)
 

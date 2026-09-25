@@ -87,12 +87,13 @@ Legend: ✅ covered · ⚠️ partial · ❌ missing · — not applicable or no
 | OAuth client credentials (ext-auth, draft) | ✅ | `--oauth-client-credentials` via the go-sdk handler (client secret); `auth-check` checks `token_endpoint_auth_methods_supported`. The go-sdk has no `private_key_jwt` |
 | Enterprise-managed authorization (ext-auth, ID-JAG) | ✅ | `--oauth-enterprise` (ID token → token exchange at the IdP → JWT bearer); authorization server and resource from the Protected Resource Metadata; `auth-check` detects `authorization_grant_profiles_supported`. The tester does not perform the SSO login itself (`--id-token`) |
 | `auth-check` | ✅ | 401 challenge, Protected Resource Metadata, authorization server metadata (issuer, PKCE S256, `iss`), offered flows |
-| Apps (`io.modelcontextprotocol/ui`) | ❌ | in progress |
+| Apps (`io.modelcontextprotocol/ui`, stable 2026-01-26) | ⚠️ | Server side: `apps` command, `verify_apps` script command – tool linkage (`_meta.ui.resourceUri`, deprecated `ui/resourceUri`), `ui://` scheme, resource exists, MIME type `text/html;profile=mcp-app`, HTML5 document, `visibility`, CSP domains, permissions, extension declared. The tester announces itself as a UI-capable host. Not testable: view↔host communication via postMessage (needs a browser host) |
 
 ## History
 
 | Date | Spec | Change |
 |---|---|---|
 | 2026-09-25 | 2026-07-28 | First review. go-sdk v1.7.0 → v1.8.0 |
+| 2026-09-25 | 2026-07-28 | Auth extensions (client credentials, enterprise/ID-JAG), `auth-check`; MCP Apps (`apps`, `verify_apps`) |
 | 2026-09-25 | 2026-07-28 | `complete`; multi round-trip (elicitation, sampling, roots); notifications via `subscriptions/listen`; OAuth, bearer, headers; `ping`/`logging` for 2026-07-28; `http-check`; `x-mcp-header` |
 | 2026-09-25 | 2026-07-28 | `inspect`: protocol lag, tool names, `title`, schema type, order, icon schemes, cache hints, extensions; pagination everywhere |

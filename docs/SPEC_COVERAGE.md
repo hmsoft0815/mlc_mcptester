@@ -84,7 +84,10 @@ Legend: ✅ covered · ⚠️ partial · ❌ missing · — not applicable or no
 |---|---|---|
 | Tasks (`io.modelcontextprotocol/tasks`) | ✅ | script commands `call_task`, `start_task`, `wait_task`, `get_task`, `cancel_task`, `assert_task_status`; `call --task`; `input_required` via `tasks/update`; `Mcp-Name` = `taskId` over HTTP. The go-sdk does not know the extension: client over the raw path, server side as package `pkg/mcptasks`. Script test `15_tasks`. Not implemented: `notifications/tasks` (MAY) |
 | Skills (`io.modelcontextprotocol/skills`) | ✅ | `skills [--verify]` command, script commands `list_skills`, `verify_skills`, shown by `inspect`: manifest (complete, digests, sizes, limits), frontmatter per Agent Skills rules, name = path segment, `skills/get`, `resources/directory/read`, `-32602`. Server side as package `pkg/mcpskills`. Script test `16_skills` |
-| Apps, auth extensions | ❌ | |
+| OAuth client credentials (ext-auth, draft) | ✅ | `--oauth-client-credentials` via the go-sdk handler (client secret); `auth-check` checks `token_endpoint_auth_methods_supported`. The go-sdk has no `private_key_jwt` |
+| Enterprise-managed authorization (ext-auth, ID-JAG) | ✅ | `--oauth-enterprise` (ID token → token exchange at the IdP → JWT bearer); authorization server and resource from the Protected Resource Metadata; `auth-check` detects `authorization_grant_profiles_supported`. The tester does not perform the SSO login itself (`--id-token`) |
+| `auth-check` | ✅ | 401 challenge, Protected Resource Metadata, authorization server metadata (issuer, PKCE S256, `iss`), offered flows |
+| Apps (`io.modelcontextprotocol/ui`) | ❌ | in progress |
 
 ## History
 

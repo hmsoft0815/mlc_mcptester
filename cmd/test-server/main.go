@@ -79,7 +79,7 @@ func main() {
 			as := newAuthServer(base, base+"/mcp")
 			as.register(mux)
 			sseH, mcpH = as.protect(sseH), as.protect(mcpH)
-			fmt.Fprintf(os.Stderr, "OAuth enabled: issuer %s, static token %q\n", base, StaticToken)
+			fmt.Fprintf(os.Stderr, "OAuth enabled: issuer %s, static token %q, client %s/%s, test IdP %s/idp (ID token %q)\n", base, StaticToken, TestClientID, TestClientSecret, base, TestIDToken)
 		}
 		mux.Handle("/sse", sseH)
 		mux.Handle("/sse/", sseH)

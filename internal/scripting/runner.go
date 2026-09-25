@@ -3,8 +3,8 @@ package scripting
 
 import (
 	"context"
-	"errors"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"

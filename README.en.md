@@ -142,6 +142,14 @@ mcp-tester inspect -u https://example.com/mcp --oauth --oauth-client-id my-clien
 
 # Without a browser, for authorization servers without user interaction (CI, test-server -auth)
 mcp-tester inspect -u http://127.0.0.1:8080/mcp --oauth --oauth-auto
+
+# Auth extensions: machine-to-machine and enterprise login (ID token → ID-JAG)
+mcp-tester list -u https://example.com/mcp --oauth-client-credentials --oauth-client-id svc --oauth-client-secret "$SECRET"
+mcp-tester list -u https://example.com/mcp --oauth-enterprise --idp-issuer https://idp.example --idp-client-id app \
+  --id-token "$ID_TOKEN" --oauth-client-id app
+
+# Which flows does the server offer, and is the metadata right?
+mcp-tester auth-check -u https://example.com/mcp
 ```
 In a profile: `headers:` and `bearer:`, `${VAR}` is expanded from the environment. `./bin/test-server -addr :8080 -auth` starts a protected test server with a built-in authorization server (static token `test-token`).
 

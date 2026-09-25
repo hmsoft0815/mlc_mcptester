@@ -143,6 +143,14 @@ mcp-tester inspect -u https://example.com/mcp --oauth --oauth-client-id my-clien
 
 # Ohne Browser, für Autorisierungsserver ohne Nutzerinteraktion (CI, test-server -auth)
 mcp-tester inspect -u http://127.0.0.1:8080/mcp --oauth --oauth-auto
+
+# Auth-Extensions: Maschine-zu-Maschine und Enterprise-Login (ID-Token → ID-JAG)
+mcp-tester list -u https://example.com/mcp --oauth-client-credentials --oauth-client-id svc --oauth-client-secret "$SECRET"
+mcp-tester list -u https://example.com/mcp --oauth-enterprise --idp-issuer https://idp.example --idp-client-id app \
+  --id-token "$ID_TOKEN" --oauth-client-id app
+
+# Welche Flows bietet der Server an, und stimmen die Metadaten?
+mcp-tester auth-check -u https://example.com/mcp
 ```
 Im Profil: `headers:` und `bearer:`, `${VAR}` wird aus der Umgebung ersetzt. `./bin/test-server -addr :8080 -auth` startet einen geschützten Test-Server mit eingebautem Autorisierungsserver (statisches Token `test-token`).
 

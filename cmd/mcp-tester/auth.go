@@ -14,8 +14,11 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/hmsoft0815/mlc_mcptester/internal/authcheck"
 	"github.com/modelcontextprotocol/go-sdk/auth"
+	"github.com/modelcontextprotocol/go-sdk/auth/extauth"
 	"github.com/modelcontextprotocol/go-sdk/oauthex"
+	"golang.org/x/oauth2"
 )
 
 var (
@@ -28,6 +31,13 @@ var (
 	oauthCallbackPort  int
 	oauthOpenBrowser   bool
 	oauthAutoAuthorize bool
+	// ext-auth
+	oauthClientCredentials bool
+	oauthEnterprise        bool
+	idpIssuer              string
+	idpClientID            string
+	idpClientSecret        string
+	idToken                string
 )
 
 func init() {
@@ -41,6 +51,82 @@ func init() {
 	f.IntVar(&oauthCallbackPort, "oauth-callback-port", 3142, "Local port receiving the authorization redirect")
 	f.BoolVar(&oauthOpenBrowser, "oauth-browser", false, "Open the authorization URL in the browser instead of only printing it")
 	f.BoolVar(&oauthAutoAuthorize, "oauth-auto", false, "Follow the authorization URL without a browser (for servers that approve without user interaction, e.g. in CI)")
+	f.BoolVar(&oauthClientCredentials, "oauth-client-credentials", false, "Machine-to-machine: OAuth client credentials grant with --oauth-client-id/--oauth-client-secret (ext-auth)")
+	f.BoolVar(&oauthEnterprise, "oauth-enterprise", false, "Enterprise-managed authorization: exchange an SSO ID token at the IdP for an ID-JAG (ext-auth)")
+	f.StringVar(&idpIssuer, "idp-issuer", "", "Issuer URL of the enterprise IdP (--oauth-enterprise)")
+	f.StringVar(&idpClientID, "idp-client-id", "", "Client ID of mcp-tester at the IdP (--oauth-enterprise)")
+	f.StringVar(&idpClientSecret, "idp-client-secret", os.Getenv("MCP_TESTER_IDP_SECRET"), "Client secret at the IdP (default $MCP_TESTER_IDP_SECRET)")
+	f.StringVar(&idToken, "id-token", os.Getenv("MCP_TESTER_ID_TOKEN"), "ID token from the SSO login at the IdP (default $MCP_TESTER_ID_TOKEN)")
+}
+
+// oauthHandlerFor returns the OAuth handler the flags select, or nil.
+func oauthHandlerFor(ctx context.Context, endpoint string, httpClient *http.Client) (auth.OAuthHandler, error) {
+	selected := 0
+	for _, on := range []bool{oauthEnabled, oauthClientCredentials, oauthEnterprise} {
+		if on {
+			selected++
+		}
+	}
+	switch {
+	case selected == 0:
+		return nil, nil
+	case selected > 1:
+		return nil, fmt.Errorf("choose one of --oauth, --oauth-client-credentials, --oauth-enterprise")
+	case oauthEnabled:
+		return newOAuthHandler()
+	}
+
+	mcpCreds, err := preregisteredClient()
+	if err != nil {
+		return nil, err
+	}
+	if oauthClientCredentials {
+		if mcpCreds.ClientSecretAuth == nil {
+			return nil, fmt.Errorf("--oauth-client-credentials needs --oauth-client-secret (the grant requires a confidential client)")
+		}
+		return extauth.NewClientCredentialsHandler(&extauth.ClientCredentialsHandlerConfig{Credentials: mcpCreds, HTTPClient: httpClient})
+	}
+
+	// Enterprise: the MCP authorization server and resource come from the
+	// server's Protected Resource Metadata
+	if idpIssuer == "" || idpClientID == "" || idToken == "" {
+		return nil, fmt.Errorf("--oauth-enterprise needs --idp-issuer, --idp-client-id and --id-token")
+	}
+	d, err := authcheck.Discover(ctx, endpoint, httpClient)
+	if err != nil {
+		return nil, fmt.Errorf("discovering the authorization server: %w", err)
+	}
+	if d == nil || d.AuthServer() == "" {
+		return nil, fmt.Errorf("the server at %s advertises no authorization server", endpoint)
+	}
+	idpCreds := &oauthex.ClientCredentials{ClientID: idpClientID}
+	if idpClientSecret != "" {
+		idpCreds.ClientSecretAuth = &oauthex.ClientSecretAuth{ClientSecret: idpClientSecret}
+	}
+	token := idToken
+	return extauth.NewEnterpriseHandler(&extauth.EnterpriseHandlerConfig{
+		IdPIssuerURL:     idpIssuer,
+		IdPCredentials:   idpCreds,
+		MCPAuthServerURL: d.AuthServer(),
+		MCPResourceURI:   d.Resource,
+		MCPCredentials:   mcpCreds,
+		HTTPClient:       httpClient,
+		IDTokenFetcher: func(context.Context) (*oauth2.Token, error) {
+			return (&oauth2.Token{}).WithExtra(map[string]any{"id_token": token}), nil
+		},
+	})
+}
+
+// preregisteredClient is the client registered at the MCP authorization server.
+func preregisteredClient() (*oauthex.ClientCredentials, error) {
+	if oauthClientID == "" {
+		return nil, fmt.Errorf("this flow needs a pre-registered client: --oauth-client-id")
+	}
+	creds := &oauthex.ClientCredentials{ClientID: oauthClientID}
+	if oauthClientSecret != "" {
+		creds.ClientSecretAuth = &oauthex.ClientSecretAuth{ClientSecret: oauthClientSecret}
+	}
+	return creds, nil
 }
 
 // httpClientWithAuth returns an HTTP client adding --header and --bearer to

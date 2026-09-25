@@ -62,6 +62,7 @@ func (a *authServer) register(mux *http.ServeMux) {
 	mux.HandleFunc("/register", a.registerClient)
 	mux.HandleFunc("/authorize", a.authorize)
 	mux.HandleFunc("/token", a.token)
+	a.registerIdP(mux)
 }
 
 // protect wraps the MCP handler with bearer token verification.
@@ -91,9 +92,10 @@ func (a *authServer) metadata(w http.ResponseWriter, r *http.Request) {
 		"token_endpoint":                                 a.issuer + "/token",
 		"registration_endpoint":                          a.issuer + "/register",
 		"response_types_supported":                       []string{"code"},
-		"grant_types_supported":                          []string{"authorization_code"},
+		"grant_types_supported":                          []string{"authorization_code", "client_credentials", grantTypeJWTBearer},
 		"code_challenge_methods_supported":               []string{"S256"},
-		"token_endpoint_auth_methods_supported":          []string{"none"},
+		"token_endpoint_auth_methods_supported":          []string{"none", "client_secret_basic", "client_secret_post"},
+		"authorization_grant_profiles_supported":         []string{idJAGProfile},
 		"scopes_supported":                               []string{"mcp"},
 		"authorization_response_iss_parameter_supported": true,
 	})
@@ -140,7 +142,19 @@ func (a *authServer) authorize(w http.ResponseWriter, r *http.Request) {
 
 // token exchanges an authorization code for an access token after checking PKCE.
 func (a *authServer) token(w http.ResponseWriter, r *http.Request) {
-	if err := r.ParseForm(); err != nil || r.PostForm.Get("grant_type") != "authorization_code" {
+	if err := r.ParseForm(); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid_request"})
+		return
+	}
+	switch r.PostForm.Get("grant_type") {
+	case "authorization_code":
+	case "client_credentials":
+		a.clientCredentialsGrant(w, r)
+		return
+	case grantTypeJWTBearer:
+		a.jwtBearerGrant(w, r)
+		return
+	default:
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "unsupported_grant_type"})
 		return
 	}
@@ -163,6 +177,11 @@ func (a *authServer) token(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	a.issueToken(w)
+}
+
+// issueToken answers a token request with a new access token.
+func (a *authServer) issueToken(w http.ResponseWriter) {
 	token := randomString(24)
 	a.mu.Lock()
 	a.tokens[token] = time.Now().Add(time.Hour)

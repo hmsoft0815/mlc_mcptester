@@ -1,0 +1,23 @@
+// Regressions B-20260925-01 to -03: quoting, comments, empty values, argument names
+
+echo "--- # and // inside quotes are not comments (B-20260925-01) ---"
+call_tool echo message:"## Plan A > ### Phasen"   # a real comment
+assert_contains "Plan A > ### Phasen"
+call_tool echo message:'a # b // c'
+assert_contains "a # b // c"
+
+echo "--- << inside quotes is not a heredoc ---"
+call_tool echo message:"x << y"
+assert_contains "x << y"
+
+echo "--- empty values stay arguments (B-20260925-03) ---"
+call_tool echo message:""
+set_var empty $.echo
+assert_equals $empty ""
+assert_string_length $empty 0 0
+
+echo "--- call_tool_raw sends the arguments as written (B-20260925-02) ---"
+// call_tool with an unknown name (echo messag:"x") is a script error and
+// stops the line; call_tool_raw is the way to send such arguments on purpose
+call_tool_raw echo '{"message": "raw"}'
+assert_contains "Echo: raw"

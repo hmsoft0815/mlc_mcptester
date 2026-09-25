@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"regexp"
 	"sort"
 	"strings"
 
@@ -18,6 +19,8 @@ func (r *Runner) parseArgs(line string) ([]string, error) {
 	var parts []string
 	var current strings.Builder
 	inQuotes := false
+	// inToken is set once a token has begun, so "" and '' yield an empty argument
+	inToken := false
 	var quoteChar rune
 	runes := []rune(line)
 
@@ -32,25 +35,59 @@ func (r *Runner) parseArgs(line string) ([]string, error) {
 			current.WriteRune(runes[i])
 		case (char == '"' || char == '\'') && !inQuotes:
 			inQuotes = true
+			inToken = true
 			quoteChar = char
 		case char == quoteChar && inQuotes:
 			inQuotes = false
 		case char == ' ' && !inQuotes:
-			if current.Len() > 0 {
+			if inToken {
 				parts = append(parts, current.String())
 				current.Reset()
+				inToken = false
 			}
 		default:
 			current.WriteRune(char)
+			inToken = true
 		}
 	}
 	if inQuotes {
 		return nil, fmt.Errorf("unterminated %c quote", quoteChar)
 	}
-	if current.Len() > 0 {
+	if inToken {
 		parts = append(parts, current.String())
 	}
 	return parts, nil
+}
+
+// namedArgPattern: a name:value argument; the name is an identifier. A value
+// starting with // (http://…) is a positional URL, not a named argument.
+var namedArgPattern = regexp.MustCompile(`^([A-Za-z_][A-Za-z0-9_.-]*):(.*)$`)
+
+func namedArg(arg string) (key, val string, ok bool) {
+	m := namedArgPattern.FindStringSubmatch(arg)
+	if m == nil || strings.HasPrefix(m[2], "//") {
+		return "", "", false
+	}
+	return m[1], m[2], true
+}
+
+// callToolRaw runs "call_tool_raw <tool> '<json object>'": the arguments go to
+// the server as written, without the schema checks of call_tool, e.g. to test
+// that the server rejects unknown fields.
+func (r *Runner) callToolRaw(ctx context.Context, name, argsJSON string) error {
+	var args map[string]any
+	if err := json.Unmarshal([]byte(argsJSON), &args); err != nil {
+		return &scriptError{fmt.Errorf("call_tool_raw: arguments must be a JSON object: %w", err)}
+	}
+	var outputSchema any
+	if tools, err := client.ListAllTools(ctx, r.session); err == nil {
+		for _, t := range tools {
+			if t.Name == name {
+				outputSchema = t.OutputSchema
+			}
+		}
+	}
+	return r.call(ctx, name, args, outputSchema)
 }
 
 // callToolPositional calls the tool with the given name and arguments.
@@ -92,16 +129,17 @@ func (r *Runner) callToolPositional(ctx context.Context, name string, args []str
 
 	// First pass: extract named arguments and collect positional ones
 	for _, arg := range args {
-		if strings.Contains(arg, ":") {
-			parts := strings.SplitN(arg, ":", 2)
-			key := parts[0]
-			val := parts[1]
+		if key, val, ok := namedArg(arg); ok {
 			if propSchema, ok := properties[key].(map[string]any); ok {
 				toolArgs[key] = convertValue(val, propSchema)
 				continue
 			}
+			// A typo in a name must not land silently in another field
+			if targetTool != nil {
+				return &scriptError{fmt.Errorf("unknown argument %q: %s takes %s (call_tool_raw sends arguments unchecked)",
+					key, name, strings.Join(propNames, ", "))}
+			}
 		}
-		// If not a named arg OR the key doesn't exist, treat as positional
 		positionalArgs = append(positionalArgs, arg)
 	}
 
@@ -116,6 +154,10 @@ func (r *Runner) callToolPositional(ctx context.Context, name string, args []str
 			toolArgs[propName] = convertValue(positionalArgs[posIdx], propSchema)
 			posIdx++
 		}
+	}
+	if targetTool != nil && posIdx < len(positionalArgs) {
+		return &scriptError{fmt.Errorf("too many arguments for %s: %q has no field left (fields: %s)",
+			name, positionalArgs[posIdx], strings.Join(propNames, ", "))}
 	}
 
 	var outputSchema any

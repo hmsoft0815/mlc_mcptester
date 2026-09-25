@@ -5,8 +5,8 @@ Die Scripting Engine des `mcp-tester` ermöglicht automatisierte Testabläufe f�
 ## Allgemeine Syntax
 
 - **Befehle**: Ein Befehl pro Zeile.
-- **Kommentare**: Zeilen, die mit `#` oder `//` beginnen, werden ignoriert. Trailing-Kommentare sind ebenfalls erlaubt.
-- **Variablen**: Werden mit dem Präfix `$` angesprochen (z.B. `$name`). Die Ersetzung erfolgt per Regex (`\$([A-Za-z_][A-Za-z0-9_]*)`). Die Verwendung unbekannter Variablen bricht die Ausführung mit einem klaren Fehler und Zeilenangabe ab.
+- **Kommentare**: Zeilen, die mit `#` oder `//` beginnen, werden ignoriert. Kommentare am Zeilenende (` #`, ` //`) sind ebenfalls erlaubt, aber nur außerhalb von Anführungszeichen: `"## Überschrift"` bleibt erhalten.
+- **Variablen**: Werden mit dem Präfix `$` angesprochen (z.B. `$name`). Die Ersetzung erfolgt per Regex (`\$([A-Za-z_][A-Za-z0-9_]*)`). Die Verwendung unbekannter Variablen bricht die Ausführung mit einem klaren Fehler und Zeilenangabe ab. Eingesetzt wird nach dem Zerlegen der Zeile pro Argument: Ein Wert mit Leerzeichen bleibt ein Argument, ein leerer Wert bleibt ein (leeres) Argument: `assert_equals $body ""`.
 - **Strings**: Können in Anführungszeichen (`"..."` oder `'...'`) gesetzt werden, wenn sie Leerzeichen oder Sonderzeichen enthalten. In doppelten Anführungszeichen sind `\"` und `\\` Escapes (`"missing: [\"code\"]"`); jeder andere Backslash bleibt wörtlich. Einfache Anführungszeichen werden unverändert übernommen. Ein nicht geschlossenes Anführungszeichen lässt die Zeile fehlschlagen.
 - **Listen / Objekte**: JSON-Arrays (`'["a.png", "b.png"]'`) oder JSON-Objekte (`'{"key": "value"}'`) können direkt als Argument übergeben werden.
 
@@ -28,7 +28,8 @@ call_tool <tool_name> [arg1] [arg2] ...
 ```
 - **Argumente**: Können positional oder als benannte Argumente (`key:value`) übergeben werden.
     - **Positional**: Werden basierend auf dem JSON-Schema des Tools automatisch in den richtigen Typ (Integer, Boolean, Array, Object etc.) konvertiert. Die Reihenfolge entspricht der **alphabetischen Sortierung** der Property-Namen im Schema.
-    - **Benannt**: Folgen der Syntax `key:value` (z.B. `paths:'["a.png", "b.png"]'`). Dies wird empfohlen, um Verwechslungen durch die alphabetische Sortierung zu vermeiden.
+    - **Benannt**: Folgen der Syntax `key:value` (z.B. `paths:'["a.png", "b.png"]'`). Dies wird empfohlen, um Verwechslungen durch die alphabetische Sortierung zu vermeiden. Ein Name, den das Schema des Tools nicht kennt, ist ein Skriptfehler mit Liste der gültigen Namen, damit ein Tippfehler nicht in einem anderen Feld landet; ebenso mehr Positionswerte als Felder. Ein Wert, der mit `//` beginnt (`http://…`), zählt als Positionswert.
+    - **Ungeprüft**: `call_tool_raw <tool> '<JSON-Objekt>'` schickt die Argumente genau so, wie sie dastehen, z. B. um zu prüfen, dass ein Server unbekannte Felder ablehnt.
     - **Arrays und Objekte**: Unterstützt Schemata mit `type: "array"`, `type: "object"` sowie Nullable-Definitionen (`type: ["null", "array"]`).
     - **Gemischt**: Es können beide Arten gemischt werden; positionale Argumente füllen die verbleibenden Properties in alphabetischer Reihenfolge auf.
 - **Ergebnisprüfung**: Gibt das Tool ein `outputSchema` an, schlägt der Aufruf fehl, wenn das Ergebnis kein dazu passendes `structuredContent` enthält — dieselbe Prüfung, die strikte Clients machen (das offizielle TypeScript-SDK, das OpenCode nutzt, lehnt so einen Aufruf mit `-32600` ab). Ergebnisse mit `isError: true` sind ausgenommen. Das Go-SDK, auf dem der Tester aufbaut, prüft das selbst nicht; deshalb tut es der Tester.

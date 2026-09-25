@@ -3,6 +3,7 @@ package scripting
 
 import (
 	"context"
+	"errors"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -145,7 +146,7 @@ func (r *Runner) processLine(ctx context.Context, i int, line string, state *run
 		return nil
 	}
 
-	if idx := strings.Index(processedLine, "<<"); idx != -1 {
+	if idx := indexOutsideQuotes(processedLine, "<<"); idx != -1 {
 		state.accumulating = true
 		state.heredocMarker = strings.TrimSpace(processedLine[idx+2:])
 		state.currentCommand = strings.TrimSpace(processedLine[:idx])
@@ -153,11 +154,18 @@ func (r *Runner) processLine(ctx context.Context, i int, line string, state *run
 	}
 
 	state.executed++
-	finalCmd, err := r.replaceVariables(processedLine)
+	parts, err := r.parseArgs(processedLine)
 	if err != nil {
-		return fmt.Errorf("line %d: %w", i+1, err)
+		return &scriptError{fmt.Errorf("line %d: failed to parse command: %w", i+1, err)}
 	}
-	if err := r.dispatchCommand(ctx, i, finalCmd); err != nil {
+	if parts, err = r.replaceInParts(parts); err != nil {
+		return &scriptError{fmt.Errorf("line %d: %w", i+1, err)}
+	}
+	if err := r.dispatchParts(ctx, i, parts); err != nil {
+		var se *scriptError
+		if errors.As(err, &se) && !strings.HasPrefix(err.Error(), "line ") {
+			return &scriptError{fmt.Errorf("line %d: %w", i+1, err)}
+		}
 		return err
 	}
 	state.passed++
@@ -167,14 +175,12 @@ func (r *Runner) processLine(ctx context.Context, i int, line string, state *run
 func (r *Runner) finalizeHeredoc(ctx context.Context, i int, state *runState) error {
 	content := strings.TrimSuffix(state.heredocContent.String(), "\n")
 
-	var err error
-	state.currentCommand, err = r.replaceVariables(state.currentCommand)
-	if err != nil {
-		return fmt.Errorf("line %d: %w", i+1, err)
-	}
 	parts, err := r.parseArgs(state.currentCommand)
 	if err != nil {
-		return fmt.Errorf("line %d: failed to parse command prefix: %w", i+1, err)
+		return &scriptError{fmt.Errorf("line %d: failed to parse command prefix: %w", i+1, err)}
+	}
+	if parts, err = r.replaceInParts(parts); err != nil {
+		return &scriptError{fmt.Errorf("line %d: %w", i+1, err)}
 	}
 	parts = append(parts, content)
 
@@ -186,14 +192,6 @@ func (r *Runner) finalizeHeredoc(ctx context.Context, i int, state *runState) er
 	state.currentCommand = ""
 	state.heredocContent.Reset()
 	return nil
-}
-
-func (r *Runner) dispatchCommand(ctx context.Context, i int, line string) error {
-	parts, err := r.parseArgs(line)
-	if err != nil {
-		return fmt.Errorf("line %d: failed to parse command: %w", i+1, err)
-	}
-	return r.dispatchParts(ctx, i, parts)
 }
 
 func (r *Runner) dispatchParts(ctx context.Context, i int, parts []string) error {
@@ -243,6 +241,11 @@ func (r *Runner) dispatchParts(ctx context.Context, i int, parts []string) error
 		return r.handleAssertElicitedCommand(i, parts)
 	case "assert_sampled":
 		return r.handleAssertSampledCommand(i, parts)
+	case "call_tool_raw":
+		if len(parts) != 3 {
+			return &scriptError{fmt.Errorf("line %d: usage: call_tool_raw <tool> '<json object>'", i+1)}
+		}
+		return r.callToolRaw(ctx, parts[1], parts[2])
 	case "call_task":
 		return r.handleTaskCallCommand(ctx, i, parts, taskCall)
 	case "start_task":

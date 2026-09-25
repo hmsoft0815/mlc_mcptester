@@ -5,8 +5,8 @@ The `mcp-tester` scripting engine enables automated test workflows for MCP serve
 ## General Syntax
 
 - **Commands**: One command per line.
-- **Comments**: Lines starting with `#` or `//` are ignored. Trailing comments are also supported.
-- **Variables**: Referenced with a `$` prefix (e.g., `$name`). Substitution uses regex matching (`\$([A-Za-z_][A-Za-z0-9_]*)`). Referencing an unknown variable aborts execution with a clear line-referenced error.
+- **Comments**: Lines starting with `#` or `//` are ignored. Trailing comments (` #`, ` //`) are also supported, but only outside quotes: `"## Heading"` stays intact.
+- **Variables**: Referenced with a `$` prefix (e.g., `$name`). They are substituted per argument after the line is split, so a value with spaces stays one argument and an empty value stays an (empty) argument: `assert_equals $body ""`. Substitution uses regex matching (`\$([A-Za-z_][A-Za-z0-9_]*)`). Referencing an unknown variable aborts execution with a clear line-referenced error.
 - **Strings**: Can be enclosed in double quotes (`"..."`) or single quotes (`'...'`) if they contain spaces or special characters. Inside double quotes `\"` and `\\` are escapes (`"missing: [\"code\"]"`); every other backslash stays literal. Single quotes are taken verbatim. An unterminated quote fails the line.
 - **Lists / Objects**: JSON arrays (`'["a.png", "b.png"]'`) or JSON objects (`'{"key": "value"}'`) can be passed directly as arguments.
 
@@ -28,7 +28,8 @@ call_tool <tool_name> [arg1] [arg2] ...
 ```
 - **Arguments**: Can be passed positionally or as named arguments (`key:value`).
     - **Positional**: Arguments are automatically converted to the correct type based on the tool's JSON schema. The order corresponds to the **alphabetical sorting** of the property names in the schema.
-    - **Named**: Arguments follow the `key:value` syntax (e.g. `paths:'["a.png", "b.png"]'`). This is recommended to avoid confusion with alphabetical sorting.
+    - **Named**: Arguments follow the `key:value` syntax (e.g. `paths:'["a.png", "b.png"]'`). This is recommended to avoid confusion with alphabetical sorting. A name the tool's schema does not know is a script error that lists the valid names, so a typo cannot land in another field; so are more positional values than fields. A value starting with `//` (`http://…`) counts as positional.
+    - **Unchecked**: `call_tool_raw <tool> '<json object>'` sends the arguments exactly as written, e.g. to test that a server rejects unknown fields.
     - **Arrays and Objects**: Supports schemas with `type: "array"`, `type: "object"` as well as nullable definitions (`type: ["null", "array"]`).
     - **Mixed**: You can mix both; positional arguments will fill the remaining properties in alphabetical order.
 - **Result check**: If the tool declares an `outputSchema`, the call fails unless the result carries `structuredContent` that matches it — the check strict clients make (the official TypeScript SDK, used by OpenCode, rejects such a call with `-32600`). Results with `isError: true` are exempt. The Go SDK this tester is built on does not check this itself, which is why the tester does.

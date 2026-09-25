@@ -88,7 +88,9 @@ var callCmd = &cobra.Command{
 		}
 
 		if raw {
-			fmt.Println("--- RAW MODE ---")
+			if format != "json" {
+				fmt.Println("--- RAW MODE ---")
+			}
 			meta := map[string]any{"progressToken": fmt.Sprintf("script-progress-%s", toolName)}
 			result, err := client.CallToolRaw(ctx, session, toolName, toolArgs, meta)
 			if err != nil {
@@ -96,7 +98,14 @@ var callCmd = &cobra.Command{
 			}
 			output, _ := json.MarshalIndent(result, "", "  ")
 			fmt.Printf("%s\n", string(output))
-			return checkResult(outputSchema, result)
+			if err := checkResult(outputSchema, result); err != nil {
+				return err
+			}
+			if isErr, _ := result["isError"].(bool); isErr && format == "json" {
+				cmd.SilenceUsage = true
+				return fmt.Errorf("the tool reported an error (isError)")
+			}
+			return nil
 		}
 
 		// Execute the tool call request.
@@ -121,6 +130,24 @@ var callCmd = &cobra.Command{
 		}
 		if err != nil {
 			return fmt.Errorf("failed to call tool: %w", err)
+		}
+
+		if format == "json" {
+			// The complete result, for jq and scripts; isError fails the command
+			asMap, err := resultJSON(callResult)
+			if err != nil {
+				return err
+			}
+			out, _ := json.MarshalIndent(asMap, "", "  ")
+			fmt.Println(string(out))
+			if err := checkResult(outputSchema, asMap); err != nil {
+				return err
+			}
+			if callResult.IsError {
+				cmd.SilenceUsage = true
+				return fmt.Errorf("the tool reported an error (isError)")
+			}
+			return nil
 		}
 
 		// Print each content item from the result.
@@ -210,4 +237,19 @@ func callTask(ctx context.Context, session *mcp.ClientSession, name string, args
 		return nil, fmt.Errorf("decoding the task result: %w", err)
 	}
 	return &result, nil
+}
+
+// resultJSON is the complete CallToolResult for --format json; isError is
+// always present (the SDK omits false).
+func resultJSON(res *mcp.CallToolResult) (map[string]any, error) {
+	data, err := json.Marshal(res)
+	if err != nil {
+		return nil, err
+	}
+	var m map[string]any
+	if err := json.Unmarshal(data, &m); err != nil {
+		return nil, err
+	}
+	m["isError"] = res.IsError
+	return m, nil
 }

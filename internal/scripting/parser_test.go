@@ -61,3 +61,64 @@ func TestParseArgs(t *testing.T) {
 		}
 	}
 }
+
+// B-20260925-01: " #" and " //" inside quotes are not comments
+func TestPreprocessLineKeepsQuotedHashes(t *testing.T) {
+	r := &Runner{}
+	tests := map[string]string{
+		`call_tool x heading:"## Plan A > ### Phasen" content:"x"`: `call_tool x heading:"## Plan A > ### Phasen" content:"x"`,
+		`assert_contains "a # b"`:                                  `assert_contains "a # b"`,
+		`assert_contains 'a # b'`:                                  `assert_contains 'a # b'`,
+		`assert_contains "http://x //y"  // real comment`:          `assert_contains "http://x //y"`,
+		`echo "say \"# hi\"" # comment`:                            `echo "say \"# hi\""`,
+		`echo plain # comment`:                                     `echo plain`,
+	}
+	for in, want := range tests {
+		if got := r.preprocessLine(in); got != want {
+			t.Errorf("preprocessLine(%q) = %q; want %q", in, got, want)
+		}
+	}
+}
+
+func TestIndexOutsideQuotes(t *testing.T) {
+	if i := indexOutsideQuotes(`call_tool x content:"a << b"`, "<<"); i != -1 {
+		t.Errorf("found << inside quotes at %d", i)
+	}
+	if i := indexOutsideQuotes(`call_tool x <<EOF`, "<<"); i != 12 {
+		t.Errorf("heredoc marker at %d, want 12", i)
+	}
+}
+
+// B-20260925-03: an empty token stays an argument
+func TestParseArgsKeepsEmptyTokens(t *testing.T) {
+	r := &Runner{}
+	for line, want := range map[string][]string{
+		`assert_equals "" ""`:         {"assert_equals", "", ""},
+		`assert_equals '' x`:          {"assert_equals", "", "x"},
+		`assert_string_length "" 0 0`: {"assert_string_length", "", "0", "0"},
+	} {
+		got, err := r.parseArgs(line)
+		if err != nil || !reflect.DeepEqual(got, want) {
+			t.Errorf("parseArgs(%q) = %q, %v; want %q", line, got, err, want)
+		}
+	}
+}
+
+// B-20260925-03: variables are substituted per token, after tokenizing
+func TestEmptyAndSpacedVariables(t *testing.T) {
+	r := &Runner{variables: map[string]string{"empty": "", "spaced": `a "b" c`}}
+	for _, line := range []string{`assert_equals $empty ""`, `assert_string_length $empty 0 0`} {
+		parts, err := r.parseArgs(line)
+		if err == nil {
+			parts, err = r.replaceInParts(parts)
+		}
+		if err != nil || len(parts) < 3 || parts[1] != "" {
+			t.Errorf("%q -> %q, %v; want the empty variable as argument 1", line, parts, err)
+		}
+	}
+	parts, _ := r.parseArgs(`assert_equals $spaced x`)
+	parts, _ = r.replaceInParts(parts)
+	if len(parts) != 3 || parts[1] != `a "b" c` {
+		t.Errorf("a value with spaces and quotes split up: %q", parts)
+	}
+}

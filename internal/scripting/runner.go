@@ -36,6 +36,12 @@ type Runner struct {
 	Notifications *client.Notifications
 	// logLevel is sent with each tool call on protocol 2026-07-28 and later.
 	logLevel string
+	// roots added by add_root, also offered to tasks that ask for them
+	roots []*mcp.Root
+	// taskMode makes call_tool's machinery start or run a task (call_task, start_task)
+	taskMode taskMode
+	// lastTask is the last task state seen, for assert_task_status
+	lastTask map[string]any
 }
 
 // TestResult holds numeric summary of test execution
@@ -237,6 +243,18 @@ func (r *Runner) dispatchParts(ctx context.Context, i int, parts []string) error
 		return r.handleAssertElicitedCommand(i, parts)
 	case "assert_sampled":
 		return r.handleAssertSampledCommand(i, parts)
+	case "call_task":
+		return r.handleTaskCallCommand(ctx, i, parts, taskCall)
+	case "start_task":
+		return r.handleTaskCallCommand(ctx, i, parts, taskStart)
+	case "wait_task":
+		return r.handleWaitTaskCommand(ctx, i, parts)
+	case "get_task":
+		return r.handleGetTaskCommand(ctx, i, parts)
+	case "cancel_task":
+		return r.handleCancelTaskCommand(ctx, i, parts)
+	case "assert_task_status":
+		return r.handleAssertTaskStatusCommand(i, parts)
 	case "subscribe":
 		return r.handleSubscribeCommand(ctx, i, parts)
 	case "wait_notification":

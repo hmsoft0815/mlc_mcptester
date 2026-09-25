@@ -150,3 +150,29 @@ func contentSuffix(content map[string]any) string {
 	data, _ := json.Marshal(content)
 	return " " + string(data)
 }
+
+// Answer answers one input request that arrived outside the SDK's own
+// multi round-trip handling, e.g. in a task's inputRequests. roots supplies
+// the answer to roots/list.
+func (r *Responder) Answer(ctx context.Context, ir mcp.InputRequest, roots []*mcp.Root) (any, error) {
+	switch p := ir.(type) {
+	case *mcp.ElicitParams:
+		return r.handleElicit(ctx, &mcp.ElicitRequest{Params: p})
+	case *mcp.CreateMessageParams:
+		return r.handleSample(ctx, &mcp.CreateMessageRequest{Params: p})
+	case *mcp.CreateMessageWithToolsParams:
+		params := &mcp.CreateMessageParams{MaxTokens: p.MaxTokens}
+		for _, m := range p.Messages {
+			for _, c := range m.Content {
+				params.Messages = append(params.Messages, &mcp.SamplingMessage{Role: m.Role, Content: c})
+			}
+		}
+		return r.handleSample(ctx, &mcp.CreateMessageRequest{Params: params})
+	case *mcp.ListRootsParams:
+		if roots == nil {
+			roots = []*mcp.Root{}
+		}
+		return &mcp.ListRootsResult{Roots: roots}, nil
+	}
+	return nil, fmt.Errorf("unsupported input request %T", ir)
+}

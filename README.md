@@ -50,7 +50,8 @@ Weil `mcp-tester` den Server von außen gegen die Spezifikation prüft, findet e
 ## Kern-Features
 
 - **Echte Client-Perspektive** über `stdio`, SSE und **Streamable HTTP**, mit Profilen in `mcp-tester.yml`.
-- **Scripting Engine** (`.mcp`): Tools, Completion, Elicitation, Sampling, Roots und Notifications skriptbar, mit Assertions und Exit-Code für CI.
+- **Scripting Engine** (`.mcp`): Tools, Tasks, Completion, Elicitation, Sampling, Roots und Notifications skriptbar, mit Assertions und Exit-Code für CI.
+- **Tasks-Extension**: lang laufende Tool-Aufrufe als Task starten, pollen, abbrechen, Eingaben nachreichen. Für Server-Autoren gibt es das Go-Paket [`pkg/mcptasks`](pkg/mcptasks), das die Extension auf Servern mit dem offiziellen go-sdk nachrüstet.
 - **Server Inspector** (`inspect`): Spec-Abgleich, Best Practices und Quality Score; `--min-score` als CI-Gate.
 - **HTTP-Konformität** (`http-check`): Pflicht-Header, Fehlercodes, Origin, Sessions nach Spec 2026-07-28.
 - **Autorisierung**: Bearer-Token, eigene Header und der OAuth-2.1-Ablauf (PKCE, Protected Resource Metadata, `iss`-Prüfung).

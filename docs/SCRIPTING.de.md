@@ -170,6 +170,23 @@ Auf der Kommandozeile zeigt `mcp-tester listen [--subscribe <uri>] [--duration 3
 
 ---
 
+### 15. Tasks: `call_task`, `start_task`, `wait_task`, `get_task`, `cancel_task`
+Mit der Tasks-Extension (`io.modelcontextprotocol/tasks`) darf ein Server einen Tool-Aufruf mit einem Task-Handle beantworten und im Hintergrund ausführen. Der Tester kündigt die Extension nur für diese Befehle an; `call_tool` bleibt synchron.
+```mcp
+call_task long_job seconds:2          # starten, bis zum Ende pollen, Ergebnis wie bei call_tool
+assert_task_status completed
+
+start_task long_job seconds:30        # nur das Handle
+set_var id taskId
+get_task $id                          # ein tasks/get
+cancel_task $id
+wait_task $id 5s                      # pollen bis completed, failed oder cancelled
+assert_task_status cancelled
+```
+Braucht ein Task Eingaben (Status `input_required`), gehen die mit `elicit_response` / `sample_response` / `add_root` vorbereiteten Antworten per `tasks/update` an den Server. Ein fehlgeschlagener Task (`failed`) ist für `expect_error` / `assert_error_code` ein RPC-Fehler. Auf der Kommandozeile: `mcp-tester call <tool> --task`.
+
+---
+
 ## Beispiel-Skript
 
 ```mcp

@@ -66,6 +66,7 @@ func (r *Runner) handleAddRootCommand(i int, parts []string) error {
 		root.Name = parts[2]
 	}
 	r.Client.AddRoots(root)
+	r.roots = append(r.roots, root)
 	return nil
 }
 

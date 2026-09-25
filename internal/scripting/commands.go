@@ -3,6 +3,7 @@ package scripting
 import (
 	"bufio"
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -106,9 +107,12 @@ func (r *Runner) handleExpectErrorCommand(ctx context.Context, i int, parts []st
 	}
 	r.lastErrorCode = 0
 	r.lastIsToolError = false
-	if rpcErr, ok := err.(*client.RPCError); ok {
+	// errors.As: commands may wrap the error with the script line
+	var rpcErr *client.RPCError
+	var toolErr *client.ToolError
+	if errors.As(err, &rpcErr) {
 		r.lastErrorCode = rpcErr.Code
-	} else if _, ok := err.(*client.ToolError); ok {
+	} else if errors.As(err, &toolErr) {
 		r.lastIsToolError = true
 	}
 	r.updateState(map[string]any{"error": err.Error(), "code": r.lastErrorCode, "isToolError": r.lastIsToolError}, err.Error())

@@ -133,9 +133,15 @@ func (r *Runner) call(ctx context.Context, name string, args map[string]any, out
 	var text string
 	var err error
 
-	if r.Raw {
+	switch {
+	case r.taskMode == taskStart:
+		// Only the handle: nothing to check against the output schema yet
+		return r.startTask(ctx, name, args)
+	case r.taskMode == taskCall:
+		rawResponse, text, err = r.executeTaskCall(ctx, name, args)
+	case r.Raw:
 		rawResponse, text, err = r.executeRawCall(ctx, name, args)
-	} else {
+	default:
 		rawResponse, text, err = r.executeSDKCall(ctx, name, args)
 	}
 

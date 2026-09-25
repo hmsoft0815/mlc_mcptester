@@ -50,7 +50,8 @@ Because `mcp-tester` checks the server from the outside against the specificatio
 ## Key Features
 
 - **True client perspective** over `stdio`, SSE and **Streamable HTTP**, with profiles in `mcp-tester.yml`.
-- **Scripting engine** (`.mcp`): tools, completion, elicitation, sampling, roots and notifications are scriptable, with assertions and an exit code for CI.
+- **Scripting engine** (`.mcp`): tools, tasks, completion, elicitation, sampling, roots and notifications are scriptable, with assertions and an exit code for CI.
+- **Tasks extension**: start long-running tool calls as tasks, poll, cancel, supply input. For server authors, the Go package [`pkg/mcptasks`](pkg/mcptasks) adds the extension to servers built on the official go-sdk.
 - **Server inspector** (`inspect`): spec check, best practices and quality score; `--min-score` as a CI gate.
 - **HTTP conformance** (`http-check`): required headers, error codes, Origin, sessions per spec 2026-07-28.
 - **Authorization**: bearer tokens, custom headers and the OAuth 2.1 flow (PKCE, Protected Resource Metadata, `iss` validation).

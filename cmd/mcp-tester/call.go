@@ -15,11 +15,13 @@ import (
 var (
 	callArgs     string
 	callLogLevel string
+	callAsTask   bool
 )
 
 func init() {
 	callCmd.Flags().StringVarP(&callArgs, "args", "a", "{}", "Tool arguments (JSON)")
 	callCmd.Flags().StringVar(&callLogLevel, "log-level", "", "Server log level for this call (debug, info, notice, warning, error, ...)")
+	callCmd.Flags().BoolVar(&callAsTask, "task", false, "Offer to run the call as a task (Tasks extension) and poll it to the end")
 	rootCmd.AddCommand(callCmd)
 }
 
@@ -111,7 +113,12 @@ var callCmd = &cobra.Command{
 			params.Meta = client.WithLogLevel(params.Meta, logLevel)
 		}
 
-		callResult, err := session.CallTool(ctx, params)
+		var callResult *mcp.CallToolResult
+		if callAsTask {
+			callResult, err = callTask(ctx, session, toolName, toolArgs)
+		} else {
+			callResult, err = session.CallTool(ctx, params)
+		}
 		if err != nil {
 			return fmt.Errorf("failed to call tool: %w", err)
 		}
@@ -169,4 +176,38 @@ func checkResult(outputSchema any, result map[string]any) error {
 		return fmt.Errorf("the result violates the MCP specification: %w", err)
 	}
 	return nil
+}
+
+// callTask runs the call as a task: it declares the Tasks extension, polls
+// the task and returns its final result. The server may also answer at once.
+func callTask(ctx context.Context, session *mcp.ClientSession, name string, args map[string]any) (*mcp.CallToolResult, error) {
+	var roots []*mcp.Root
+	for _, uri := range rootURIs {
+		roots = append(roots, &mcp.Root{URI: uri})
+	}
+	tc := &client.TaskClient{Session: session, Responder: cliResponder, Roots: roots, Out: os.Stderr}
+	res, done, err := tc.Start(ctx, name, args)
+	if err != nil {
+		return nil, err
+	}
+	if done {
+		fmt.Fprintln(os.Stderr, "[TASK] the server answered synchronously")
+	} else {
+		task, err := tc.Wait(ctx, res["taskId"].(string))
+		if err != nil {
+			return nil, err
+		}
+		if res, err = client.TaskResult(task); err != nil {
+			return nil, err
+		}
+	}
+	data, err := json.Marshal(res)
+	if err != nil {
+		return nil, err
+	}
+	var result mcp.CallToolResult
+	if err := json.Unmarshal(data, &result); err != nil {
+		return nil, fmt.Errorf("decoding the task result: %w", err)
+	}
+	return &result, nil
 }

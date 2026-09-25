@@ -82,8 +82,8 @@ Legende: ✅ abgedeckt · ⚠️ teilweise · ❌ fehlt · — nicht anwendbar o
 
 | Feature | Status | Anmerkung |
 |---|---|---|
-| Tasks (`io.modelcontextprotocol/tasks`) | ❌ | |
-| Apps, Skills, Auth-Extensions | ❌ | |
+| Tasks (`io.modelcontextprotocol/tasks`) | ✅ | Skriptbefehle `call_task`, `start_task`, `wait_task`, `get_task`, `cancel_task`, `assert_task_status`; `call --task`; `input_required` über `tasks/update`; `Mcp-Name` = `taskId` über HTTP. Das go-sdk kennt die Extension nicht: Client über den Raw-Pfad, Server-Seite als Paket `pkg/mcptasks`. Skripttest `15_tasks`. Nicht umgesetzt: `notifications/tasks` (MAY) |
+| Apps, Skills, Auth-Extensions | ❌ | Skills in Arbeit |
 
 ## Verlauf
 

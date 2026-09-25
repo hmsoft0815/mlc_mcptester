@@ -72,6 +72,7 @@ func getTransport(ctx context.Context, command, url string) (mcp.Transport, erro
 		if err != nil {
 			return nil, err
 		}
+		httpClient = withTaskRouting(httpClient)
 		tType := strings.ToLower(strings.TrimSpace(transportType))
 		if tType == "sse" || (tType == "" && strings.HasSuffix(strings.TrimRight(url, "/"), "/sse")) {
 			if oauthEnabled {

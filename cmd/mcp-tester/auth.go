@@ -1,9 +1,12 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"os"
@@ -156,4 +159,47 @@ func openBrowser(url string) error {
 		return exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Start()
 	}
 	return exec.Command("xdg-open", url).Start()
+}
+
+// taskRoutingTransport sets Mcp-Name to params.taskId on tasks/* requests,
+// as the Tasks extension requires on Streamable HTTP; the go-sdk does not
+// know these methods and sets no Mcp-Name for them.
+type taskRoutingTransport struct {
+	base http.RoundTripper
+}
+
+func (t *taskRoutingTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	if req.Method == http.MethodPost && req.Body != nil && strings.HasPrefix(req.Header.Get("Mcp-Method"), "tasks/") && req.Header.Get("Mcp-Name") == "" {
+		body, err := io.ReadAll(req.Body)
+		req.Body.Close()
+		if err != nil {
+			return nil, err
+		}
+		var msg struct {
+			Params struct {
+				TaskID string `json:"taskId"`
+			} `json:"params"`
+		}
+		req = req.Clone(req.Context())
+		if json.Unmarshal(body, &msg) == nil && msg.Params.TaskID != "" {
+			req.Header.Set("Mcp-Name", msg.Params.TaskID)
+		}
+		req.Body = io.NopCloser(bytes.NewReader(body))
+		req.ContentLength = int64(len(body))
+	}
+	return t.base.RoundTrip(req)
+}
+
+// withTaskRouting wraps client (nil means the default client).
+func withTaskRouting(client *http.Client) *http.Client {
+	if client == nil {
+		client = &http.Client{}
+	}
+	base := client.Transport
+	if base == nil {
+		base = http.DefaultTransport
+	}
+	wrapped := *client
+	wrapped.Transport = &taskRoutingTransport{base: base}
+	return &wrapped
 }

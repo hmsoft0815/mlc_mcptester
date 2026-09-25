@@ -2,7 +2,7 @@
 
 All notable changes to mcp-tester. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versions: [SemVer](https://semver.org/).
 
-## [Unreleased]
+## [1.5.0] - 2026-09-25
 
 ### Added
 - `auth-check`: shows how an HTTP server is protected and which OAuth flows it offers; checks the metadata.

@@ -1,6 +1,6 @@
 # MCP Specification Coverage
 
-**As of 2026-09-25** · specification **2026-07-28** (latest stable revision; the draft is unchanged since) · mcp-tester **1.4.0** · go-sdk **v1.8.0**
+**As of 2026-09-25** · specification **2026-07-28** (latest stable revision; the draft is unchanged since) · mcp-tester **1.5.0** · go-sdk **v1.8.0**
 
 The MCP specification keeps changing. This page records what mcp-tester can and cannot check as of the date above. It is re-checked, and the date updated, with every new spec revision or SDK update.
 

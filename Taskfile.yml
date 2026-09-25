@@ -40,7 +40,7 @@ tasks:
       - mkdir -p bin dist
       - GOOS=windows GOARCH=amd64 go build -ldflags "{{.LDFLAGS}}" -o bin/mcp-tester-windows-amd64.exe ./cmd/mcp-tester/
       - GOOS=windows GOARCH=amd64 go build -o bin/test-server-windows-amd64.exe ./cmd/test-server/
-      - makensis scripts/windows-installer.nsi
+      - makensis -DAPP_VERSION={{.VERSION}} scripts/windows-installer.nsi
 
   build-macos:
     desc: Build for macOS (arm64 & amd64)

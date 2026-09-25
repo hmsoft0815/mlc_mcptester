@@ -9,6 +9,21 @@ import (
 
 var varRegex = regexp.MustCompile(`\$([A-Za-z_][A-Za-z0-9_]*)`)
 
+// replaceInParts substitutes variables in each token separately, after
+// tokenizing: a value with spaces or quotes stays one argument, and an empty
+// value stays an (empty) argument.
+func (r *Runner) replaceInParts(parts []string) ([]string, error) {
+	out := make([]string, len(parts))
+	for i, p := range parts {
+		v, err := r.replaceVariables(p)
+		if err != nil {
+			return nil, err
+		}
+		out[i] = v
+	}
+	return out, nil
+}
+
 func (r *Runner) replaceVariables(line string) (string, error) {
 	var unknownVars []string
 	result := varRegex.ReplaceAllStringFunc(line, func(match string) string {

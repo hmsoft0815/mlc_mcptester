@@ -3,10 +3,12 @@ package client
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"reflect"
 	"unsafe"
 
+	"github.com/modelcontextprotocol/go-sdk/jsonrpc"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
@@ -33,6 +35,21 @@ func (e *ToolError) Error() string {
 // CallToolRaw performs a tool call and returns the raw map[string]any result,
 // bypassing the strict SDK unmarshaling that fails on missing "type" fields.
 func CallToolRaw(ctx context.Context, session *mcp.ClientSession, toolName string, arguments any, meta map[string]any) (map[string]any, error) {
+	params := struct {
+		Name      string         `json:"name"`
+		Arguments any            `json:"arguments"`
+		Meta      map[string]any `json:"_meta,omitempty"`
+	}{
+		Name:      toolName,
+		Arguments: arguments,
+		Meta:      meta,
+	}
+	return CallRaw(ctx, session, "tools/call", params)
+}
+
+// CallRaw sends any request on the session's connection and returns the raw
+// result. Nothing is added to params, not even the per-request metadata.
+func CallRaw(ctx context.Context, session *mcp.ClientSession, method string, params any) (map[string]any, error) {
 	// 1. Get the internal jsonrpc2.Connection via reflection on unexported field
 	sVal := reflect.ValueOf(session).Elem()
 	connField := sVal.FieldByName("conn")
@@ -43,18 +60,7 @@ func CallToolRaw(ctx context.Context, session *mcp.ClientSession, toolName strin
 	// Create a NEW reflect.Value that is addressable and exported (using NewAt)
 	connPtr := reflect.NewAt(connField.Type().Elem(), unsafe.Pointer(connField.Pointer()))
 
-	// 2. Prepare the request
-	params := struct {
-		Name      string         `json:"name"`
-		Arguments any            `json:"arguments"`
-		Meta      map[string]any `json:"_meta,omitempty"`
-	}{
-		Name:      toolName,
-		Arguments: arguments,
-		Meta:      meta,
-	}
-
-	// 3. Call the internal Connection.Call method
+	// 2. Call the internal Connection.Call method
 	callMethod := connPtr.MethodByName("Call")
 	if !callMethod.IsValid() {
 		return nil, fmt.Errorf("call method not found on Connection")
@@ -62,7 +68,7 @@ func CallToolRaw(ctx context.Context, session *mcp.ClientSession, toolName strin
 
 	callResults := callMethod.Call([]reflect.Value{
 		reflect.ValueOf(ctx),
-		reflect.ValueOf("tools/call"),
+		reflect.ValueOf(method),
 		reflect.ValueOf(params),
 	})
 
@@ -102,28 +108,14 @@ func CallToolRaw(ctx context.Context, session *mcp.ClientSession, toolName strin
 	// Error check
 	errField := respVal.FieldByName("Error")
 	if !errField.IsNil() {
-		// errField is an error interface. Get the concrete value.
-		errVal := errField.Elem()
-		// If it's a pointer, get the element it points to
-		if errVal.Kind() == reflect.Ptr {
-			errVal = errVal.Elem()
+		// A JSON-RPC error may arrive wrapped (e.g. over HTTP); anything else
+		// is a transport error without a code
+		err, _ := errField.Interface().(error)
+		var wire *jsonrpc.Error
+		if errors.As(err, &wire) {
+			return nil, &RPCError{Code: wire.Code, Message: wire.Message, Data: wire.Data}
 		}
-
-		// Now we should have the struct
-		var code int64
-		if codeField := errVal.FieldByName("Code"); codeField.IsValid() && codeField.Kind() == reflect.Int64 {
-			code = codeField.Int()
-		}
-		var message string
-		if messageField := errVal.FieldByName("Message"); messageField.IsValid() && messageField.Kind() == reflect.String {
-			message = messageField.String()
-		}
-		var data any
-		dataField := errVal.FieldByName("Data")
-		if dataField.IsValid() {
-			data = dataField.Interface()
-		}
-		return nil, &RPCError{Code: code, Message: message, Data: data}
+		return nil, err
 	}
 
 	// Result check

@@ -1,0 +1,16 @@
+// Notifications via subscriptions/listen: list changes and resource updates
+
+echo "--- tools/list_changed after a tool is added ---"
+call_tool add_tool name:"alpha"
+wait_notification tools/list_changed 3s
+call_tool dyn_alpha
+assert_contains "Hello from dyn_alpha"
+
+echo "--- resources/updated for a subscribed resource ---"
+subscribe mcp://time
+call_tool touch_resource uri:"mcp://time"
+wait_notification resources/updated mcp://time 3s
+
+echo "--- No notification without a trigger ---"
+expect_error wait_notification tools/list_changed 300ms
+assert_contains "no notifications/tools/list_changed"

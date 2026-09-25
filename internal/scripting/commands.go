@@ -3,6 +3,7 @@ package scripting
 import (
 	"bufio"
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -104,11 +105,18 @@ func (r *Runner) handleExpectErrorCommand(ctx context.Context, i int, parts []st
 	if err == nil {
 		return fmt.Errorf("line %d: expected error but command succeeded", i+1)
 	}
+	var scriptErr *scriptError
+	if errors.As(err, &scriptErr) {
+		return err
+	}
 	r.lastErrorCode = 0
 	r.lastIsToolError = false
-	if rpcErr, ok := err.(*client.RPCError); ok {
+	// errors.As: commands may wrap the error with the script line
+	var rpcErr *client.RPCError
+	var toolErr *client.ToolError
+	if errors.As(err, &rpcErr) {
 		r.lastErrorCode = rpcErr.Code
-	} else if _, ok := err.(*client.ToolError); ok {
+	} else if errors.As(err, &toolErr) {
 		r.lastIsToolError = true
 	}
 	r.updateState(map[string]any{"error": err.Error(), "code": r.lastErrorCode, "isToolError": r.lastIsToolError}, err.Error())
@@ -118,10 +126,11 @@ func (r *Runner) handleExpectErrorCommand(ctx context.Context, i int, parts []st
 
 func (r *Runner) handlePingCommand(ctx context.Context, i int) error {
 	fmt.Fprintln(r.w(), "Ping...")
-	if err := r.session.Ping(ctx, &mcp.PingParams{}); err != nil {
+	method, err := client.Ping(ctx, r.session)
+	if err != nil {
 		return fmt.Errorf("line %d: ping failed: %w", i+1, err)
 	}
-	fmt.Fprintln(r.w(), "Pong!")
+	fmt.Fprintf(r.w(), "Pong! (%s)\n", method)
 	return nil
 }
 
@@ -130,6 +139,12 @@ func (r *Runner) handleLoggingCommand(ctx context.Context, i int, parts []string
 		return fmt.Errorf("line %d: logging expects a level", i+1)
 	}
 	level := parts[1]
+	if client.IsStateless(r.session) {
+		// No logging/setLevel since 2026-07-28: the level goes with every later call
+		r.logLevel = level
+		fmt.Fprintf(r.w(), "Server logging level %s is sent with each following call\n", level)
+		return nil
+	}
 	fmt.Fprintf(r.w(), "Setting server logging level to %s...\n", level)
 	if err := r.session.SetLoggingLevel(ctx, &mcp.SetLoggingLevelParams{Level: mcp.LoggingLevel(level)}); err != nil {
 		return fmt.Errorf("line %d: failed to set logging level: %w", i+1, err)
@@ -143,5 +158,34 @@ func (r *Runner) handleEchoCommand(parts []string) error {
 	} else {
 		fmt.Fprintln(r.w())
 	}
+	return nil
+}
+
+// handleCompleteCommand runs "complete <prompt:name|resource:uri> <argument> [value]".
+// The result is kept as {values, total, hasMore}, so set_var can address
+// values.0 or total, and assert_contains sees the values one per line.
+func (r *Runner) handleCompleteCommand(ctx context.Context, i int, parts []string) error {
+	if len(parts) < 3 || len(parts) > 4 {
+		return fmt.Errorf("line %d: usage: complete <prompt:name|resource:uri> <argument> [value]", i+1)
+	}
+	value := ""
+	if len(parts) == 4 {
+		value = parts[3]
+	}
+	res, err := client.Complete(ctx, r.session, parts[1], parts[2], value, nil)
+	if err != nil {
+		return fmt.Errorf("line %d: complete: %w", i+1, err)
+	}
+
+	values := make([]any, len(res.Completion.Values))
+	for j, v := range res.Completion.Values {
+		values[j] = v
+	}
+	r.updateState(map[string]any{
+		"values":  values,
+		"total":   res.Completion.Total,
+		"hasMore": res.Completion.HasMore,
+	}, strings.Join(res.Completion.Values, "\n"))
+	fmt.Fprintf(r.w(), "Completions: %s\n", strings.Join(res.Completion.Values, ", "))
 	return nil
 }

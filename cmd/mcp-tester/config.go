@@ -13,6 +13,10 @@ type Profile struct {
 	URL       string `yaml:"url,omitempty"`
 	Transport string `yaml:"transport,omitempty"`
 	Disabled  bool   `yaml:"disabled,omitempty"`
+	// Headers and Bearer apply to HTTP transports. ${VAR} is expanded from
+	// the environment, so secrets need not be stored in the file.
+	Headers map[string]string `yaml:"headers,omitempty"`
+	Bearer  string            `yaml:"bearer,omitempty"`
 }
 
 // Config represents the tool's configuration file.
@@ -65,6 +69,13 @@ func resolveSettings(config *Config, profileName string, cmdArg, urlArg string) 
 		}
 		if profile.Transport != "" && transportType == "" {
 			transportType = profile.Transport
+		}
+		// Command line flags win over the profile
+		for name, value := range profile.Headers {
+			headerFlags = append([]string{name + ": " + os.ExpandEnv(value)}, headerFlags...)
+		}
+		if profile.Bearer != "" && bearerToken == "" {
+			bearerToken = os.ExpandEnv(profile.Bearer)
 		}
 		return profile.Command, profile.URL, nil
 	}

@@ -7,9 +7,12 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/hmsoft0815/mlc_mcptester/internal/version"
+	"github.com/hmsoft0815/mlc_mcptester/pkg/mcpskills"
+	"github.com/hmsoft0815/mlc_mcptester/pkg/mcptasks"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
@@ -19,6 +22,7 @@ const serverIcon = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My
 func main() {
 	showVersion := flag.Bool("version", false, "print the version and exit")
 	addr := flag.String("addr", "", "Listen address for HTTP/SSE (e.g. \":8080\"). If empty, uses stdio.")
+	withAuth := flag.Bool("auth", false, "With -addr: require OAuth bearer tokens and serve a built-in test authorization server")
 	flag.Parse()
 
 	if *showVersion {
@@ -27,23 +31,34 @@ func main() {
 	}
 
 	ctx := context.Background()
+	caps := &mcp.ServerCapabilities{
+		Logging:   &mcp.LoggingCapabilities{},
+		Tools:     &mcp.ToolCapabilities{ListChanged: true},
+		Prompts:   &mcp.PromptCapabilities{ListChanged: true},
+		Resources: &mcp.ResourceCapabilities{ListChanged: true, Subscribe: true},
+	}
+	mcptasks.Declare(caps)
+	mcpskills.Declare(caps, true)
 	s := mcp.NewServer(
 		&mcp.Implementation{
 			Name:    "ultimate-test-server",
 			Version: version.Version,
 		},
 		&mcp.ServerOptions{
-			Capabilities: &mcp.ServerCapabilities{
-				Logging:   &mcp.LoggingCapabilities{},
-				Tools:     &mcp.ToolCapabilities{ListChanged: true},
-				Prompts:   &mcp.PromptCapabilities{ListChanged: true},
-				Resources: &mcp.ResourceCapabilities{ListChanged: true, Subscribe: true},
-			},
+			Capabilities:       caps,
+			CompletionHandler:  complete,
+			SubscribeHandler:   subscribe,
+			UnsubscribeHandler: unsubscribe,
 		},
 	)
 
 	registerBasicTools(s)
 	registerExtraTools(s)
+	registerInputTools(s)
+	registerNotifyTools(s)
+	registerHeaderTools(s)
+	registerTaskTools(s)
+	registerSkills(s)
 	registerResources(s)
 	registerPrompts(s)
 
@@ -51,12 +66,26 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Starting Ultimate Test Server on %s (SSE: /sse, Streamable HTTP: /mcp)...\n", *addr)
 		mux := http.NewServeMux()
 		sseHandler := mcp.NewSSEHandler(func(*http.Request) *mcp.Server { return s }, nil)
-		streamableHandler := mcp.NewStreamableHTTPHandler(func(*http.Request) *mcp.Server { return s }, nil)
-		mux.Handle("/sse", sseHandler)
-		mux.Handle("/sse/", sseHandler)
-		mux.Handle("/mcp", streamableHandler)
-		mux.Handle("/mcp/", streamableHandler)
-		mux.Handle("/", streamableHandler)
+		// Stateless: the SDK serves protocol 2026-07-28 over HTTP only in this mode
+		streamableHandler := mcp.NewStreamableHTTPHandler(func(*http.Request) *mcp.Server { return s }, &mcp.StreamableHTTPOptions{Stateless: true})
+		// Reject foreign browser origins (DNS rebinding); the spec requires 403
+		cop := http.NewCrossOriginProtection()
+		var sseH, mcpH http.Handler = cop.Handler(sseHandler), cop.Handler(streamableHandler)
+		if *withAuth {
+			base := "http://" + *addr
+			if strings.HasPrefix(*addr, ":") {
+				base = "http://127.0.0.1" + *addr
+			}
+			as := newAuthServer(base, base+"/mcp")
+			as.register(mux)
+			sseH, mcpH = as.protect(sseH), as.protect(mcpH)
+			fmt.Fprintf(os.Stderr, "OAuth enabled: issuer %s, static token %q\n", base, StaticToken)
+		}
+		mux.Handle("/sse", sseH)
+		mux.Handle("/sse/", sseH)
+		mux.Handle("/mcp", mcpH)
+		mux.Handle("/mcp/", mcpH)
+		mux.Handle("/", mcpH)
 		if err := http.ListenAndServe(*addr, mux); err != nil {
 			log.Fatalf("Server failed: %v", err)
 		}
@@ -93,6 +122,8 @@ func registerBasicTools(s *mcp.Server) {
 		},
 	}, func(ctx context.Context, request *mcp.CallToolRequest, args map[string]any) (*mcp.CallToolResult, any, error) {
 		msg, _ := args["message"].(string)
+		// Only delivered if the client asked for debug logs (per request since 2026-07-28)
+		_ = request.Session.Log(ctx, &mcp.LoggingMessageParams{Level: "debug", Logger: "echo", Data: "echo called with " + msg})
 		return &mcp.CallToolResult{
 			Content: []mcp.Content{&mcp.TextContent{Text: "Echo: " + msg}},
 		}, map[string]any{"echo": msg}, nil
@@ -223,6 +254,10 @@ func registerPrompts(s *mcp.Server) {
 	s.AddPrompt(&mcp.Prompt{
 		Name:        "persona_developer",
 		Description: "Sets the LLM persona to an expert Go developer",
+		Arguments: []*mcp.PromptArgument{{
+			Name:        "language",
+			Description: "Programming language of the persona (completable)",
+		}},
 		Icons: []mcp.Icon{
 			{Source: serverIcon, MIMEType: "image/svg+xml"},
 		},
@@ -237,4 +272,30 @@ func registerPrompts(s *mcp.Server) {
 			},
 		}, nil
 	})
+}
+
+// completionValues are the candidates offered by complete, per reference and argument.
+var completionValues = map[string][]string{
+	"ref/prompt persona_developer language":     {"go", "golang", "python", "rust", "typescript"},
+	"ref/resource file:///logs/{name}.log name": {"access", "app", "error"},
+}
+
+// complete serves completion/complete: candidates starting with the typed value.
+func complete(ctx context.Context, req *mcp.CompleteRequest) (*mcp.CompleteResult, error) {
+	ref := req.Params.Ref
+	target := ref.Name
+	if ref.Type == "ref/resource" {
+		target = ref.URI
+	}
+	key := ref.Type + " " + target + " " + req.Params.Argument.Name
+
+	values := []string{}
+	for _, v := range completionValues[key] {
+		if strings.HasPrefix(v, req.Params.Argument.Value) {
+			values = append(values, v)
+		}
+	}
+	return &mcp.CompleteResult{
+		Completion: mcp.CompletionResultDetails{Values: values, Total: len(values)},
+	}, nil
 }

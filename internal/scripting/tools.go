@@ -3,12 +3,14 @@ package scripting
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
 
 	"github.com/hmsoft0815/mlc_mcptester/internal/client"
 	"github.com/hmsoft0815/mlc_mcptester/internal/conformance"
+	"github.com/modelcontextprotocol/go-sdk/jsonrpc"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
@@ -53,15 +55,15 @@ func (r *Runner) parseArgs(line string) ([]string, error) {
 
 // callToolPositional calls the tool with the given name and arguments.
 func (r *Runner) callToolPositional(ctx context.Context, name string, args []string) error {
-	tools, err := r.session.ListTools(ctx, nil)
+	tools, err := client.ListAllTools(ctx, r.session)
 	if err != nil {
 		return err
 	}
 
 	var targetTool *mcp.Tool
-	for i := range tools.Tools {
-		if tools.Tools[i].Name == name {
-			targetTool = tools.Tools[i]
+	for _, t := range tools {
+		if t.Name == name {
+			targetTool = t
 			break
 		}
 	}
@@ -131,9 +133,15 @@ func (r *Runner) call(ctx context.Context, name string, args map[string]any, out
 	var text string
 	var err error
 
-	if r.Raw {
+	switch {
+	case r.taskMode == taskStart:
+		// Only the handle: nothing to check against the output schema yet
+		return r.startTask(ctx, name, args)
+	case r.taskMode == taskCall:
+		rawResponse, text, err = r.executeTaskCall(ctx, name, args)
+	case r.Raw:
 		rawResponse, text, err = r.executeRawCall(ctx, name, args)
-	} else {
+	default:
 		rawResponse, text, err = r.executeSDKCall(ctx, name, args)
 	}
 
@@ -170,19 +178,33 @@ func (r *Runner) executeRawCall(ctx context.Context, name string, args map[strin
 
 // executeSDKCall calls the tool with the given name and arguments using the SDK call method.
 func (r *Runner) executeSDKCall(ctx context.Context, name string, args map[string]any) (map[string]any, string, error) {
-	meta := map[string]any{"progressToken": fmt.Sprintf("script-progress-%s", name)}
-	rawResponse, err := client.CallToolRaw(ctx, r.session, name, args, meta)
+	// The SDK path sends the per-request metadata 2026-07-28 requires and runs
+	// the multi round-trip middleware, which answers input requests through
+	// the client's handlers (see Runner.Responder). --raw bypasses both.
+	params := &mcp.CallToolParams{Name: name, Arguments: args}
+	if r.logLevel != "" {
+		params.Meta = client.WithLogLevel(params.Meta, r.logLevel)
+	}
+	params.SetProgressToken(fmt.Sprintf("script-progress-%s", name))
+	result, err := r.session.CallTool(ctx, params)
 	if err != nil {
+		var wireErr *jsonrpc.Error
+		if errors.As(err, &wireErr) {
+			return nil, "", &client.RPCError{Code: wireErr.Code, Message: wireErr.Message, Data: wireErr.Data}
+		}
 		return nil, "", err
 	}
 
-	// Try to unmarshal into SDK result for backward compatibility if needed,
-	// but we mainly need the text for the runner's state.
-	var sdkResult mcp.CallToolResult
-	data, _ := json.Marshal(rawResponse)
-	_ = json.Unmarshal(data, &sdkResult)
+	data, err := json.Marshal(result)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to marshal result: %w", err)
+	}
+	var rawResponse map[string]any
+	if err := json.Unmarshal(data, &rawResponse); err != nil {
+		return nil, "", fmt.Errorf("failed to unmarshal result: %w", err)
+	}
 
-	text := r.processSDKResult(&sdkResult)
+	text := r.processSDKResult(result)
 	return rawResponse, text, nil
 }
 

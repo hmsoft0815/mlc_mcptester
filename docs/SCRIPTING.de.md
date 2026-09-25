@@ -126,6 +126,80 @@ assert_string_length $variable <min> <max>
 
 ---
 
+### 12. `complete`
+Fragt den Server nach Vervollständigungen für ein Argument (`completion/complete`).
+```mcp
+complete <prompt:name|resource:uri> <argument> [wert]
+```
+Das Ergebnis wird als `{values, total, hasMore}` abgelegt: `assert_contains` sieht die Werte zeilenweise, `set_var` adressiert `values.0` oder `total`.
+```mcp
+complete prompt:persona_developer language g
+assert_contains "golang"
+set_var first values.0
+```
+
+---
+
+### 13. Eingabeanfragen: `elicit_response`, `sample_response`, `add_root`
+Seit Spec 2026-07-28 fragt ein Server über *Multi Round-Trip Requests* nach Eingaben: `tools/call`, `prompts/get` oder `resources/read` liefert `inputRequests`, der Client antwortet und wiederholt den Aufruf. Der Tester erledigt das automatisch; das Skript legt die Antworten **vor** dem Aufruf fest. Eine Anfrage ohne vorbereitete Antwort lässt den Aufruf scheitern.
+```mcp
+elicit_response accept '{"confirm": true}'   # auch: decline, cancel
+sample_response "Antwort des Modells"        # Antwort auf sampling/createMessage
+add_root file:///home/user/project project   # angeboten über roots/list
+```
+Antworten werden der Reihe nach verbraucht (Warteschlange). `assert_elicited <text>` prüft die Nachricht der letzten Elicitation, `assert_sampled <text>` den Prompt der letzten Sampling-Anfrage.
+```mcp
+elicit_response accept '{"confirm": true}'
+call_tool confirm_delete item:"report.pdf"
+assert_elicited "report.pdf"
+```
+Auf der Kommandozeile gibt es dieselben Antworten mit `--elicit 'accept:{"confirm":true}'`, `--sample "text"` und `--root file:///pfad` (jeweils wiederholbar); dort wird eine unbeantwortete Elicitation abgelehnt.
+
+---
+
+### 14. Notifications: `subscribe`, `wait_notification`
+Der Tester öffnet einen `subscriptions/listen`-Stream für jede Liste, die der Server als `listChanged` kennzeichnet, und zeichnet `notifications/tools|prompts|resources/list_changed` und `notifications/resources/updated` auf.
+```mcp
+subscribe mcp://time                             # Resource-Updates für diese URI
+wait_notification tools/list_changed             # wartet bis zu 5s (Default)
+wait_notification resources/updated mcp://time 2s
+```
+`wait_notification` ist erfüllt durch eine Notification seit dem letzten Warten, auch eine, die vor dem Befehl eintraf, und verbraucht sie. Mit `expect_error` prüft es, dass nichts ankommt.
+
+Auf der Kommandozeile zeigt `mcp-tester listen [--subscribe <uri>] [--duration 30s]` eintreffende Notifications an.
+
+---
+
+### 15. Tasks: `call_task`, `start_task`, `wait_task`, `get_task`, `cancel_task`
+Mit der Tasks-Extension (`io.modelcontextprotocol/tasks`) darf ein Server einen Tool-Aufruf mit einem Task-Handle beantworten und im Hintergrund ausführen. Der Tester kündigt die Extension nur für diese Befehle an; `call_tool` bleibt synchron.
+```mcp
+call_task long_job seconds:2          # starten, bis zum Ende pollen, Ergebnis wie bei call_tool
+assert_task_status completed
+
+start_task long_job seconds:30        # nur das Handle
+set_var id taskId
+get_task $id                          # ein tasks/get
+cancel_task $id
+wait_task $id 5s                      # pollen bis completed, failed oder cancelled
+assert_task_status cancelled
+```
+Braucht ein Task Eingaben (Status `input_required`), gehen die mit `elicit_response` / `sample_response` / `add_root` vorbereiteten Antworten per `tasks/update` an den Server. Ein fehlgeschlagener Task (`failed`) ist für `expect_error` / `assert_error_code` ein RPC-Fehler. Auf der Kommandozeile: `mcp-tester call <tool> --task`.
+
+---
+
+### 16. Skills: `list_skills`, `verify_skills`
+Für Server, die Agent Skills über die Skills-Extension (`io.modelcontextprotocol/skills`) veröffentlichen.
+```mcp
+list_skills                 # abgelegt als {skills: [...], count}; Text: ein Name pro Zeile
+assert_contains "image-prompting"
+set_var n count
+
+verify_skills               # alle Prüfungen inkl. Lesen jeder Datei; scheitert bei jedem Verstoß
+```
+Auf der Kommandozeile zeigt `mcp-tester skills [--verify]` Name, Beschreibung, Lizenz, `allowed-tools` und Dateien jedes Skills und die Prüfergebnisse.
+
+---
+
 ## Beispiel-Skript
 
 ```mcp

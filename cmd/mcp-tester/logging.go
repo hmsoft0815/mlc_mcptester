@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	mcpclient "github.com/hmsoft0815/mlc_mcptester/internal/client"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/spf13/cobra"
@@ -35,6 +36,11 @@ var loggingCmd = &cobra.Command{
 		}
 		defer session.Close()
 
+		if mcpclient.IsStateless(session) {
+			cmd.SilenceUsage = true
+			return fmt.Errorf("protocol %s has no logging/setLevel; the level is sent with each request: use 'call --log-level %s' or 'logging %s' in a test script",
+				session.InitializeResult().ProtocolVersion, level, level)
+		}
 		fmt.Printf("Setting logging level to %s...\n", level)
 		if err := session.SetLoggingLevel(ctx, &mcp.SetLoggingLevelParams{Level: mcp.LoggingLevel(level)}); err != nil {
 			return fmt.Errorf("failed to set logging level: %w", err)

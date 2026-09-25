@@ -126,6 +126,80 @@ assert_string_length $variable <min> <max>
 
 ---
 
+### 12. `complete`
+Asks the server for argument completions (`completion/complete`).
+```mcp
+complete <prompt:name|resource:uri> <argument> [value]
+```
+The result is stored as `{values, total, hasMore}`: `assert_contains` sees the values one per line, `set_var` addresses `values.0` or `total`.
+```mcp
+complete prompt:persona_developer language g
+assert_contains "golang"
+set_var first values.0
+```
+
+---
+
+### 13. Input requests: `elicit_response`, `sample_response`, `add_root`
+Since spec 2026-07-28 a server asks the client for input via *multi round-trip requests*: `tools/call`, `prompts/get` or `resources/read` returns `inputRequests`, the client answers and retries. The tester does this automatically; the script prepares the answers **before** the call. A request without a prepared answer fails the call.
+```mcp
+elicit_response accept '{"confirm": true}'   # also: decline, cancel
+sample_response "The model's reply"          # answer to sampling/createMessage
+add_root file:///home/user/project project   # offered via roots/list
+```
+Answers are used in order (queue). `assert_elicited <text>` checks the message of the last elicitation request, `assert_sampled <text>` the prompt of the last sampling request.
+```mcp
+elicit_response accept '{"confirm": true}'
+call_tool confirm_delete item:"report.pdf"
+assert_elicited "report.pdf"
+```
+On the command line the same answers are given with `--elicit 'accept:{"confirm":true}'`, `--sample "text"` and `--root file:///path` (all repeatable); there an unanswered elicitation is declined.
+
+---
+
+### 14. Notifications: `subscribe`, `wait_notification`
+The tester opens a `subscriptions/listen` stream for every list the server marks as `listChanged`, and records `notifications/tools|prompts|resources/list_changed` and `notifications/resources/updated`.
+```mcp
+subscribe mcp://time                             # resource updates for this URI
+wait_notification tools/list_changed             # waits up to 5s (default)
+wait_notification resources/updated mcp://time 2s
+```
+`wait_notification` succeeds with a notification received since the last wait, also one that arrived before the command, and consumes it. With `expect_error`, it checks that nothing arrives.
+
+On the command line, `mcp-tester listen [--subscribe <uri>] [--duration 30s]` prints notifications as they arrive.
+
+---
+
+### 15. Tasks: `call_task`, `start_task`, `wait_task`, `get_task`, `cancel_task`
+With the Tasks extension (`io.modelcontextprotocol/tasks`) a server may answer a tool call with a task handle and run it in the background. The tester declares the extension only for these commands; `call_tool` stays synchronous.
+```mcp
+call_task long_job seconds:2          # start, poll to the end, result as with call_tool
+assert_task_status completed
+
+start_task long_job seconds:30        # only the handle
+set_var id taskId
+get_task $id                          # one tasks/get
+cancel_task $id
+wait_task $id 5s                      # poll until completed, failed or cancelled
+assert_task_status cancelled
+```
+If a task needs input (status `input_required`), the answers prepared with `elicit_response` / `sample_response` / `add_root` are sent via `tasks/update`. A failed task (`failed`) is an RPC error for `expect_error` / `assert_error_code`. On the command line: `mcp-tester call <tool> --task`.
+
+---
+
+### 16. Skills: `list_skills`, `verify_skills`
+For servers publishing Agent Skills via the Skills extension (`io.modelcontextprotocol/skills`).
+```mcp
+list_skills                 # stored as {skills: [...], count}; text: one name per line
+assert_contains "image-prompting"
+set_var n count
+
+verify_skills               # all checks incl. reading every file; fails on any violation
+```
+On the command line, `mcp-tester skills [--verify]` lists name, description, license, `allowed-tools` and files of every skill and prints the checks.
+
+---
+
 ## Example Script
 
 ```mcp

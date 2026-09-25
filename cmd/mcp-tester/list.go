@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	mcpclient "github.com/hmsoft0815/mlc_mcptester/internal/client"
 	"github.com/hmsoft0815/mlc_mcptester/internal/i18n"
 	"github.com/spf13/cobra"
 )
@@ -36,12 +37,12 @@ var listCmd = &cobra.Command{
 		}
 		defer session.Close()
 
-		toolsResult, err := session.ListTools(ctx, nil)
+		tools, err := mcpclient.ListAllTools(ctx, session)
 		if err != nil {
 			return fmt.Errorf("failed to list tools: %w", err)
 		}
 
-		for _, tool := range toolsResult.Tools {
+		for _, tool := range tools {
 			fmt.Print(i18n.T(i18n.MsgTool, tool.Name))
 			fmt.Print(i18n.T(i18n.MsgDescription, tool.Description))
 			if len(tool.Icons) > 0 {

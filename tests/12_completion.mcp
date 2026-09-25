@@ -1,0 +1,19 @@
+// Test completion/complete against prompts and resource templates
+
+echo "--- Prompt argument ---"
+complete prompt:persona_developer language g
+assert_contains "golang"
+set_var first values.0
+assert_equals $first "go"
+set_var total total
+assert_equals $total "2"
+
+echo "--- Resource template variable ---"
+complete resource:file:///logs/{name}.log name a
+assert_contains "access"
+assert_contains "app"
+
+echo "--- No match returns an empty list ---"
+complete prompt:persona_developer language zzz
+set_var none total
+assert_equals $none "0"

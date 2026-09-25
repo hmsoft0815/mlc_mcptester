@@ -9,6 +9,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/hmsoft0815/mlc_mcptester/internal/client"
 	"github.com/hmsoft0815/mlc_mcptester/internal/i18n"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
@@ -26,6 +27,21 @@ type Runner struct {
 	// out receives per-command progress. It is stderr in JSON mode so that
 	// stdout carries nothing but the summary document.
 	out io.Writer
+	// Responder answers elicitation and sampling requests with the answers
+	// queued by elicit_response / sample_response. Optional.
+	Responder *client.Responder
+	// Client receives roots added by add_root. Optional.
+	Client *mcp.Client
+	// Notifications records server notifications for wait_notification. Optional.
+	Notifications *client.Notifications
+	// logLevel is sent with each tool call on protocol 2026-07-28 and later.
+	logLevel string
+	// roots added by add_root, also offered to tasks that ask for them
+	roots []*mcp.Root
+	// taskMode makes call_tool's machinery start or run a task (call_task, start_task)
+	taskMode taskMode
+	// lastTask is the last task state seen, for assert_task_status
+	lastTask map[string]any
 }
 
 // TestResult holds numeric summary of test execution
@@ -77,6 +93,12 @@ func (r *Runner) Run(ctx context.Context, script string, outputFormat string) (*
 
 	if outputFormat == "json" && r.out == nil {
 		r.out = os.Stderr
+	}
+	if r.Responder != nil && r.Responder.Out == nil {
+		r.Responder.Out = r.w()
+	}
+	if r.Notifications != nil && r.Notifications.Out == nil {
+		r.Notifications.Out = r.w()
 	}
 
 	for i, line := range lines {
@@ -209,9 +231,48 @@ func (r *Runner) dispatchParts(ctx context.Context, i int, parts []string) error
 		return r.handleExpectErrorCommand(ctx, i, parts)
 	case "ping":
 		return r.handlePingCommand(ctx, i)
+	case "complete":
+		return r.handleCompleteCommand(ctx, i, parts)
+	case "elicit_response":
+		return r.handleElicitResponseCommand(i, parts)
+	case "sample_response":
+		return r.handleSampleResponseCommand(i, parts)
+	case "add_root":
+		return r.handleAddRootCommand(i, parts)
+	case "assert_elicited":
+		return r.handleAssertElicitedCommand(i, parts)
+	case "assert_sampled":
+		return r.handleAssertSampledCommand(i, parts)
+	case "call_task":
+		return r.handleTaskCallCommand(ctx, i, parts, taskCall)
+	case "start_task":
+		return r.handleTaskCallCommand(ctx, i, parts, taskStart)
+	case "wait_task":
+		return r.handleWaitTaskCommand(ctx, i, parts)
+	case "get_task":
+		return r.handleGetTaskCommand(ctx, i, parts)
+	case "cancel_task":
+		return r.handleCancelTaskCommand(ctx, i, parts)
+	case "assert_task_status":
+		return r.handleAssertTaskStatusCommand(i, parts)
+	case "list_skills":
+		return r.handleListSkillsCommand(ctx, i)
+	case "verify_skills":
+		return r.handleVerifySkillsCommand(ctx, i)
+	case "subscribe":
+		return r.handleSubscribeCommand(ctx, i, parts)
+	case "wait_notification":
+		return r.handleWaitNotificationCommand(ctx, i, parts)
 	case "logging":
 		return r.handleLoggingCommand(ctx, i, parts)
 	default:
-		return fmt.Errorf("line %d: unknown command: %s", i+1, cmd)
+		return &scriptError{fmt.Errorf("line %d: unknown command: %s", i+1, cmd)}
 	}
 }
+
+// scriptError is a mistake in the script itself. expect_error must not
+// accept it as the error it expects from the server.
+type scriptError struct{ err error }
+
+func (e *scriptError) Error() string { return e.err.Error() }
+func (e *scriptError) Unwrap() error { return e.err }

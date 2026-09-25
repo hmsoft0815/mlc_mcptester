@@ -1,0 +1,9 @@
+// Skills extension (io.modelcontextprotocol/skills): list and verify skills
+
+list_skills
+assert_contains "image-prompting"
+assert_contains "escalation"
+set_var n count
+assert_equals $n "2"
+
+verify_skills

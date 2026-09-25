@@ -32,24 +32,40 @@ const (
 	MsgNoLogging             MessageKey = "no_logging"
 	// MsgListFailed reports a list request that failed although the server
 	// declared the matching capability — a protocol error real clients hit too.
-	MsgListFailed      MessageKey = "list_failed"
-	MsgScoreBelowMin   MessageKey = "score_below_min"
-	MsgInspectFailed   MessageKey = "inspect_failed"
-	MsgTestSummary     MessageKey = "test_summary"
-	MsgExecuting       MessageKey = "executing"
-	MsgVariableSet     MessageKey = "variable_set"
-	MsgExpectedError   MessageKey = "expected_error"
-	MsgAssertionPassed MessageKey = "assertion_passed"
-	MsgResource        MessageKey = "resource"
-	MsgTemplate        MessageKey = "template"
-	MsgPrompt          MessageKey = "prompt"
-	MsgTool            MessageKey = "tool"
-	MsgIcons           MessageKey = "icons"
-	MsgDescription     MessageKey = "description"
-	MsgSchema          MessageKey = "schema"
-	MsgInputSchema     MessageKey = "input_schema"
-	MsgOutputSchema    MessageKey = "output_schema"
-	MsgAnnotations     MessageKey = "annotations"
+	MsgListFailed    MessageKey = "list_failed"
+	MsgScoreBelowMin MessageKey = "score_below_min"
+	MsgInspectFailed MessageKey = "inspect_failed"
+	// Checks against the protocol revision the server negotiates
+	MsgOutdatedProtocol     MessageKey = "outdated_protocol"
+	MsgUnknownProtocol      MessageKey = "unknown_protocol"
+	MsgInvalidToolName      MessageKey = "invalid_tool_name"
+	MsgDuplicateToolName    MessageKey = "duplicate_tool_name"
+	MsgInputSchemaNotObject MessageKey = "input_schema_not_object"
+	MsgNoTitle              MessageKey = "no_title"
+	MsgInvalidIcon          MessageKey = "invalid_icon"
+	MsgToolOrderUnstable    MessageKey = "tool_order_unstable"
+	MsgCacheHints           MessageKey = "cache_hints"
+	MsgInvalidXMCPHeader    MessageKey = "invalid_x_mcp_header"
+	MsgSkillsInvalid        MessageKey = "skills_invalid"
+	MsgInstructions         MessageKey = "instructions"
+	MsgNoInstructions       MessageKey = "no_instructions_line"
+	MsgExtensions           MessageKey = "extensions"
+	MsgCompletions          MessageKey = "completions"
+	MsgTestSummary          MessageKey = "test_summary"
+	MsgExecuting            MessageKey = "executing"
+	MsgVariableSet          MessageKey = "variable_set"
+	MsgExpectedError        MessageKey = "expected_error"
+	MsgAssertionPassed      MessageKey = "assertion_passed"
+	MsgResource             MessageKey = "resource"
+	MsgTemplate             MessageKey = "template"
+	MsgPrompt               MessageKey = "prompt"
+	MsgTool                 MessageKey = "tool"
+	MsgIcons                MessageKey = "icons"
+	MsgDescription          MessageKey = "description"
+	MsgSchema               MessageKey = "schema"
+	MsgInputSchema          MessageKey = "input_schema"
+	MsgOutputSchema         MessageKey = "output_schema"
+	MsgAnnotations          MessageKey = "annotations"
 )
 
 var messages = map[string]map[MessageKey]string{
@@ -75,26 +91,42 @@ var messages = map[string]map[MessageKey]string{
 		MsgOutputSchemaUnchecked: "NOTE: %d tools declare an output schema. inspect calls no tools, so it cannot tell whether their results " +
 			"carry matching structuredContent; strict clients (official TypeScript SDK, e.g. OpenCode) reject calls that do not. " +
 			"Check with `mcp-tester call <tool>` or a test script.",
-		MsgNoPrompts:       "WARNING: No prompts defined. Prompts are highly recommended to set the system context and persona.",
-		MsgNoLogging:       "HINT: The server does not support logging. Server-side logs via MCP help debugging.",
-		MsgListFailed:      "ERROR: %s failed although the server declares the capability: %v",
-		MsgScoreBelowMin:   "score %d is below the required minimum of %d",
-		MsgInspectFailed:   "inspection found %d protocol error(s)",
-		MsgTestSummary:     "\nTest Summary: %d commands executed, %d passed, %d failed\n",
-		MsgExecuting:       "Executing: %s %v\n",
-		MsgVariableSet:     "Variable set: %s = %s\n",
-		MsgExpectedError:   "Expected error caught: %v (code: %d)\n",
-		MsgAssertionPassed: "Assertion passed: %s\n",
-		MsgResource:        "Resource: %s\n",
-		MsgTemplate:        "Template: %s\n",
-		MsgPrompt:          "Prompt: %s\n",
-		MsgTool:            "Tool: %s\n",
-		MsgIcons:           "Icons:",
-		MsgDescription:     "Description: %s\n",
-		MsgSchema:          "Schema: %+v\n",
-		MsgInputSchema:     "Input Schema: %+v\n",
-		MsgOutputSchema:    "Output Schema: %+v\n",
-		MsgAnnotations:     "Annotations: %+v\n",
+		MsgNoPrompts:     "WARNING: No prompts defined. Prompts are highly recommended to set the system context and persona.",
+		MsgNoLogging:     "HINT: The server does not support logging. Server-side logs via MCP help debugging.",
+		MsgListFailed:    "ERROR: %s failed although the server declares the capability: %v",
+		MsgScoreBelowMin: "score %d is below the required minimum of %d",
+		MsgInspectFailed: "inspection found %d protocol error(s)",
+		MsgOutdatedProtocol: "WARNING: The server speaks protocol %s, %d revision(s) behind the latest (%s). " +
+			"Newer features are not available to clients.",
+		MsgUnknownProtocol:      "WARNING: Unknown protocol version %q.",
+		MsgInvalidToolName:      "WARNING: Tool name '%s' violates the spec naming rules: %s.",
+		MsgDuplicateToolName:    "WARNING: Tool name '%s' is not unique.",
+		MsgInputSchemaNotObject: "WARNING: Tool '%s' has an inputSchema without type \"object\".",
+		MsgNoTitle:              "HINT: Tool '%s' has no title for display in user interfaces.",
+		MsgInvalidIcon:          "WARNING: Icon of %s: %s (%s).",
+		MsgToolOrderUnstable:    "WARNING: tools/list returns the tools in a different order on each call; clients cannot cache the list reliably.",
+		MsgCacheHints:           "HINT: %s: invalid cache hints: %s.",
+		MsgInvalidXMCPHeader:    "WARNING: Tool '%s' has an invalid x-mcp-header (%s); clients on Streamable HTTP must drop the tool.",
+		MsgSkillsInvalid:        "WARNING: The published skills violate the Skills extension; details with 'mcp-tester skills --verify'.",
+		MsgInstructions:         "    - Instructions: %d characters\n",
+		MsgNoInstructions:       "    - Instructions: none\n",
+		MsgExtensions:           "    - Extensions: %s\n",
+		MsgCompletions:          "    - Completions: %v\n",
+		MsgTestSummary:          "\nTest Summary: %d commands executed, %d passed, %d failed\n",
+		MsgExecuting:            "Executing: %s %v\n",
+		MsgVariableSet:          "Variable set: %s = %s\n",
+		MsgExpectedError:        "Expected error caught: %v (code: %d)\n",
+		MsgAssertionPassed:      "Assertion passed: %s\n",
+		MsgResource:             "Resource: %s\n",
+		MsgTemplate:             "Template: %s\n",
+		MsgPrompt:               "Prompt: %s\n",
+		MsgTool:                 "Tool: %s\n",
+		MsgIcons:                "Icons:",
+		MsgDescription:          "Description: %s\n",
+		MsgSchema:               "Schema: %+v\n",
+		MsgInputSchema:          "Input Schema: %+v\n",
+		MsgOutputSchema:         "Output Schema: %+v\n",
+		MsgAnnotations:          "Annotations: %+v\n",
 	},
 	"de": {
 		MsgInspectionTitle: "=== MCP Server Inspektion: %s ===\n",
@@ -118,26 +150,42 @@ var messages = map[string]map[MessageKey]string{
 		MsgOutputSchemaUnchecked: "HINWEIS: %d Tools geben ein Output-Schema an. inspect ruft keine Tools auf und kann daher nicht prüfen, " +
 			"ob ihre Ergebnisse passendes structuredContent liefern; strikte Clients (offizielles TypeScript-SDK, z. B. OpenCode) " +
 			"lehnen solche Aufrufe ab. Prüfen mit `mcp-tester call <tool>` oder einem Testskript.",
-		MsgNoPrompts:       "WARNUNG: Keine Prompts definiert. Prompts werden dringend empfohlen.",
-		MsgNoLogging:       "HINT: Der Server unterstützt kein Logging. Server-seitige Logs helfen bei der Fehlersuche.",
-		MsgListFailed:      "FEHLER: %s ist fehlgeschlagen, obwohl der Server die Fähigkeit angibt: %v",
-		MsgScoreBelowMin:   "Score %d liegt unter dem geforderten Minimum von %d",
-		MsgInspectFailed:   "Inspektion hat %d Protokollfehler gefunden",
-		MsgTestSummary:     "\nTest-Zusammenfassung: %d Befehle ausgeführt, %d bestanden, %d fehlgeschlagen\n",
-		MsgExecuting:       "Ausführung: %s %v\n",
-		MsgVariableSet:     "Variable gesetzt: %s = %s\n",
-		MsgExpectedError:   "Erwarteter Fehler abgefangen: %v (Code: %d)\n",
-		MsgAssertionPassed: "Zusicherung bestanden: %s\n",
-		MsgResource:        "Ressource: %s\n",
-		MsgTemplate:        "Vorlage: %s\n",
-		MsgPrompt:          "Prompt: %s\n",
-		MsgTool:            "Tool: %s\n",
-		MsgIcons:           "Icons:",
-		MsgDescription:     "Beschreibung: %s\n",
-		MsgSchema:          "Schema: %+v\n",
-		MsgInputSchema:     "Input-Schema: %+v\n",
-		MsgOutputSchema:    "Output-Schema: %+v\n",
-		MsgAnnotations:     "Annotationen: %+v\n",
+		MsgNoPrompts:     "WARNUNG: Keine Prompts definiert. Prompts werden dringend empfohlen.",
+		MsgNoLogging:     "HINT: Der Server unterstützt kein Logging. Server-seitige Logs helfen bei der Fehlersuche.",
+		MsgListFailed:    "FEHLER: %s ist fehlgeschlagen, obwohl der Server die Fähigkeit angibt: %v",
+		MsgScoreBelowMin: "Score %d liegt unter dem geforderten Minimum von %d",
+		MsgInspectFailed: "Inspektion hat %d Protokollfehler gefunden",
+		MsgOutdatedProtocol: "WARNUNG: Der Server spricht Protokoll %s, %d Revision(en) hinter der neuesten (%s). " +
+			"Neuere Features stehen Clients nicht zur Verfügung.",
+		MsgUnknownProtocol:      "WARNUNG: Unbekannte Protokoll-Version %q.",
+		MsgInvalidToolName:      "WARNUNG: Tool-Name '%s' verletzt die Namensregeln der Spec: %s.",
+		MsgDuplicateToolName:    "WARNUNG: Tool-Name '%s' ist nicht eindeutig.",
+		MsgInputSchemaNotObject: "WARNUNG: Tool '%s' hat ein inputSchema ohne type \"object\".",
+		MsgNoTitle:              "HINT: Tool '%s' hat keinen title für die Anzeige in Oberflächen.",
+		MsgInvalidIcon:          "WARNUNG: Icon von %s: %s (%s).",
+		MsgToolOrderUnstable:    "WARNUNG: tools/list liefert die Tools bei jedem Aufruf in anderer Reihenfolge; Clients können die Liste nicht zuverlässig cachen.",
+		MsgCacheHints:           "HINT: %s: ungültige Cache-Angaben: %s.",
+		MsgInvalidXMCPHeader:    "WARNUNG: Tool '%s' hat ein ungültiges x-mcp-header (%s); Clients über Streamable HTTP müssen das Tool verwerfen.",
+		MsgSkillsInvalid:        "WARNUNG: Die veröffentlichten Skills verletzen die Skills-Extension; Details mit 'mcp-tester skills --verify'.",
+		MsgInstructions:         "    - Instructions: %d Zeichen\n",
+		MsgNoInstructions:       "    - Instructions: keine\n",
+		MsgExtensions:           "    - Extensions: %s\n",
+		MsgCompletions:          "    - Completions: %v\n",
+		MsgTestSummary:          "\nTest-Zusammenfassung: %d Befehle ausgeführt, %d bestanden, %d fehlgeschlagen\n",
+		MsgExecuting:            "Ausführung: %s %v\n",
+		MsgVariableSet:          "Variable gesetzt: %s = %s\n",
+		MsgExpectedError:        "Erwarteter Fehler abgefangen: %v (Code: %d)\n",
+		MsgAssertionPassed:      "Zusicherung bestanden: %s\n",
+		MsgResource:             "Ressource: %s\n",
+		MsgTemplate:             "Vorlage: %s\n",
+		MsgPrompt:               "Prompt: %s\n",
+		MsgTool:                 "Tool: %s\n",
+		MsgIcons:                "Icons:",
+		MsgDescription:          "Beschreibung: %s\n",
+		MsgSchema:               "Schema: %+v\n",
+		MsgInputSchema:          "Input-Schema: %+v\n",
+		MsgOutputSchema:         "Output-Schema: %+v\n",
+		MsgAnnotations:          "Annotationen: %+v\n",
 	},
 }
 

@@ -1,0 +1,36 @@
+// Tasks extension (io.modelcontextprotocol/tasks): tool calls as polled tasks
+
+echo "--- call_task: start, poll, result ---"
+call_task long_job seconds:0.5
+assert_task_status completed
+assert_contains "Job finished after 500ms"
+
+echo "--- input_required inside a task, answered via tasks/update ---"
+elicit_response accept '{"name": "Ada"}'
+call_task ask_name
+assert_elicited "What is your name?"
+assert_task_status completed
+assert_contains "Hello, Ada!"
+
+echo "--- the same tool without tasks uses multi round-trip ---"
+elicit_response accept '{"name": "Grace"}'
+call_tool ask_name
+assert_contains "Hello, Grace!"
+
+echo "--- failed: a JSON-RPC error inside the task ---"
+expect_error call_task failing_job
+assert_error_code -32603
+assert_task_status failed
+
+echo "--- step by step: start, inspect, cancel ---"
+start_task long_job seconds:30
+set_var id taskId
+get_task $id
+assert_task_status working
+cancel_task $id
+wait_task $id 5s
+assert_task_status cancelled
+
+echo "--- unknown task id ---"
+expect_error get_task no-such-task
+assert_error_code -32602

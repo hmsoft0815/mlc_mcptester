@@ -187,6 +187,19 @@ Braucht ein Task Eingaben (Status `input_required`), gehen die mit `elicit_respo
 
 ---
 
+### 16. Skills: `list_skills`, `verify_skills`
+Für Server, die Agent Skills über die Skills-Extension (`io.modelcontextprotocol/skills`) veröffentlichen.
+```mcp
+list_skills                 # abgelegt als {skills: [...], count}; Text: ein Name pro Zeile
+assert_contains "image-prompting"
+set_var n count
+
+verify_skills               # alle Prüfungen inkl. Lesen jeder Datei; scheitert bei jedem Verstoß
+```
+Auf der Kommandozeile zeigt `mcp-tester skills [--verify]` Name, Beschreibung, Lizenz, `allowed-tools` und Dateien jedes Skills und die Prüfergebnisse.
+
+---
+
 ## Beispiel-Skript
 
 ```mcp

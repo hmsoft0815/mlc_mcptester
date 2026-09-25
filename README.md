@@ -39,7 +39,7 @@ Besonders bei neuen Features lohnt frühes Testen. Fehler in der **Autorisierung
 
 ### Fremde und Closed-Source-Server vor der Freigabe prüfen
 
-Auch bei MCP-Servern, deren Quellcode ihr nicht kennt, ist eine Analyse sinnvoll, **bevor** ihr sie einem „echten“ LLM zur Verfügung stellt. `inspect` zeigt Protokollversion, Fähigkeiten, Tools mit Schemas und Annotations (z. B. ob ein Tool nur liest), Icons und Auffälligkeiten; `http-check` zeigt, wie sauber der Transport umgesetzt ist.
+Auch bei MCP-Servern, deren Quellcode ihr nicht kennt, ist eine Analyse sinnvoll, **bevor** ihr sie einem „echten“ LLM zur Verfügung stellt. `inspect` zeigt Protokollversion, Fähigkeiten, Tools mit Schemas und Annotations (z. B. ob ein Tool nur liest), Icons und Auffälligkeiten; `http-check` zeigt, wie sauber der Transport umgesetzt ist; `skills --verify` zeigt, welche Anweisungen (Skills) der Server dem Modell mitgibt, welche Tools sie vorab freigeben wollen (`allowed-tools`) und ob der Inhalt zu den veröffentlichten Digests passt.
 
 Unser eigener, interner Harness zeigt genau solche Details an, bevor ein MCP-Server freigeschaltet wird. Für Anwender ist das eine sehr hilfreiche Entscheidungshilfe: verwenden, ja oder nein?
 
@@ -51,6 +51,7 @@ Weil `mcp-tester` den Server von außen gegen die Spezifikation prüft, findet e
 
 - **Echte Client-Perspektive** über `stdio`, SSE und **Streamable HTTP**, mit Profilen in `mcp-tester.yml`.
 - **Scripting Engine** (`.mcp`): Tools, Tasks, Completion, Elicitation, Sampling, Roots und Notifications skriptbar, mit Assertions und Exit-Code für CI.
+- **Skills-Extension**: Skills eines Servers auflisten und verifizieren (`skills --verify`): Manifest, Digests, Frontmatter, Namensregeln. Das Go-Paket [`pkg/mcpskills`](pkg/mcpskills) stellt Skills aus einem Verzeichnis bereit.
 - **Tasks-Extension**: lang laufende Tool-Aufrufe als Task starten, pollen, abbrechen, Eingaben nachreichen. Für Server-Autoren gibt es das Go-Paket [`pkg/mcptasks`](pkg/mcptasks), das die Extension auf Servern mit dem offiziellen go-sdk nachrüstet.
 - **Server Inspector** (`inspect`): Spec-Abgleich, Best Practices und Quality Score; `--min-score` als CI-Gate.
 - **HTTP-Konformität** (`http-check`): Pflicht-Header, Fehlercodes, Origin, Sessions nach Spec 2026-07-28.

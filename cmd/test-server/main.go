@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/hmsoft0815/mlc_mcptester/internal/version"
+	"github.com/hmsoft0815/mlc_mcptester/pkg/mcpskills"
 	"github.com/hmsoft0815/mlc_mcptester/pkg/mcptasks"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
@@ -37,6 +38,7 @@ func main() {
 		Resources: &mcp.ResourceCapabilities{ListChanged: true, Subscribe: true},
 	}
 	mcptasks.Declare(caps)
+	mcpskills.Declare(caps, true)
 	s := mcp.NewServer(
 		&mcp.Implementation{
 			Name:    "ultimate-test-server",
@@ -56,6 +58,7 @@ func main() {
 	registerNotifyTools(s)
 	registerHeaderTools(s)
 	registerTaskTools(s)
+	registerSkills(s)
 	registerResources(s)
 	registerPrompts(s)
 

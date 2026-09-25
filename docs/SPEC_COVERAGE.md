@@ -83,7 +83,8 @@ Legend: ✅ covered · ⚠️ partial · ❌ missing · — not applicable or no
 | Feature | Status | Notes |
 |---|---|---|
 | Tasks (`io.modelcontextprotocol/tasks`) | ✅ | script commands `call_task`, `start_task`, `wait_task`, `get_task`, `cancel_task`, `assert_task_status`; `call --task`; `input_required` via `tasks/update`; `Mcp-Name` = `taskId` over HTTP. The go-sdk does not know the extension: client over the raw path, server side as package `pkg/mcptasks`. Script test `15_tasks`. Not implemented: `notifications/tasks` (MAY) |
-| Apps, Skills, auth extensions | ❌ | Skills in progress |
+| Skills (`io.modelcontextprotocol/skills`) | ✅ | `skills [--verify]` command, script commands `list_skills`, `verify_skills`, shown by `inspect`: manifest (complete, digests, sizes, limits), frontmatter per Agent Skills rules, name = path segment, `skills/get`, `resources/directory/read`, `-32602`. Server side as package `pkg/mcpskills`. Script test `16_skills` |
+| Apps, auth extensions | ❌ | |
 
 ## History
 

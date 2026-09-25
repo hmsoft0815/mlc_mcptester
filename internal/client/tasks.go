@@ -7,7 +7,6 @@ import (
 	"io"
 	"time"
 
-	"github.com/hmsoft0815/mlc_mcptester/internal/version"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
@@ -34,16 +33,12 @@ type TaskClient struct {
 // meta is the per-request metadata, declaring the extension and the input
 // kinds the tester can answer.
 func (c *TaskClient) meta() map[string]any {
-	return map[string]any{
-		mcp.MetaKeyProtocolVersion: c.Session.InitializeResult().ProtocolVersion,
-		mcp.MetaKeyClientInfo:      map[string]any{"name": version.AppName, "version": version.Version},
-		mcp.MetaKeyClientCapabilities: map[string]any{
-			"extensions":  map[string]any{TasksExtension: map[string]any{}},
-			"elicitation": map[string]any{"form": map[string]any{}, "url": map[string]any{}},
-			"sampling":    map[string]any{},
-			"roots":       map[string]any{"listChanged": true},
-		},
-	}
+	return RequestMeta(c.Session, map[string]any{
+		"extensions":  map[string]any{TasksExtension: map[string]any{}},
+		"elicitation": map[string]any{"form": map[string]any{}, "url": map[string]any{}},
+		"sampling":    map[string]any{},
+		"roots":       map[string]any{"listChanged": true},
+	})
 }
 
 func (c *TaskClient) call(ctx context.Context, method string, params map[string]any) (map[string]any, error) {

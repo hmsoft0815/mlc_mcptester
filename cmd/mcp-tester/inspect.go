@@ -11,6 +11,8 @@ import (
 	mcpclient "github.com/hmsoft0815/mlc_mcptester/internal/client"
 	"github.com/hmsoft0815/mlc_mcptester/internal/httpcheck"
 	"github.com/hmsoft0815/mlc_mcptester/internal/i18n"
+	"github.com/hmsoft0815/mlc_mcptester/internal/skillcheck"
+	"github.com/hmsoft0815/mlc_mcptester/pkg/mcpskills"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/spf13/cobra"
 )
@@ -301,6 +303,18 @@ var inspectCmd = &cobra.Command{
 			}
 			if first, err := session.ListResources(ctx, nil); err == nil {
 				checkCache("resources/list", first)
+			}
+		}
+
+		// Skills are instructions that reach the model: count them, details via 'skills'
+		if _, ok := caps.Extensions[mcpskills.Extension]; ok {
+			skillsReport := (&skillcheck.Checker{Session: session}).Run(ctx)
+			if format == "text" {
+				fmt.Print(i18n.T(i18n.MsgFound, len(skillsReport.Skills), "skills"))
+			}
+			if skillsReport.Failed() {
+				warn(i18n.T(i18n.MsgSkillsInvalid))
+				score -= 10
 			}
 		}
 

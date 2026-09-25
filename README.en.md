@@ -39,7 +39,7 @@ Testing early pays off most for new features. Mistakes in **authorization** (OAu
 
 ### Check third-party and closed-source servers before you enable them
 
-Even for MCP servers whose source you do not know, an analysis makes sense **before** you give them to a "real" LLM. `inspect` shows protocol version, capabilities, tools with schemas and annotations (e.g. whether a tool only reads), icons and anything unusual; `http-check` shows how cleanly the transport is implemented.
+Even for MCP servers whose source you do not know, an analysis makes sense **before** you give them to a "real" LLM. `inspect` shows protocol version, capabilities, tools with schemas and annotations (e.g. whether a tool only reads), icons and anything unusual; `http-check` shows how cleanly the transport is implemented; `skills --verify` shows which instructions (skills) the server hands to the model, which tools they want pre-approved (`allowed-tools`) and whether the content matches the published digests.
 
 Our own internal harness shows exactly these details before an MCP server is enabled. For users it is a very helpful basis for the decision: use it, yes or no?
 
@@ -51,6 +51,7 @@ Because `mcp-tester` checks the server from the outside against the specificatio
 
 - **True client perspective** over `stdio`, SSE and **Streamable HTTP**, with profiles in `mcp-tester.yml`.
 - **Scripting engine** (`.mcp`): tools, tasks, completion, elicitation, sampling, roots and notifications are scriptable, with assertions and an exit code for CI.
+- **Skills extension**: list and verify a server's skills (`skills --verify`): manifest, digests, frontmatter, naming rules. The Go package [`pkg/mcpskills`](pkg/mcpskills) serves skills from a directory.
 - **Tasks extension**: start long-running tool calls as tasks, poll, cancel, supply input. For server authors, the Go package [`pkg/mcptasks`](pkg/mcptasks) adds the extension to servers built on the official go-sdk.
 - **Server inspector** (`inspect`): spec check, best practices and quality score; `--min-score` as a CI gate.
 - **HTTP conformance** (`http-check`): required headers, error codes, Origin, sessions per spec 2026-07-28.

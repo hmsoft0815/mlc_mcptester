@@ -255,6 +255,10 @@ func (r *Runner) dispatchParts(ctx context.Context, i int, parts []string) error
 		return r.handleCancelTaskCommand(ctx, i, parts)
 	case "assert_task_status":
 		return r.handleAssertTaskStatusCommand(i, parts)
+	case "list_skills":
+		return r.handleListSkillsCommand(ctx, i)
+	case "verify_skills":
+		return r.handleVerifySkillsCommand(ctx, i)
 	case "subscribe":
 		return r.handleSubscribeCommand(ctx, i, parts)
 	case "wait_notification":

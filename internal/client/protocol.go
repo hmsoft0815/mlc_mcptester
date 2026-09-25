@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 
+	"github.com/hmsoft0815/mlc_mcptester/internal/version"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
@@ -32,4 +33,18 @@ func WithLogLevel(meta mcp.Meta, level string) mcp.Meta {
 	}
 	meta[mcp.MetaKeyLogLevel] = level
 	return meta
+}
+
+// RequestMeta is the per-request metadata (2026-07-28) for requests sent over
+// the raw path, which the SDK does not fill in: protocol version, client info
+// and the given client capabilities (nil means none).
+func RequestMeta(session *mcp.ClientSession, capabilities map[string]any) map[string]any {
+	if capabilities == nil {
+		capabilities = map[string]any{}
+	}
+	return map[string]any{
+		mcp.MetaKeyProtocolVersion:    session.InitializeResult().ProtocolVersion,
+		mcp.MetaKeyClientInfo:         map[string]any{"name": version.AppName, "version": version.Version},
+		mcp.MetaKeyClientCapabilities: capabilities,
+	}
 }

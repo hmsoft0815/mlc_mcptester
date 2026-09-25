@@ -187,6 +187,19 @@ If a task needs input (status `input_required`), the answers prepared with `elic
 
 ---
 
+### 16. Skills: `list_skills`, `verify_skills`
+For servers publishing Agent Skills via the Skills extension (`io.modelcontextprotocol/skills`).
+```mcp
+list_skills                 # stored as {skills: [...], count}; text: one name per line
+assert_contains "image-prompting"
+set_var n count
+
+verify_skills               # all checks incl. reading every file; fails on any violation
+```
+On the command line, `mcp-tester skills [--verify]` lists name, description, license, `allowed-tools` and files of every skill and prints the checks.
+
+---
+
 ## Example Script
 
 ```mcp

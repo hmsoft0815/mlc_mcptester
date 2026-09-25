@@ -118,10 +118,11 @@ func (r *Runner) handleExpectErrorCommand(ctx context.Context, i int, parts []st
 
 func (r *Runner) handlePingCommand(ctx context.Context, i int) error {
 	fmt.Fprintln(r.w(), "Ping...")
-	if err := r.session.Ping(ctx, &mcp.PingParams{}); err != nil {
+	method, err := client.Ping(ctx, r.session)
+	if err != nil {
 		return fmt.Errorf("line %d: ping failed: %w", i+1, err)
 	}
-	fmt.Fprintln(r.w(), "Pong!")
+	fmt.Fprintf(r.w(), "Pong! (%s)\n", method)
 	return nil
 }
 
@@ -130,6 +131,12 @@ func (r *Runner) handleLoggingCommand(ctx context.Context, i int, parts []string
 		return fmt.Errorf("line %d: logging expects a level", i+1)
 	}
 	level := parts[1]
+	if client.IsStateless(r.session) {
+		// No logging/setLevel since 2026-07-28: the level goes with every later call
+		r.logLevel = level
+		fmt.Fprintf(r.w(), "Server logging level %s is sent with each following call\n", level)
+		return nil
+	}
 	fmt.Fprintf(r.w(), "Setting server logging level to %s...\n", level)
 	if err := r.session.SetLoggingLevel(ctx, &mcp.SetLoggingLevelParams{Level: mcp.LoggingLevel(level)}); err != nil {
 		return fmt.Errorf("line %d: failed to set logging level: %w", i+1, err)

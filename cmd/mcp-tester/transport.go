@@ -68,16 +68,31 @@ func getTransport(ctx context.Context, command, url string) (mcp.Transport, erro
 		}, nil
 	}
 	if url != "" {
+		httpClient, err := httpClientWithAuth()
+		if err != nil {
+			return nil, err
+		}
 		tType := strings.ToLower(strings.TrimSpace(transportType))
 		if tType == "sse" || (tType == "" && strings.HasSuffix(strings.TrimRight(url, "/"), "/sse")) {
+			if oauthEnabled {
+				return nil, fmt.Errorf("--oauth needs the Streamable HTTP transport; the legacy SSE transport has no OAuth support")
+			}
 			return &mcp.SSEClientTransport{
-				Endpoint: url,
+				Endpoint:   url,
+				HTTPClient: httpClient,
 			}, nil
 		}
 		// Default to Streamable HTTP transport for HTTP URLs, or when explicitly requested
-		return &mcp.StreamableClientTransport{
-			Endpoint: url,
-		}, nil
+		t := &mcp.StreamableClientTransport{
+			Endpoint:   url,
+			HTTPClient: httpClient,
+		}
+		if oauthEnabled {
+			if t.OAuthHandler, err = newOAuthHandler(); err != nil {
+				return nil, fmt.Errorf("setting up OAuth: %w", err)
+			}
+		}
+		return t, nil
 	}
 	return nil, fmt.Errorf("either --command or --url is required")
 }

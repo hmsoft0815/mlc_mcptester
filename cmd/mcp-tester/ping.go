@@ -3,8 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
+	mcpclient "github.com/hmsoft0815/mlc_mcptester/internal/client"
 
-	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/spf13/cobra"
 )
 
@@ -34,8 +34,12 @@ var pingCmd = &cobra.Command{
 		defer session.Close()
 
 		fmt.Println("Sending ping...")
-		if err := session.Ping(ctx, &mcp.PingParams{}); err != nil {
+		method, err := mcpclient.Ping(ctx, session)
+		if err != nil {
 			return fmt.Errorf("ping failed: %w", err)
+		}
+		if method != "ping" {
+			fmt.Printf("Protocol %s has no ping; the server answered %s.\n", session.InitializeResult().ProtocolVersion, method)
 		}
 		fmt.Println("Ping successful!")
 		return nil

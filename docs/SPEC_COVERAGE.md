@@ -32,7 +32,7 @@ Legend: ✅ covered · ⚠️ partial · ❌ missing · — not applicable per s
 | Cancellation (`notifications/cancelled`) | ✅ | script test `06_cancellation` |
 | Pagination | ✅ | `inspect`, `list` and the script engine follow `nextCursor` across all pages; `prompts list` / `resources list` page with `--cursor` |
 | Error codes | ✅ | `assert_error_code` checks any code, including -32020…-32022 |
-| `ping` | ⚠️ | removed in 2026-07-28; the command stays for older servers |
+| `ping` | ✅ | removed in 2026-07-28: there `server/discover` counts as liveness, otherwise `ping` |
 
 ## Transports
 
@@ -48,8 +48,9 @@ Legend: ✅ covered · ⚠️ partial · ❌ missing · — not applicable per s
 
 | Feature | Status | Notes |
 |---|---|---|
-| OAuth 2.1 / PKCE, Protected Resource Metadata, `iss` validation | ❌ | no token or header support; protected servers cannot be tested |
-| Client ID Metadata Documents, Dynamic Client Registration | ❌ | |
+| OAuth 2.1 / PKCE, Protected Resource Metadata, `iss` validation | ✅ | `--oauth` via the go-sdk handler; `--oauth-auto` without a browser; checked against `test-server -auth` |
+| Static credentials | ✅ | `--bearer`, `-H/--header`, profile fields `bearer` / `headers` |
+| Client ID Metadata Documents, Dynamic Client Registration | ✅ | `--oauth-client-metadata-url`, `--oauth-client-id`, otherwise dynamic registration (deprecated since 2026-07-28) |
 
 ## Server features
 
@@ -65,7 +66,7 @@ Legend: ✅ covered · ⚠️ partial · ❌ missing · — not applicable per s
 | Resource not found `-32602` (was `-32002`) | ⚠️ | checkable via `assert_error_code`, not checked by `inspect` |
 | `subscriptions/listen`, `list_changed`, resource updates | ✅ | script commands `subscribe`, `wait_notification`; `listen` command; script test `14_notifications` (stdio and HTTP) |
 | `completion/complete` | ✅ | `complete` command and script command, script test `12_completion` |
-| Logging | ⚠️ | `logging` uses `setLevel`; deprecated in 2026-07-28, where the level is set per request via `_meta` |
+| Logging | ✅ | up to 2025-11-25 `setLevel`; from 2026-07-28 per request via `_meta` (`call --log-level`, script command `logging`); deprecated since 2026-07-28 |
 
 ## Client features (MRTR)
 

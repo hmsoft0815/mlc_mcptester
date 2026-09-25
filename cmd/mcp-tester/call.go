@@ -12,10 +12,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var callArgs string
+var (
+	callArgs     string
+	callLogLevel string
+)
 
 func init() {
 	callCmd.Flags().StringVarP(&callArgs, "args", "a", "{}", "Tool arguments (JSON)")
+	callCmd.Flags().StringVar(&callLogLevel, "log-level", "", "Server log level for this call (debug, info, notice, warning, error, ...)")
 	rootCmd.AddCommand(callCmd)
 }
 
@@ -56,8 +60,16 @@ var callCmd = &cobra.Command{
 		}
 		defer session.Close()
 
-		if verbose {
-			_ = session.SetLoggingLevel(ctx, &mcp.SetLoggingLevelParams{Level: "debug"})
+		logLevel := callLogLevel
+		if logLevel == "" && verbose {
+			logLevel = "debug"
+		}
+		// Up to 2025-11-25 the level is session state; since 2026-07-28 it
+		// travels with the request (below)
+		if logLevel != "" && !client.IsStateless(session) {
+			if err := session.SetLoggingLevel(ctx, &mcp.SetLoggingLevelParams{Level: mcp.LoggingLevel(logLevel)}); err != nil && callLogLevel != "" {
+				return fmt.Errorf("failed to set logging level: %w", err)
+			}
 		}
 
 		// Parse the JSON arguments provided via the --args flag.
@@ -94,6 +106,9 @@ var callCmd = &cobra.Command{
 			params.Meta = mcp.Meta{
 				"progressToken": "call-progress-123",
 			}
+		}
+		if logLevel != "" && client.IsStateless(session) {
+			params.Meta = client.WithLogLevel(params.Meta, logLevel)
 		}
 
 		callResult, err := session.CallTool(ctx, params)

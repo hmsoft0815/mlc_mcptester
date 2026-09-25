@@ -176,6 +176,9 @@ func (r *Runner) executeSDKCall(ctx context.Context, name string, args map[strin
 	// the multi round-trip middleware, which answers input requests through
 	// the client's handlers (see Runner.Responder). --raw bypasses both.
 	params := &mcp.CallToolParams{Name: name, Arguments: args}
+	if r.logLevel != "" {
+		params.Meta = client.WithLogLevel(params.Meta, r.logLevel)
+	}
 	params.SetProgressToken(fmt.Sprintf("script-progress-%s", name))
 	result, err := r.session.CallTool(ctx, params)
 	if err != nil {

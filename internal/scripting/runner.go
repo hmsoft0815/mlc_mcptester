@@ -34,6 +34,8 @@ type Runner struct {
 	Client *mcp.Client
 	// Notifications records server notifications for wait_notification. Optional.
 	Notifications *client.Notifications
+	// logLevel is sent with each tool call on protocol 2026-07-28 and later.
+	logLevel string
 }
 
 // TestResult holds numeric summary of test execution

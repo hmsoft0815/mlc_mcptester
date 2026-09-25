@@ -99,6 +99,22 @@ mcp-tester profile disable my-server
 mcp-tester profile delete my-server
 ```
 
+#### Protected servers (authorization)
+For HTTP transports. Static credentials via flags or profile, otherwise the spec's OAuth 2.1 flow (PKCE, Protected Resource Metadata, `iss` validation; client registration via Client ID Metadata Document, pre-registered client or dynamic):
+```bash
+# Bearer token or any header
+mcp-tester list -u https://example.com/mcp --bearer "$TOKEN"
+mcp-tester list -u https://example.com/mcp -H "X-Api-Key: $KEY"
+
+# OAuth: the URL is printed (or opened with --oauth-browser)
+mcp-tester inspect -u https://example.com/mcp --oauth
+mcp-tester inspect -u https://example.com/mcp --oauth --oauth-client-id my-client
+
+# Without a browser, for authorization servers without user interaction (CI, test-server -auth)
+mcp-tester inspect -u http://127.0.0.1:8080/mcp --oauth --oauth-auto
+```
+In a profile: `headers:` and `bearer:`, `${VAR}` is expanded from the environment. `./bin/test-server -addr :8080 -auth` starts a protected test server with a built-in authorization server (static token `test-token`).
+
 #### Server Inspection
 Analyze a server for quality (metadata, prompts, structure):
 ```bash

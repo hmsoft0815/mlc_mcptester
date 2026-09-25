@@ -20,6 +20,7 @@ const serverIcon = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My
 func main() {
 	showVersion := flag.Bool("version", false, "print the version and exit")
 	addr := flag.String("addr", "", "Listen address for HTTP/SSE (e.g. \":8080\"). If empty, uses stdio.")
+	withAuth := flag.Bool("auth", false, "With -addr: require OAuth bearer tokens and serve a built-in test authorization server")
 	flag.Parse()
 
 	if *showVersion {
@@ -59,11 +60,22 @@ func main() {
 		sseHandler := mcp.NewSSEHandler(func(*http.Request) *mcp.Server { return s }, nil)
 		// Stateless: the SDK serves protocol 2026-07-28 over HTTP only in this mode
 		streamableHandler := mcp.NewStreamableHTTPHandler(func(*http.Request) *mcp.Server { return s }, &mcp.StreamableHTTPOptions{Stateless: true})
-		mux.Handle("/sse", sseHandler)
-		mux.Handle("/sse/", sseHandler)
-		mux.Handle("/mcp", streamableHandler)
-		mux.Handle("/mcp/", streamableHandler)
-		mux.Handle("/", streamableHandler)
+		var sseH, mcpH http.Handler = sseHandler, streamableHandler
+		if *withAuth {
+			base := "http://" + *addr
+			if strings.HasPrefix(*addr, ":") {
+				base = "http://127.0.0.1" + *addr
+			}
+			as := newAuthServer(base, base+"/mcp")
+			as.register(mux)
+			sseH, mcpH = as.protect(sseHandler), as.protect(streamableHandler)
+			fmt.Fprintf(os.Stderr, "OAuth enabled: issuer %s, static token %q\n", base, StaticToken)
+		}
+		mux.Handle("/sse", sseH)
+		mux.Handle("/sse/", sseH)
+		mux.Handle("/mcp", mcpH)
+		mux.Handle("/mcp/", mcpH)
+		mux.Handle("/", mcpH)
 		if err := http.ListenAndServe(*addr, mux); err != nil {
 			log.Fatalf("Server failed: %v", err)
 		}
@@ -100,6 +112,8 @@ func registerBasicTools(s *mcp.Server) {
 		},
 	}, func(ctx context.Context, request *mcp.CallToolRequest, args map[string]any) (*mcp.CallToolResult, any, error) {
 		msg, _ := args["message"].(string)
+		// Only delivered if the client asked for debug logs (per request since 2026-07-28)
+		_ = request.Session.Log(ctx, &mcp.LoggingMessageParams{Level: "debug", Logger: "echo", Data: "echo called with " + msg})
 		return &mcp.CallToolResult{
 			Content: []mcp.Content{&mcp.TextContent{Text: "Echo: " + msg}},
 		}, map[string]any{"echo": msg}, nil

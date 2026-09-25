@@ -32,7 +32,7 @@ Legende: ✅ abgedeckt · ⚠️ teilweise · ❌ fehlt · — entfällt laut Sp
 | Abbruch (`notifications/cancelled`) | ✅ | Skripttest `06_cancellation` |
 | Pagination | ✅ | `inspect`, `list` und die Skript-Engine folgen `nextCursor` über alle Seiten; `prompts list` / `resources list` blättern mit `--cursor` |
 | Fehlercodes | ✅ | `assert_error_code` prüft beliebige Codes, auch -32020…-32022 |
-| `ping` | ⚠️ | in 2026-07-28 entfernt; der Befehl bleibt für ältere Server |
+| `ping` | ✅ | in 2026-07-28 entfernt: dort gilt `server/discover` als Lebenszeichen, sonst `ping` |
 
 ## Transporte
 
@@ -48,8 +48,9 @@ Legende: ✅ abgedeckt · ⚠️ teilweise · ❌ fehlt · — entfällt laut Sp
 
 | Feature | Status | Anmerkung |
 |---|---|---|
-| OAuth 2.1 / PKCE, Protected Resource Metadata, `iss`-Prüfung | ❌ | keine Unterstützung für Tokens oder Header; geschützte Server sind nicht testbar |
-| Client ID Metadata Documents, Dynamic Client Registration | ❌ | |
+| OAuth 2.1 / PKCE, Protected Resource Metadata, `iss`-Prüfung | ✅ | `--oauth` über den Handler des go-sdk; `--oauth-auto` ohne Browser; geprüft gegen `test-server -auth` |
+| Statische Zugangsdaten | ✅ | `--bearer`, `-H/--header`, Profilfelder `bearer` / `headers` |
+| Client ID Metadata Documents, Dynamic Client Registration | ✅ | `--oauth-client-metadata-url`, `--oauth-client-id`, sonst dynamische Registrierung (deprecated seit 2026-07-28) |
 
 ## Server-Features
 
@@ -65,7 +66,7 @@ Legende: ✅ abgedeckt · ⚠️ teilweise · ❌ fehlt · — entfällt laut Sp
 | Resource-not-found `-32602` (statt `-32002`) | ⚠️ | per `assert_error_code` prüfbar, `inspect` prüft es nicht |
 | `subscriptions/listen`, `list_changed`, Resource-Updates | ✅ | Skriptbefehle `subscribe`, `wait_notification`; Befehl `listen`; Skripttest `14_notifications` (stdio und HTTP) |
 | `completion/complete` | ✅ | Befehl `complete`, Skriptbefehl `complete`, Skripttest `12_completion` |
-| Logging | ⚠️ | `logging` nutzt `setLevel`; in 2026-07-28 deprecated, die Stufe wird dort pro Request über `_meta` gesetzt |
+| Logging | ✅ | bis 2025-11-25 `setLevel`; ab 2026-07-28 pro Request über `_meta` (`call --log-level`, Skriptbefehl `logging`); deprecated seit 2026-07-28 |
 
 ## Client-Features (MRTR)
 

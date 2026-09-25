@@ -265,7 +265,7 @@ var inspectCmd = &cobra.Command{
 				}
 
 				// The spec asks for a deterministic order so clients can cache the list
-				if again, err := mcpclient.ListAllTools(ctx, session); err == nil && !sameToolOrder(tools, again) {
+				if again, err := listToolsAgain(ctx, session, c, u); err == nil && !sameToolOrder(tools, again) {
 					warn(i18n.T(i18n.MsgToolOrderUnstable))
 					score -= 5
 				}
@@ -360,4 +360,23 @@ func sameToolOrder(a, b []*mcp.Tool) bool {
 		return out
 	}
 	return slices.Equal(names(a), names(b))
+}
+
+// listToolsAgain lists the tools a second time for the order check. Since
+// 2026-07-28 the SDK serves repeated list calls from its ttlMs cache, so a
+// fresh connection is needed to ask the server again.
+func listToolsAgain(ctx context.Context, session *mcp.ClientSession, cmdArg, urlArg string) ([]*mcp.Tool, error) {
+	if !mcpclient.IsStateless(session) {
+		return mcpclient.ListAllTools(ctx, session)
+	}
+	transport, err := getTransport(ctx, cmdArg, urlArg)
+	if err != nil {
+		return nil, err
+	}
+	second, err := getClient(false).Connect(ctx, transport, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer second.Close()
+	return mcpclient.ListAllTools(ctx, second)
 }

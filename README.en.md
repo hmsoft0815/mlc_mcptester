@@ -51,6 +51,8 @@ Because `mcp-tester` checks the server from the outside against the specificatio
 
 - **True client perspective** over `stdio`, SSE and **Streamable HTTP**, with profiles in `mcp-tester.yml`.
 - **Scripting engine** (`.mcp`): tools, tasks, completion, elicitation, sampling, roots and notifications are scriptable, with assertions and an exit code for CI.
+- **MCP Apps**: list and check a server's interactive UIs (`apps`): tool linkage, `ui://` resources, external domains (CSP) and requested permissions such as camera or microphone – important before enabling a server.
+- **Auth extensions**: client credentials (machine-to-machine) and enterprise login via ID-JAG; `auth-check` shows which flows a server offers.
 - **Skills extension**: list and verify a server's skills (`skills --verify`): manifest, digests, frontmatter, naming rules. The Go package [`pkg/mcpskills`](pkg/mcpskills) serves skills from a directory.
 - **Tasks extension**: start long-running tool calls as tasks, poll, cancel, supply input. For server authors, the Go package [`pkg/mcptasks`](pkg/mcptasks) adds the extension to servers built on the official go-sdk.
 - **Server inspector** (`inspect`): spec check, best practices and quality score; `--min-score` as a CI gate.
@@ -142,6 +144,14 @@ mcp-tester inspect -u https://example.com/mcp --oauth --oauth-client-id my-clien
 
 # Without a browser, for authorization servers without user interaction (CI, test-server -auth)
 mcp-tester inspect -u http://127.0.0.1:8080/mcp --oauth --oauth-auto
+
+# Auth extensions: machine-to-machine and enterprise login (ID token → ID-JAG)
+mcp-tester list -u https://example.com/mcp --oauth-client-credentials --oauth-client-id svc --oauth-client-secret "$SECRET"
+mcp-tester list -u https://example.com/mcp --oauth-enterprise --idp-issuer https://idp.example --idp-client-id app \
+  --id-token "$ID_TOKEN" --oauth-client-id app
+
+# Which flows does the server offer, and is the metadata right?
+mcp-tester auth-check -u https://example.com/mcp
 ```
 In a profile: `headers:` and `bearer:`, `${VAR}` is expanded from the environment. `./bin/test-server -addr :8080 -auth` starts a protected test server with a built-in authorization server (static token `test-token`).
 
@@ -187,6 +197,7 @@ Execute complex test scenarios:
 - [The MCP Handbook (Online)](https://mlcgo.eu/books/mcp-handbuch/) — A comprehensive introduction and reference to Model Context Protocol (German).
 - [Scripting Reference (EN)](docs/SCRIPTING.md) — Detailed documentation of the test grammar.
 - [Scripting Referenz (DE)](docs/SCRIPTING.de.md) — Detailed documentation of the test grammar (German).
+- [Changelog](CHANGELOG.md) — Changes per version (Added/Changed/Fixed).
 - [Spec Coverage (EN)](docs/SPEC_COVERAGE.md) — Which features of the current MCP specification are checked, with date.
 
 ---

@@ -51,6 +51,8 @@ Weil `mcp-tester` den Server von außen gegen die Spezifikation prüft, findet e
 
 - **Echte Client-Perspektive** über `stdio`, SSE und **Streamable HTTP**, mit Profilen in `mcp-tester.yml`.
 - **Scripting Engine** (`.mcp`): Tools, Tasks, Completion, Elicitation, Sampling, Roots und Notifications skriptbar, mit Assertions und Exit-Code für CI.
+- **MCP Apps**: interaktive Oberflächen eines Servers auflisten und prüfen (`apps`): Tool-Verknüpfung, `ui://`-Resources, externe Domains (CSP) und angeforderte Berechtigungen wie Kamera oder Mikrofon – wichtig vor der Freigabe.
+- **Auth-Extensions**: Client Credentials (Maschine-zu-Maschine) und Enterprise-Login per ID-JAG; `auth-check` zeigt, welche Flows ein Server anbietet.
 - **Skills-Extension**: Skills eines Servers auflisten und verifizieren (`skills --verify`): Manifest, Digests, Frontmatter, Namensregeln. Das Go-Paket [`pkg/mcpskills`](pkg/mcpskills) stellt Skills aus einem Verzeichnis bereit.
 - **Tasks-Extension**: lang laufende Tool-Aufrufe als Task starten, pollen, abbrechen, Eingaben nachreichen. Für Server-Autoren gibt es das Go-Paket [`pkg/mcptasks`](pkg/mcptasks), das die Extension auf Servern mit dem offiziellen go-sdk nachrüstet.
 - **Server Inspector** (`inspect`): Spec-Abgleich, Best Practices und Quality Score; `--min-score` als CI-Gate.
@@ -143,6 +145,14 @@ mcp-tester inspect -u https://example.com/mcp --oauth --oauth-client-id my-clien
 
 # Ohne Browser, für Autorisierungsserver ohne Nutzerinteraktion (CI, test-server -auth)
 mcp-tester inspect -u http://127.0.0.1:8080/mcp --oauth --oauth-auto
+
+# Auth-Extensions: Maschine-zu-Maschine und Enterprise-Login (ID-Token → ID-JAG)
+mcp-tester list -u https://example.com/mcp --oauth-client-credentials --oauth-client-id svc --oauth-client-secret "$SECRET"
+mcp-tester list -u https://example.com/mcp --oauth-enterprise --idp-issuer https://idp.example --idp-client-id app \
+  --id-token "$ID_TOKEN" --oauth-client-id app
+
+# Welche Flows bietet der Server an, und stimmen die Metadaten?
+mcp-tester auth-check -u https://example.com/mcp
 ```
 Im Profil: `headers:` und `bearer:`, `${VAR}` wird aus der Umgebung ersetzt. `./bin/test-server -addr :8080 -auth` startet einen geschützten Test-Server mit eingebautem Autorisierungsserver (statisches Token `test-token`).
 
@@ -185,6 +195,7 @@ Führe komplexe Test-Szenarien aus:
 - [Das MCP-Handbuch (Online)](https://mlcgo.eu/books/mcp-handbuch/) — Die umfassende Einführung und Referenz in das Model Context Protocol (Deutsch).
 - [Scripting Referenz (DE)](docs/SCRIPTING.de.md) — Detaillierte Dokumentation der Test-Grammatik.
 - [Scripting Reference (EN)](docs/SCRIPTING.md) — Detailed documentation of the test grammar.
+- [Changelog](CHANGELOG.md) — Änderungen je Version (Added/Changed/Fixed).
 - [Spec-Abdeckung (DE)](docs/SPEC_COVERAGE.de.md) — Welche Features der aktuellen MCP-Spezifikation geprüft werden, mit Datum.
 
 ---

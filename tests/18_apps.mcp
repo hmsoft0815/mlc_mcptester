@@ -1,0 +1,10 @@
+// MCP Apps (io.modelcontextprotocol/ui): UI resources linked from tools
+
+verify_apps
+assert_contains "ui://clock"
+set_var n count
+assert_equals $n "1"
+
+echo "--- the UI tool still returns a text result for hosts without apps ---"
+call_tool show_clock
+assert_contains "time"

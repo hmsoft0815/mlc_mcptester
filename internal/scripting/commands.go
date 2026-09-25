@@ -21,7 +21,7 @@ func (r *Runner) handleCallTool(ctx context.Context, lineIdx int, line string) e
 	}
 	toolName := parts[1]
 	args := parts[2:]
-	fmt.Print(i18n.T(i18n.MsgExecuting, toolName, args))
+	fmt.Fprint(r.w(), i18n.T(i18n.MsgExecuting, toolName, args))
 	return r.callToolPositional(ctx, toolName, args)
 }
 
@@ -43,7 +43,7 @@ func (r *Runner) handleInputVarParts(lineIdx int, parts []string) error {
 		prompt = strings.Join(parts[2:], " ")
 		prompt = strings.Trim(prompt, "\"")
 	}
-	fmt.Print(prompt)
+	fmt.Fprint(r.w(), prompt)
 	scanner := bufio.NewScanner(os.Stdin)
 	if scanner.Scan() {
 		r.variables[varName] = scanner.Text()
@@ -72,7 +72,7 @@ func (r *Runner) handleSetVarParts(lineIdx int, varName, path string) error {
 		return fmt.Errorf("line %d: failed to extract %q: %w", lineIdx+1, path, err)
 	}
 	r.variables[varName] = fmt.Sprintf("%v", val)
-	fmt.Print(i18n.T(i18n.MsgVariableSet, varName, r.variables[varName]))
+	fmt.Fprint(r.w(), i18n.T(i18n.MsgVariableSet, varName, r.variables[varName]))
 	return nil
 }
 
@@ -112,16 +112,16 @@ func (r *Runner) handleExpectErrorCommand(ctx context.Context, i int, parts []st
 		r.lastIsToolError = true
 	}
 	r.updateState(map[string]any{"error": err.Error(), "code": r.lastErrorCode, "isToolError": r.lastIsToolError}, err.Error())
-	fmt.Print(i18n.T(i18n.MsgExpectedError, err, r.lastErrorCode))
+	fmt.Fprint(r.w(), i18n.T(i18n.MsgExpectedError, err, r.lastErrorCode))
 	return nil
 }
 
 func (r *Runner) handlePingCommand(ctx context.Context, i int) error {
-	fmt.Println("Ping...")
+	fmt.Fprintln(r.w(), "Ping...")
 	if err := r.session.Ping(ctx, &mcp.PingParams{}); err != nil {
 		return fmt.Errorf("line %d: ping failed: %w", i+1, err)
 	}
-	fmt.Println("Pong!")
+	fmt.Fprintln(r.w(), "Pong!")
 	return nil
 }
 
@@ -130,7 +130,7 @@ func (r *Runner) handleLoggingCommand(ctx context.Context, i int, parts []string
 		return fmt.Errorf("line %d: logging expects a level", i+1)
 	}
 	level := parts[1]
-	fmt.Printf("Setting server logging level to %s...\n", level)
+	fmt.Fprintf(r.w(), "Setting server logging level to %s...\n", level)
 	if err := r.session.SetLoggingLevel(ctx, &mcp.SetLoggingLevelParams{Level: mcp.LoggingLevel(level)}); err != nil {
 		return fmt.Errorf("line %d: failed to set logging level: %w", i+1, err)
 	}
@@ -139,9 +139,9 @@ func (r *Runner) handleLoggingCommand(ctx context.Context, i int, parts []string
 
 func (r *Runner) handleEchoCommand(parts []string) error {
 	if len(parts) > 1 {
-		fmt.Println(strings.Join(parts[1:], " "))
+		fmt.Fprintln(r.w(), strings.Join(parts[1:], " "))
 	} else {
-		fmt.Println()
+		fmt.Fprintln(r.w())
 	}
 	return nil
 }

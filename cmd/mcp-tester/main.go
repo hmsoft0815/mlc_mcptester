@@ -53,7 +53,8 @@ func init() {
 func main() {
 	// Execute the root command.
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
+		// stderr keeps --format json output on stdout parseable
+		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 }

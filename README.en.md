@@ -107,6 +107,9 @@ mcp-tester inspect --profile local
 
 # Direct call without a configuration file
 mcp-tester inspect -c "npx -y @modelcontextprotocol/server-everything"
+
+# As a CI gate: exit 1 on protocol errors or a score below the threshold
+mcp-tester inspect -p local --min-score 90
 ```
 
 #### Tools, Resources & Prompts

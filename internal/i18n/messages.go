@@ -30,21 +30,26 @@ const (
 	MsgOutputSchemaUnchecked MessageKey = "output_schema_unchecked"
 	MsgNoPrompts             MessageKey = "no_prompts"
 	MsgNoLogging             MessageKey = "no_logging"
-	MsgTestSummary           MessageKey = "test_summary"
-	MsgExecuting             MessageKey = "executing"
-	MsgVariableSet           MessageKey = "variable_set"
-	MsgExpectedError         MessageKey = "expected_error"
-	MsgAssertionPassed       MessageKey = "assertion_passed"
-	MsgResource              MessageKey = "resource"
-	MsgTemplate              MessageKey = "template"
-	MsgPrompt                MessageKey = "prompt"
-	MsgTool                  MessageKey = "tool"
-	MsgIcons                 MessageKey = "icons"
-	MsgDescription           MessageKey = "description"
-	MsgSchema                MessageKey = "schema"
-	MsgInputSchema           MessageKey = "input_schema"
-	MsgOutputSchema          MessageKey = "output_schema"
-	MsgAnnotations           MessageKey = "annotations"
+	// MsgListFailed reports a list request that failed although the server
+	// declared the matching capability — a protocol error real clients hit too.
+	MsgListFailed      MessageKey = "list_failed"
+	MsgScoreBelowMin   MessageKey = "score_below_min"
+	MsgInspectFailed   MessageKey = "inspect_failed"
+	MsgTestSummary     MessageKey = "test_summary"
+	MsgExecuting       MessageKey = "executing"
+	MsgVariableSet     MessageKey = "variable_set"
+	MsgExpectedError   MessageKey = "expected_error"
+	MsgAssertionPassed MessageKey = "assertion_passed"
+	MsgResource        MessageKey = "resource"
+	MsgTemplate        MessageKey = "template"
+	MsgPrompt          MessageKey = "prompt"
+	MsgTool            MessageKey = "tool"
+	MsgIcons           MessageKey = "icons"
+	MsgDescription     MessageKey = "description"
+	MsgSchema          MessageKey = "schema"
+	MsgInputSchema     MessageKey = "input_schema"
+	MsgOutputSchema    MessageKey = "output_schema"
+	MsgAnnotations     MessageKey = "annotations"
 )
 
 var messages = map[string]map[MessageKey]string{
@@ -72,6 +77,9 @@ var messages = map[string]map[MessageKey]string{
 			"Check with `mcp-tester call <tool>` or a test script.",
 		MsgNoPrompts:       "WARNING: No prompts defined. Prompts are highly recommended to set the system context and persona.",
 		MsgNoLogging:       "HINT: The server does not support logging. Server-side logs via MCP help debugging.",
+		MsgListFailed:      "ERROR: %s failed although the server declares the capability: %v",
+		MsgScoreBelowMin:   "score %d is below the required minimum of %d",
+		MsgInspectFailed:   "inspection found %d protocol error(s)",
 		MsgTestSummary:     "\nTest Summary: %d commands executed, %d passed, %d failed\n",
 		MsgExecuting:       "Executing: %s %v\n",
 		MsgVariableSet:     "Variable set: %s = %s\n",
@@ -112,6 +120,9 @@ var messages = map[string]map[MessageKey]string{
 			"lehnen solche Aufrufe ab. Prüfen mit `mcp-tester call <tool>` oder einem Testskript.",
 		MsgNoPrompts:       "WARNUNG: Keine Prompts definiert. Prompts werden dringend empfohlen.",
 		MsgNoLogging:       "HINT: Der Server unterstützt kein Logging. Server-seitige Logs helfen bei der Fehlersuche.",
+		MsgListFailed:      "FEHLER: %s ist fehlgeschlagen, obwohl der Server die Fähigkeit angibt: %v",
+		MsgScoreBelowMin:   "Score %d liegt unter dem geforderten Minimum von %d",
+		MsgInspectFailed:   "Inspektion hat %d Protokollfehler gefunden",
 		MsgTestSummary:     "\nTest-Zusammenfassung: %d Befehle ausgeführt, %d bestanden, %d fehlgeschlagen\n",
 		MsgExecuting:       "Ausführung: %s %v\n",
 		MsgVariableSet:     "Variable gesetzt: %s = %s\n",

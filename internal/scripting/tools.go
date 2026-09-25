@@ -17,9 +17,17 @@ func (r *Runner) parseArgs(line string) ([]string, error) {
 	var current strings.Builder
 	inQuotes := false
 	var quoteChar rune
+	runes := []rune(line)
 
-	for _, char := range line {
+	for i := 0; i < len(runes); i++ {
+		char := runes[i]
 		switch {
+		// Inside double quotes \" and \\ are escapes; any other backslash stays
+		// literal so paths like "C:\temp" survive. Single quotes are verbatim.
+		case char == '\\' && inQuotes && quoteChar == '"' && i+1 < len(runes) &&
+			(runes[i+1] == '"' || runes[i+1] == '\\'):
+			i++
+			current.WriteRune(runes[i])
 		case (char == '"' || char == '\'') && !inQuotes:
 			inQuotes = true
 			quoteChar = char
@@ -33,6 +41,9 @@ func (r *Runner) parseArgs(line string) ([]string, error) {
 		default:
 			current.WriteRune(char)
 		}
+	}
+	if inQuotes {
+		return nil, fmt.Errorf("unterminated %c quote", quoteChar)
 	}
 	if current.Len() > 0 {
 		parts = append(parts, current.String())
@@ -196,10 +207,10 @@ func (r *Runner) processSDKResult(result *mcp.CallToolResult) string {
 	for _, content := range result.Content {
 		switch c := content.(type) {
 		case *mcp.TextContent:
-			fmt.Printf("Response: %s\n", c.Text)
+			fmt.Fprintf(r.w(), "Response: %s\n", c.Text)
 			textBuilder.WriteString(c.Text)
 		case *mcp.ImageContent:
-			fmt.Printf("Response: [Image data, size %d]\n", len(c.Data))
+			fmt.Fprintf(r.w(), "Response: [Image data, size %d]\n", len(c.Data))
 		}
 	}
 	return textBuilder.String()
@@ -212,6 +223,6 @@ func (r *Runner) updateState(rawResponse map[string]any, text string) {
 	respData, _ := json.MarshalIndent(rawResponse, "", "  ")
 	r.lastResponse = string(respData)
 	if r.Raw {
-		fmt.Printf("Raw Response:\n%s\n", r.lastResponse)
+		fmt.Fprintf(r.w(), "Raw Response:\n%s\n", r.lastResponse)
 	}
 }

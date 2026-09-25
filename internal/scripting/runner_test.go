@@ -54,6 +54,10 @@ func TestExtractValue(t *testing.T) {
 			"content": []any{
 				map[string]any{"text": "hello"},
 			},
+			"structuredContent": map[string]any{
+				"size": "512x512",
+				"id":   7,
+			},
 		},
 	}
 
@@ -63,7 +67,10 @@ func TestExtractValue(t *testing.T) {
 		wantErr  bool
 	}{
 		{"id", 42, false},
-		{"$.id", 42, false},
+		{"$.size", "512x512", false},
+		{"$.id", 7, false}, // structuredContent wins over a top-level field of the same name
+		{"structuredContent.size", "512x512", false},
+		{"$.name", "tester", false}, // falls back to the top level
 		{"name", "tester", false},
 		{"nested.key", "value", false},
 		{"nested.list.1", "b", false},

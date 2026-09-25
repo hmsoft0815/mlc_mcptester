@@ -5,6 +5,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"os"
 	"strings"
 
 	"github.com/hmsoft0815/mlc_mcptester/internal/i18n"
@@ -21,13 +23,23 @@ type Runner struct {
 	variables       map[string]string
 	lastErrorCode   int64
 	lastIsToolError bool
+	// out receives per-command progress. It is stderr in JSON mode so that
+	// stdout carries nothing but the summary document.
+	out io.Writer
 }
 
 // TestResult holds numeric summary of test execution
 type TestResult struct {
-	Executed int `json:"executed"`
-	Passed   int `json:"passed"`
-	Failed   int `json:"failed"`
+	Executed int           `json:"executed"`
+	Passed   int           `json:"passed"`
+	Failed   int           `json:"failed"`
+	Failures []TestFailure `json:"failures,omitempty"`
+}
+
+// TestFailure records one failed script line.
+type TestFailure struct {
+	Line  int    `json:"line"`
+	Error string `json:"error"`
 }
 
 // NewRunner creates a new Runner with the given MCP client session.
@@ -49,17 +61,29 @@ type runState struct {
 	failed         int
 }
 
+// w returns the writer for per-command progress output.
+func (r *Runner) w() io.Writer {
+	if r.out == nil {
+		return os.Stdout
+	}
+	return r.out
+}
+
 // Run executes a script string against the established MCP session.
 func (r *Runner) Run(ctx context.Context, script string, outputFormat string) (*TestResult, error) {
 	lines := strings.Split(script, "\n")
 	state := &runState{}
+	var failures []TestFailure
+
+	if outputFormat == "json" && r.out == nil {
+		r.out = os.Stderr
+	}
 
 	for i, line := range lines {
 		if err := r.processLine(ctx, i, line, state); err != nil {
 			state.failed++
-			if outputFormat == "text" {
-				fmt.Printf("Error: %v\n", err)
-			}
+			failures = append(failures, TestFailure{Line: i + 1, Error: err.Error()})
+			fmt.Fprintf(r.w(), "Error: %v\n", err)
 		}
 	}
 
@@ -71,6 +95,7 @@ func (r *Runner) Run(ctx context.Context, script string, outputFormat string) (*
 		Executed: state.executed,
 		Passed:   state.passed,
 		Failed:   state.failed,
+		Failures: failures,
 	}
 
 	if outputFormat == "text" {

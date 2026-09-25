@@ -18,9 +18,17 @@ type InspectionReport struct {
 	ToolsFound      int      `json:"toolsFound"`
 	PromptsFound    int      `json:"promptsFound"`
 	ResourcesFound  int      `json:"resourcesFound"`
+	Errors          []string `json:"errors,omitempty"`
 }
 
+// listFailurePenalty is deducted for each list request that fails although its
+// capability is declared: clients break on it, so it outweighs any style hint.
+const listFailurePenalty = 50
+
+var minScore int
+
 func init() {
+	inspectCmd.Flags().IntVar(&minScore, "min-score", 0, "Exit with an error if the score is below this value")
 	rootCmd.AddCommand(inspectCmd)
 }
 
@@ -47,7 +55,12 @@ var inspectCmd = &cobra.Command{
 
 		report := InspectionReport{}
 		recommendations := []string{}
+		protocolErrors := []string{}
 		score := 100
+		listFailed := func(method string, err error) {
+			protocolErrors = append(protocolErrors, i18n.T(i18n.MsgListFailed, method, err))
+			score -= listFailurePenalty
+		}
 		// inspect never calls a tool — it cannot know which ones are free of
 		// side effects — so a declared schema is all it can see, not whether the
 		// results honour it.
@@ -88,6 +101,9 @@ var inspectCmd = &cobra.Command{
 		}
 
 		promptsResult, err := session.ListPrompts(ctx, nil)
+		if err != nil && caps.Prompts != nil {
+			listFailed("prompts/list", err)
+		}
 		if err == nil {
 			report.PromptsFound = len(promptsResult.Prompts)
 			if report.PromptsFound == 0 {
@@ -99,6 +115,9 @@ var inspectCmd = &cobra.Command{
 		}
 
 		toolsResult, err := session.ListTools(ctx, nil)
+		if err != nil && caps.Tools != nil {
+			listFailed("tools/list", err)
+		}
 		if err == nil {
 			report.ToolsFound = len(toolsResult.Tools)
 			if report.ToolsFound > 0 {
@@ -154,6 +173,9 @@ var inspectCmd = &cobra.Command{
 		}
 
 		resourcesResult, err := session.ListResources(ctx, nil)
+		if err != nil && caps.Resources != nil {
+			listFailed("resources/list", err)
+		}
 		if err == nil {
 			report.ResourcesFound = len(resourcesResult.Resources)
 			if report.ResourcesFound > 0 && format == "text" {
@@ -174,13 +196,17 @@ var inspectCmd = &cobra.Command{
 
 		report.Score = score
 		report.Recommendations = recommendations
+		report.Errors = protocolErrors
 
 		if format == "json" {
 			out, _ := json.MarshalIndent(report, "", "  ")
 			fmt.Println(string(out))
 		} else {
 			fmt.Println(i18n.T(i18n.MsgScore, score))
-			if len(recommendations) == 0 {
+			for _, e := range protocolErrors {
+				fmt.Println("- " + e)
+			}
+			if len(recommendations) == 0 && len(protocolErrors) == 0 {
 				fmt.Println(i18n.T(i18n.MsgPerfect))
 			} else {
 				for _, rec := range recommendations {
@@ -193,6 +219,15 @@ var inspectCmd = &cobra.Command{
 			}
 		}
 
+		// A finished inspection that finds problems is a result, not a usage mistake
+		if len(protocolErrors) > 0 {
+			cmd.SilenceUsage = true
+			return fmt.Errorf("%s", i18n.T(i18n.MsgInspectFailed, len(protocolErrors)))
+		}
+		if score < minScore {
+			cmd.SilenceUsage = true
+			return fmt.Errorf("%s", i18n.T(i18n.MsgScoreBelowMin, score, minScore))
+		}
 		return nil
 	},
 }

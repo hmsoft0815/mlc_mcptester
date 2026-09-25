@@ -7,7 +7,7 @@ Die Scripting Engine des `mcp-tester` ermöglicht automatisierte Testabläufe f�
 - **Befehle**: Ein Befehl pro Zeile.
 - **Kommentare**: Zeilen, die mit `#` oder `//` beginnen, werden ignoriert. Trailing-Kommentare sind ebenfalls erlaubt.
 - **Variablen**: Werden mit dem Präfix `$` angesprochen (z.B. `$name`). Die Ersetzung erfolgt per Regex (`\$([A-Za-z_][A-Za-z0-9_]*)`). Die Verwendung unbekannter Variablen bricht die Ausführung mit einem klaren Fehler und Zeilenangabe ab.
-- **Strings**: Können in Anführungszeichen (`"..."` oder `'...'`) gesetzt werden, wenn sie Leerzeichen oder Sonderzeichen enthalten.
+- **Strings**: Können in Anführungszeichen (`"..."` oder `'...'`) gesetzt werden, wenn sie Leerzeichen oder Sonderzeichen enthalten. In doppelten Anführungszeichen sind `\"` und `\\` Escapes (`"missing: [\"code\"]"`); jeder andere Backslash bleibt wörtlich. Einfache Anführungszeichen werden unverändert übernommen. Ein nicht geschlossenes Anführungszeichen lässt die Zeile fehlschlagen.
 - **Listen / Objekte**: JSON-Arrays (`'["a.png", "b.png"]'`) oder JSON-Objekte (`'{"key": "value"}'`) können direkt als Argument übergeben werden.
 
 ---
@@ -84,7 +84,7 @@ set_var <variable_name> <pfad>
 - **Pfade**:
     - `rawResponse`: Speichert die komplette JSON-Antwort des Servers.
     - `structuredContent.<pfad>`: Navigiert durch die JSON-Struktur (Punkt-Notation).
-    - `$.<pfad>`: Kurzform für `structuredContent`.
+    - `$.<pfad>`: Kurzform für `structuredContent.<pfad>`; fehlt das Feld dort, wird die oberste Ebene des Ergebnisses versucht.
 
 ### 6. `input_var`
 Fragt den Benutzer während des Tests nach einer Eingabe.
@@ -155,3 +155,5 @@ Ein Skript wird über den Menüpunkt `test` oder direkt per CLI gestartet:
 ```bash
 mcp-tester test --script my_test.mcp --profile my_server
 ```
+
+Der Befehl endet mit Status 1, sobald ein Skriptbefehl fehlschlägt, und taugt damit als Gate für CI oder Taskfile. Mit `--format json` steht auf stdout nur die Zusammenfassung (inklusive `failures`-Liste mit Zeile und Fehler); die Ausgabe der einzelnen Befehle geht nach stderr.

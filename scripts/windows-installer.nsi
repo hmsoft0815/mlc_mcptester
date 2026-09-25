@@ -8,7 +8,10 @@
 !cd ".."
 
 !define APP_NAME    "MCP-Tester"
-!define APP_VERSION "1.2.0"
+; Set by the Taskfile from VERSION: makensis -DAPP_VERSION=...
+!ifndef APP_VERSION
+  !define APP_VERSION "dev"
+!endif
 !define PUBLISHER   "Michael Lechner"
 !define COPYRIGHT   "Copyright (c) 2026 Michael Lechner"
 !define INSTALL_DIR "$PROGRAMFILES64\mcp-tester"

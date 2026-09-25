@@ -20,16 +20,16 @@ Legende: ✅ abgedeckt · ⚠️ teilweise · ❌ fehlt · — entfällt laut Sp
 | Feature | Status | Anmerkung |
 |---|---|---|
 | Versionsaushandlung, Rückfall auf ältere Revisionen | ✅ | macht das go-sdk; `inspect` zeigt die ausgehandelte Version |
-| Bewertung veralteter Revisionen | ❌ | ein Server nur mit 2024-11-05 bekommt trotzdem 100/100 |
-| `server/discover` (`supportedVersions`, `instructions`, Cache-Angaben) | ❌ | wird nicht angezeigt oder geprüft |
+| Bewertung veralteter Revisionen | ✅ | `inspect`: 10 Punkte Abzug je Revision Rückstand (max. 30), unbekannte Version 10 |
+| `server/discover` (`supportedVersions`, `instructions`, Cache-Angaben) | ⚠️ | `inspect` zeigt `instructions`, Capabilities und Extensions; `supportedVersions` und die Cache-Angaben von discover gibt das go-sdk nicht heraus |
 | `resultType` / Multi Round-Trip (`InputRequiredResult`) | ❌ | der Tester gibt keine Client-Fähigkeiten an und beantwortet keine `inputRequests` |
-| `CacheableResult` (`ttlMs`, `cacheScope`) | ❌ | nicht geprüft |
+| `CacheableResult` (`ttlMs`, `cacheScope`) | ✅ | `inspect` prüft die erste Seite von tools/prompts/resources/list bei Servern ab 2026-07-28 |
 | `serverInfo` in `_meta` der Ergebnisse | ❌ | nicht geprüft |
-| Extensions (`capabilities.extensions`) | ❌ | nicht angezeigt |
+| Extensions (`capabilities.extensions`) | ✅ | `inspect` zeigt sie an, JSON-Feld `extensions` |
 | OpenTelemetry-`_meta` (`traceparent` …) | ❌ | |
 | Fortschritt (`progressToken`) | ✅ | wird angezeigt, Skripttest `05_progress` |
 | Abbruch (`notifications/cancelled`) | ✅ | Skripttest `06_cancellation` |
-| Pagination | ⚠️ | `prompts list` / `resources list` mit `--cursor`; `inspect`, `list` und die Skript-Engine lesen nur die **erste Seite** von `tools/list` |
+| Pagination | ✅ | `inspect`, `list` und die Skript-Engine folgen `nextCursor` über alle Seiten; `prompts list` / `resources list` blättern mit `--cursor` |
 | Fehlercodes | ✅ | `assert_error_code` prüft beliebige Codes, auch -32020…-32022 |
 | `ping` | ⚠️ | in 2026-07-28 entfernt; der Befehl bleibt für ältere Server |
 
@@ -56,9 +56,9 @@ Legende: ✅ abgedeckt · ⚠️ teilweise · ❌ fehlt · — entfällt laut Sp
 |---|---|---|
 | `tools/list`, `tools/call` | ✅ | `list`, `call`, Skripte |
 | `outputSchema` ↔ `structuredContent` | ✅ | `call` und Skripte prüfen wie ein strikter Client |
-| Tool-Qualität in `inspect` | ⚠️ | geprüft: `description`, `inputSchema`, `outputSchema`, `readOnlyHint`. Nicht geprüft: `title`, Namensregeln (1–128 Zeichen, Zeichensatz), weitere Annotations, deterministische Reihenfolge, `inputSchema` vom Typ `object` |
+| Tool-Qualität in `inspect` | ✅ | `description`, `title`, Namensregeln (1–128 Zeichen, `A-Z a-z 0-9 _ - .`), Eindeutigkeit, `inputSchema` vom Typ `object`, `outputSchema`, deterministische Reihenfolge von `tools/list`, Bonus für `readOnlyHint` |
 | Tool-Fehler (`isError`) vs. Protokollfehler | ✅ | `assert_tool_error`, `assert_error_code` |
-| Icons | ⚠️ | `--check-icons` / `--download-icons`; die erlaubten URI-Schemata (nur `https`, `data:`) werden nicht geprüft |
+| Icons | ✅ | `inspect` prüft die URI-Schemata (nur `https`, `data:`) bei Server, Tools, Prompts und Resources; `--check-icons` / `--download-icons` prüfen die Erreichbarkeit |
 | Prompts `list` / `get` | ✅ | |
 | Resources `list` / `read` / `templates` | ✅ | |
 | Resource-not-found `-32602` (statt `-32002`) | ⚠️ | per `assert_error_code` prüfbar, `inspect` prüft es nicht |
@@ -86,3 +86,4 @@ Legende: ✅ abgedeckt · ⚠️ teilweise · ❌ fehlt · — entfällt laut Sp
 | Datum | Spec | Änderung |
 |---|---|---|
 | 25.09.2026 | 2026-07-28 | Erster Abgleich. go-sdk v1.7.0 → v1.8.0 |
+| 25.09.2026 | 2026-07-28 | `inspect`: Protokoll-Rückstand, Tool-Namen, `title`, Schema-Typ, Reihenfolge, Icon-Schemata, Cache-Angaben, Extensions; Pagination überall |

@@ -20,16 +20,16 @@ Legend: ✅ covered · ⚠️ partial · ❌ missing · — not applicable per s
 | Feature | Status | Notes |
 |---|---|---|
 | Version negotiation, fallback to older revisions | ✅ | done by the go-sdk; `inspect` shows the negotiated version |
-| Rating outdated revisions | ❌ | a server that only speaks 2024-11-05 still scores 100/100 |
-| `server/discover` (`supportedVersions`, `instructions`, cache hints) | ❌ | neither shown nor checked |
+| Rating outdated revisions | ✅ | `inspect`: 10 points per revision behind (max. 30), unknown version 10 |
+| `server/discover` (`supportedVersions`, `instructions`, cache hints) | ⚠️ | `inspect` shows `instructions`, capabilities and extensions; the go-sdk does not expose `supportedVersions` or discover's cache hints |
 | `resultType` / multi round-trip (`InputRequiredResult`) | ❌ | the tester declares no client capabilities and answers no `inputRequests` |
-| `CacheableResult` (`ttlMs`, `cacheScope`) | ❌ | not checked |
+| `CacheableResult` (`ttlMs`, `cacheScope`) | ✅ | `inspect` checks the first page of tools/prompts/resources/list for servers on 2026-07-28 or later |
 | `serverInfo` in result `_meta` | ❌ | not checked |
-| Extensions (`capabilities.extensions`) | ❌ | not shown |
+| Extensions (`capabilities.extensions`) | ✅ | shown by `inspect`, JSON field `extensions` |
 | OpenTelemetry `_meta` (`traceparent` …) | ❌ | |
 | Progress (`progressToken`) | ✅ | displayed, script test `05_progress` |
 | Cancellation (`notifications/cancelled`) | ✅ | script test `06_cancellation` |
-| Pagination | ⚠️ | `prompts list` / `resources list` take `--cursor`; `inspect`, `list` and the script engine read only the **first page** of `tools/list` |
+| Pagination | ✅ | `inspect`, `list` and the script engine follow `nextCursor` across all pages; `prompts list` / `resources list` page with `--cursor` |
 | Error codes | ✅ | `assert_error_code` checks any code, including -32020…-32022 |
 | `ping` | ⚠️ | removed in 2026-07-28; the command stays for older servers |
 
@@ -56,9 +56,9 @@ Legend: ✅ covered · ⚠️ partial · ❌ missing · — not applicable per s
 |---|---|---|
 | `tools/list`, `tools/call` | ✅ | `list`, `call`, scripts |
 | `outputSchema` ↔ `structuredContent` | ✅ | `call` and scripts check like a strict client |
-| Tool quality in `inspect` | ⚠️ | checked: `description`, `inputSchema`, `outputSchema`, `readOnlyHint`. Not checked: `title`, naming rules (1–128 chars, charset), other annotations, deterministic order, `inputSchema` of type `object` |
+| Tool quality in `inspect` | ✅ | `description`, `title`, naming rules (1–128 chars, `A-Z a-z 0-9 _ - .`), uniqueness, `inputSchema` of type `object`, `outputSchema`, deterministic `tools/list` order, bonus for `readOnlyHint` |
 | Tool errors (`isError`) vs. protocol errors | ✅ | `assert_tool_error`, `assert_error_code` |
-| Icons | ⚠️ | `--check-icons` / `--download-icons`; allowed URI schemes (`https`, `data:` only) are not checked |
+| Icons | ✅ | `inspect` checks URI schemes (`https`, `data:` only) on server, tools, prompts and resources; `--check-icons` / `--download-icons` check reachability |
 | Prompts `list` / `get` | ✅ | |
 | Resources `list` / `read` / `templates` | ✅ | |
 | Resource not found `-32602` (was `-32002`) | ⚠️ | checkable via `assert_error_code`, not checked by `inspect` |
@@ -86,3 +86,4 @@ Legend: ✅ covered · ⚠️ partial · ❌ missing · — not applicable per s
 | Date | Spec | Change |
 |---|---|---|
 | 2026-09-25 | 2026-07-28 | First review. go-sdk v1.7.0 → v1.8.0 |
+| 2026-09-25 | 2026-07-28 | `inspect`: protocol lag, tool names, `title`, schema type, order, icon schemes, cache hints, extensions; pagination everywhere |

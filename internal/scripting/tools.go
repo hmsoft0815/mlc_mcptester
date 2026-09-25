@@ -53,15 +53,15 @@ func (r *Runner) parseArgs(line string) ([]string, error) {
 
 // callToolPositional calls the tool with the given name and arguments.
 func (r *Runner) callToolPositional(ctx context.Context, name string, args []string) error {
-	tools, err := r.session.ListTools(ctx, nil)
+	tools, err := client.ListAllTools(ctx, r.session)
 	if err != nil {
 		return err
 	}
 
 	var targetTool *mcp.Tool
-	for i := range tools.Tools {
-		if tools.Tools[i].Name == name {
-			targetTool = tools.Tools[i]
+	for _, t := range tools {
+		if t.Name == name {
+			targetTool = t
 			break
 		}
 	}

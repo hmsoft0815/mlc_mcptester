@@ -45,6 +45,7 @@ const (
 	MsgInvalidIcon          MessageKey = "invalid_icon"
 	MsgToolOrderUnstable    MessageKey = "tool_order_unstable"
 	MsgCacheHints           MessageKey = "cache_hints"
+	MsgInvalidXMCPHeader    MessageKey = "invalid_x_mcp_header"
 	MsgInstructions         MessageKey = "instructions"
 	MsgNoInstructions       MessageKey = "no_instructions_line"
 	MsgExtensions           MessageKey = "extensions"
@@ -104,6 +105,7 @@ var messages = map[string]map[MessageKey]string{
 		MsgInvalidIcon:          "WARNING: Icon of %s: %s (%s).",
 		MsgToolOrderUnstable:    "WARNING: tools/list returns the tools in a different order on each call; clients cannot cache the list reliably.",
 		MsgCacheHints:           "HINT: %s: invalid cache hints: %s.",
+		MsgInvalidXMCPHeader:    "WARNING: Tool '%s' has an invalid x-mcp-header (%s); clients on Streamable HTTP must drop the tool.",
 		MsgInstructions:         "    - Instructions: %d characters\n",
 		MsgNoInstructions:       "    - Instructions: none\n",
 		MsgExtensions:           "    - Extensions: %s\n",
@@ -161,6 +163,7 @@ var messages = map[string]map[MessageKey]string{
 		MsgInvalidIcon:          "WARNUNG: Icon von %s: %s (%s).",
 		MsgToolOrderUnstable:    "WARNUNG: tools/list liefert die Tools bei jedem Aufruf in anderer Reihenfolge; Clients können die Liste nicht zuverlässig cachen.",
 		MsgCacheHints:           "HINT: %s: ungültige Cache-Angaben: %s.",
+		MsgInvalidXMCPHeader:    "WARNUNG: Tool '%s' hat ein ungültiges x-mcp-header (%s); Clients über Streamable HTTP müssen das Tool verwerfen.",
 		MsgInstructions:         "    - Instructions: %d Zeichen\n",
 		MsgNoInstructions:       "    - Instructions: keine\n",
 		MsgExtensions:           "    - Extensions: %s\n",

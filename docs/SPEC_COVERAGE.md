@@ -22,7 +22,7 @@ Legend: ✅ covered · ⚠️ partial · ❌ missing · — not applicable per s
 | Version negotiation, fallback to older revisions | ✅ | done by the go-sdk; `inspect` shows the negotiated version |
 | Per-request metadata (`protocolVersion`, `clientCapabilities`, `clientInfo`) | ✅ | all commands and scripts via the go-sdk; only `--raw` deliberately bypasses it |
 | Rating outdated revisions | ✅ | `inspect`: 10 points per revision behind (max. 30), unknown version 10 |
-| `server/discover` (`supportedVersions`, `instructions`, cache hints) | ⚠️ | `inspect` shows `instructions`, capabilities and extensions; the go-sdk does not expose `supportedVersions` or discover's cache hints |
+| `server/discover` (`supportedVersions`, `instructions`, cache hints) | ✅ | `inspect` shows `instructions`, capabilities and extensions; `http-check` shows `supportedVersions` (over HTTP) |
 | `resultType` / multi round-trip (`InputRequiredResult`) | ✅ | via the go-sdk; answers from scripts (`elicit_response`, `sample_response`, `add_root`) or `--elicit` / `--sample` / `--root`; script test `13_input_requests` |
 | `CacheableResult` (`ttlMs`, `cacheScope`) | ✅ | `inspect` checks the first page of tools/prompts/resources/list for servers on 2026-07-28 or later |
 | `serverInfo` in result `_meta` | ❌ | not checked |
@@ -41,8 +41,10 @@ Legend: ✅ covered · ⚠️ partial · ❌ missing · — not applicable per s
 | stdio | ✅ | |
 | Streamable HTTP | ✅ | via the go-sdk |
 | HTTP+SSE (legacy) | ✅ | classified as deprecated in 2026-07-28 |
-| `Mcp-Method`, `Mcp-Name`, `x-mcp-header` headers | ❌ | not checked |
-| Origin check (403), 404 for unknown method | ❌ | |
+| `MCP-Protocol-Version`, `Mcp-Method`, `Mcp-Name` headers, Base64 values | ✅ | `http-check`: missing and mismatching → 400/`-32020`, Base64 must be decoded |
+| `x-mcp-header` / `Mcp-Param-*` | ✅ | `inspect` checks the annotations (token, unique, type, reachable only via `properties`); `http-check` checks server-side validation |
+| Origin check (403), 404 for unknown method, 405 for GET/DELETE, no sessions | ✅ | `http-check` |
+| Unknown version (400/`-32022`), missing `_meta` (400/`-32602`) | ✅ | `http-check` |
 
 ## Authorization
 

@@ -22,7 +22,7 @@ Legende: ✅ abgedeckt · ⚠️ teilweise · ❌ fehlt · — entfällt laut Sp
 | Versionsaushandlung, Rückfall auf ältere Revisionen | ✅ | macht das go-sdk; `inspect` zeigt die ausgehandelte Version |
 | Metadaten pro Request (`protocolVersion`, `clientCapabilities`, `clientInfo`) | ✅ | alle Befehle und Skripte über das go-sdk; nur `--raw` umgeht sie bewusst |
 | Bewertung veralteter Revisionen | ✅ | `inspect`: 10 Punkte Abzug je Revision Rückstand (max. 30), unbekannte Version 10 |
-| `server/discover` (`supportedVersions`, `instructions`, Cache-Angaben) | ⚠️ | `inspect` zeigt `instructions`, Capabilities und Extensions; `supportedVersions` und die Cache-Angaben von discover gibt das go-sdk nicht heraus |
+| `server/discover` (`supportedVersions`, `instructions`, Cache-Angaben) | ✅ | `inspect` zeigt `instructions`, Capabilities und Extensions; `http-check` zeigt `supportedVersions` (über HTTP) |
 | `resultType` / Multi Round-Trip (`InputRequiredResult`) | ✅ | über das go-sdk; Antworten per Skript (`elicit_response`, `sample_response`, `add_root`) oder `--elicit` / `--sample` / `--root`; Skripttest `13_input_requests` |
 | `CacheableResult` (`ttlMs`, `cacheScope`) | ✅ | `inspect` prüft die erste Seite von tools/prompts/resources/list bei Servern ab 2026-07-28 |
 | `serverInfo` in `_meta` der Ergebnisse | ❌ | nicht geprüft |
@@ -41,8 +41,10 @@ Legende: ✅ abgedeckt · ⚠️ teilweise · ❌ fehlt · — entfällt laut Sp
 | stdio | ✅ | |
 | Streamable HTTP | ✅ | über das go-sdk |
 | HTTP+SSE (Legacy) | ✅ | in 2026-07-28 als deprecated eingestuft |
-| Header `Mcp-Method`, `Mcp-Name`, `x-mcp-header` | ❌ | werden nicht geprüft |
-| Origin-Prüfung (403), 404 für unbekannte Methode | ❌ | |
+| Header `MCP-Protocol-Version`, `Mcp-Method`, `Mcp-Name`, Base64-Werte | ✅ | `http-check`: fehlend und abweichend → 400/`-32020`, Base64 muss dekodiert werden |
+| `x-mcp-header` / `Mcp-Param-*` | ✅ | `inspect` prüft die Annotationen (Token, eindeutig, Typ, nur über `properties` erreichbar); `http-check` prüft die serverseitige Validierung |
+| Origin-Prüfung (403), 404 für unbekannte Methode, 405 für GET/DELETE, keine Sessions | ✅ | `http-check` |
+| Fehler bei unbekannter Version (400/`-32022`), fehlende `_meta` (400/`-32602`) | ✅ | `http-check` |
 
 ## Autorisierung
 

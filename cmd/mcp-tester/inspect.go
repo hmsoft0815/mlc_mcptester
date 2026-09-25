@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	mcpclient "github.com/hmsoft0815/mlc_mcptester/internal/client"
+	"github.com/hmsoft0815/mlc_mcptester/internal/httpcheck"
 	"github.com/hmsoft0815/mlc_mcptester/internal/i18n"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/spf13/cobra"
@@ -104,6 +105,7 @@ var inspectCmd = &cobra.Command{
 			"title":        5,
 			"icon":         15,
 			"cache":        3,
+			"xMCPHeader":   20,
 		})
 		// inspect never calls a tool — it cannot know which ones are free of
 		// side effects — so a declared schema is all it can see, not whether the
@@ -255,6 +257,10 @@ var inspectCmd = &cobra.Command{
 						declaredOutputSchemas++
 					}
 					checkIcons("tool '"+t.Name+"'", t.Icons)
+					if _, problems := httpcheck.XMCPHeaders(t.InputSchema); len(problems) > 0 {
+						warn(i18n.T(i18n.MsgInvalidXMCPHeader, t.Name, strings.Join(problems, "; ")))
+						d.add("xMCPHeader", 10)
+					}
 
 					// Bonus for safety annotations (readOnlyHint)
 					if t.Annotations != nil {

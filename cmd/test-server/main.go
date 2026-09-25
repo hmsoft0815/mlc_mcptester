@@ -51,6 +51,7 @@ func main() {
 	registerExtraTools(s)
 	registerInputTools(s)
 	registerNotifyTools(s)
+	registerHeaderTools(s)
 	registerResources(s)
 	registerPrompts(s)
 
@@ -60,7 +61,9 @@ func main() {
 		sseHandler := mcp.NewSSEHandler(func(*http.Request) *mcp.Server { return s }, nil)
 		// Stateless: the SDK serves protocol 2026-07-28 over HTTP only in this mode
 		streamableHandler := mcp.NewStreamableHTTPHandler(func(*http.Request) *mcp.Server { return s }, &mcp.StreamableHTTPOptions{Stateless: true})
-		var sseH, mcpH http.Handler = sseHandler, streamableHandler
+		// Reject foreign browser origins (DNS rebinding); the spec requires 403
+		cop := http.NewCrossOriginProtection()
+		var sseH, mcpH http.Handler = cop.Handler(sseHandler), cop.Handler(streamableHandler)
 		if *withAuth {
 			base := "http://" + *addr
 			if strings.HasPrefix(*addr, ":") {
@@ -68,7 +71,7 @@ func main() {
 			}
 			as := newAuthServer(base, base+"/mcp")
 			as.register(mux)
-			sseH, mcpH = as.protect(sseHandler), as.protect(streamableHandler)
+			sseH, mcpH = as.protect(sseH), as.protect(mcpH)
 			fmt.Fprintf(os.Stderr, "OAuth enabled: issuer %s, static token %q\n", base, StaticToken)
 		}
 		mux.Handle("/sse", sseH)

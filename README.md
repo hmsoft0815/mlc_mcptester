@@ -115,6 +115,13 @@ mcp-tester inspect -u http://127.0.0.1:8080/mcp --oauth --oauth-auto
 ```
 Im Profil: `headers:` und `bearer:`, `${VAR}` wird aus der Umgebung ersetzt. `./bin/test-server -addr :8080 -auth` startet einen geschützten Test-Server mit eingebautem Autorisierungsserver (statisches Token `test-token`).
 
+#### HTTP-Konformität (`http-check`)
+Prüft einen Streamable-HTTP-Endpunkt mit gezielt gebauten Requests gegen die Transportregeln von Spec 2026-07-28: Pflicht-Header (`MCP-Protocol-Version`, `Mcp-Method`, `Mcp-Name`, Base64-Werte, `Mcp-Param-*` aus `x-mcp-header`), Fehlercodes mit HTTP-Status (`-32020`, `-32022`, 404/`-32601`), Origin-Prüfung (403), 405 für GET/DELETE und keine Sessions. MUST-Verstöße: FAIL und Exit 1, SHOULD-Verstöße: WARN.
+```bash
+mcp-tester http-check -u https://example.com/mcp --bearer "$TOKEN"
+mcp-tester http-check -u http://127.0.0.1:8080/mcp --format json
+```
+
 #### Server Inspektion
 Analysiere einen Server auf Qualität (Metadaten, Prompts, Struktur):
 ```bash

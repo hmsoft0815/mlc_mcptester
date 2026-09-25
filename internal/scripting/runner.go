@@ -209,6 +209,8 @@ func (r *Runner) dispatchParts(ctx context.Context, i int, parts []string) error
 		return r.handleExpectErrorCommand(ctx, i, parts)
 	case "ping":
 		return r.handlePingCommand(ctx, i)
+	case "complete":
+		return r.handleCompleteCommand(ctx, i, parts)
 	case "logging":
 		return r.handleLoggingCommand(ctx, i, parts)
 	default:

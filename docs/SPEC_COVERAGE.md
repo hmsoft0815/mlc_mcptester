@@ -63,7 +63,7 @@ Legend: ✅ covered · ⚠️ partial · ❌ missing · — not applicable per s
 | Resources `list` / `read` / `templates` | ✅ | |
 | Resource not found `-32602` (was `-32002`) | ⚠️ | checkable via `assert_error_code`, not checked by `inspect` |
 | `subscriptions/listen`, `list_changed`, resource updates | ❌ | |
-| `completion/complete` | ❌ | no command |
+| `completion/complete` | ✅ | `complete` command and script command, script test `12_completion` |
 | Logging | ⚠️ | `logging` uses `setLevel`; deprecated in 2026-07-28, where the level is set per request via `_meta` |
 
 ## Client features (MRTR)

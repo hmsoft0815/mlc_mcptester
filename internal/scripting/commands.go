@@ -145,3 +145,32 @@ func (r *Runner) handleEchoCommand(parts []string) error {
 	}
 	return nil
 }
+
+// handleCompleteCommand runs "complete <prompt:name|resource:uri> <argument> [value]".
+// The result is kept as {values, total, hasMore}, so set_var can address
+// values.0 or total, and assert_contains sees the values one per line.
+func (r *Runner) handleCompleteCommand(ctx context.Context, i int, parts []string) error {
+	if len(parts) < 3 || len(parts) > 4 {
+		return fmt.Errorf("line %d: usage: complete <prompt:name|resource:uri> <argument> [value]", i+1)
+	}
+	value := ""
+	if len(parts) == 4 {
+		value = parts[3]
+	}
+	res, err := client.Complete(ctx, r.session, parts[1], parts[2], value, nil)
+	if err != nil {
+		return fmt.Errorf("line %d: complete: %w", i+1, err)
+	}
+
+	values := make([]any, len(res.Completion.Values))
+	for j, v := range res.Completion.Values {
+		values[j] = v
+	}
+	r.updateState(map[string]any{
+		"values":  values,
+		"total":   res.Completion.Total,
+		"hasMore": res.Completion.HasMore,
+	}, strings.Join(res.Completion.Values, "\n"))
+	fmt.Fprintf(r.w(), "Completions: %s\n", strings.Join(res.Completion.Values, ", "))
+	return nil
+}

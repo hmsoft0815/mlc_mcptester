@@ -126,6 +126,20 @@ assert_string_length $variable <min> <max>
 
 ---
 
+### 12. `complete`
+Fragt den Server nach Vervollständigungen für ein Argument (`completion/complete`).
+```mcp
+complete <prompt:name|resource:uri> <argument> [wert]
+```
+Das Ergebnis wird als `{values, total, hasMore}` abgelegt: `assert_contains` sieht die Werte zeilenweise, `set_var` adressiert `values.0` oder `total`.
+```mcp
+complete prompt:persona_developer language g
+assert_contains "golang"
+set_var first values.0
+```
+
+---
+
 ## Beispiel-Skript
 
 ```mcp

@@ -118,6 +118,7 @@ mcp-tester tools list -p local
 mcp-tester ping -p local
 mcp-tester logging debug -p local
 mcp-tester prompts get code_review --args '{"file_path": "main.go"}' -p local
+mcp-tester complete prompt:code_review file_path ma -p local
 ```
 
 #### Test Scripts (Automation)

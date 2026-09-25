@@ -117,6 +117,7 @@ mcp-tester inspect -p local --min-score 90
 mcp-tester tools list -p local
 mcp-tester resources list --cursor "NEXT_TOKEN" -p local
 mcp-tester prompts get code_review --args '{"file_path": "main.go"}' -p local
+mcp-tester complete prompt:code_review file_path ma -p local
 ```
 
 #### Test-Skripte (Automatisierung)

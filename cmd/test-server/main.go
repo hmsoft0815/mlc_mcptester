@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/hmsoft0815/mlc_mcptester/internal/version"
@@ -39,6 +40,7 @@ func main() {
 				Prompts:   &mcp.PromptCapabilities{ListChanged: true},
 				Resources: &mcp.ResourceCapabilities{ListChanged: true, Subscribe: true},
 			},
+			CompletionHandler: complete,
 		},
 	)
 
@@ -223,6 +225,10 @@ func registerPrompts(s *mcp.Server) {
 	s.AddPrompt(&mcp.Prompt{
 		Name:        "persona_developer",
 		Description: "Sets the LLM persona to an expert Go developer",
+		Arguments: []*mcp.PromptArgument{{
+			Name:        "language",
+			Description: "Programming language of the persona (completable)",
+		}},
 		Icons: []mcp.Icon{
 			{Source: serverIcon, MIMEType: "image/svg+xml"},
 		},
@@ -237,4 +243,30 @@ func registerPrompts(s *mcp.Server) {
 			},
 		}, nil
 	})
+}
+
+// completionValues are the candidates offered by complete, per reference and argument.
+var completionValues = map[string][]string{
+	"ref/prompt persona_developer language":     {"go", "golang", "python", "rust", "typescript"},
+	"ref/resource file:///logs/{name}.log name": {"access", "app", "error"},
+}
+
+// complete serves completion/complete: candidates starting with the typed value.
+func complete(ctx context.Context, req *mcp.CompleteRequest) (*mcp.CompleteResult, error) {
+	ref := req.Params.Ref
+	target := ref.Name
+	if ref.Type == "ref/resource" {
+		target = ref.URI
+	}
+	key := ref.Type + " " + target + " " + req.Params.Argument.Name
+
+	values := []string{}
+	for _, v := range completionValues[key] {
+		if strings.HasPrefix(v, req.Params.Argument.Value) {
+			values = append(values, v)
+		}
+	}
+	return &mcp.CompleteResult{
+		Completion: mcp.CompletionResultDetails{Values: values, Total: len(values)},
+	}, nil
 }

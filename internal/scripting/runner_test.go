@@ -1,6 +1,7 @@
 package scripting
 
 import (
+	"context"
 	"reflect"
 	"strings"
 	"testing"
@@ -156,5 +157,13 @@ func TestParseComments(t *testing.T) {
 		if line != tt.expected {
 			t.Errorf("parsing %q = %q; want %q", tt.input, line, tt.expected)
 		}
+	}
+}
+
+func TestExpectErrorRejectsScriptErrors(t *testing.T) {
+	r := &Runner{variables: map[string]string{}}
+	err := r.handleExpectErrorCommand(context.Background(), 0, []string{"expect_error", "no_such_command"})
+	if err == nil {
+		t.Fatal("expect_error accepted an unknown command as the expected error")
 	}
 }

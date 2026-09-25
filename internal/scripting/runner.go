@@ -262,6 +262,13 @@ func (r *Runner) dispatchParts(ctx context.Context, i int, parts []string) error
 	case "logging":
 		return r.handleLoggingCommand(ctx, i, parts)
 	default:
-		return fmt.Errorf("line %d: unknown command: %s", i+1, cmd)
+		return &scriptError{fmt.Errorf("line %d: unknown command: %s", i+1, cmd)}
 	}
 }
+
+// scriptError is a mistake in the script itself. expect_error must not
+// accept it as the error it expects from the server.
+type scriptError struct{ err error }
+
+func (e *scriptError) Error() string { return e.err.Error() }
+func (e *scriptError) Unwrap() error { return e.err }

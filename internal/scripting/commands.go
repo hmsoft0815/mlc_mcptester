@@ -105,6 +105,10 @@ func (r *Runner) handleExpectErrorCommand(ctx context.Context, i int, parts []st
 	if err == nil {
 		return fmt.Errorf("line %d: expected error but command succeeded", i+1)
 	}
+	var scriptErr *scriptError
+	if errors.As(err, &scriptErr) {
+		return err
+	}
 	r.lastErrorCode = 0
 	r.lastIsToolError = false
 	// errors.As: commands may wrap the error with the script line

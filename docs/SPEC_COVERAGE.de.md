@@ -25,9 +25,9 @@ Legende: ✅ abgedeckt · ⚠️ teilweise · ❌ fehlt · — entfällt laut Sp
 | `server/discover` (`supportedVersions`, `instructions`, Cache-Angaben) | ✅ | `inspect` zeigt `instructions`, Capabilities und Extensions; `http-check` zeigt `supportedVersions` (über HTTP) |
 | `resultType` / Multi Round-Trip (`InputRequiredResult`) | ✅ | über das go-sdk; Antworten per Skript (`elicit_response`, `sample_response`, `add_root`) oder `--elicit` / `--sample` / `--root`; Skripttest `13_input_requests` |
 | `CacheableResult` (`ttlMs`, `cacheScope`) | ✅ | `inspect` prüft die erste Seite von tools/prompts/resources/list bei Servern ab 2026-07-28 |
-| `serverInfo` in `_meta` der Ergebnisse | ❌ | nicht geprüft |
+| `serverInfo` in `_meta` der Ergebnisse | ✅ | `http-check` (discover und `tools/list`) |
 | Extensions (`capabilities.extensions`) | ✅ | `inspect` zeigt sie an, JSON-Feld `extensions` |
-| OpenTelemetry-`_meta` (`traceparent` …) | ❌ | |
+| OpenTelemetry-`_meta` (`traceparent` …) | — | ob ein Server den Trace-Kontext weitergibt, ist von außen nicht beobachtbar |
 | Fortschritt (`progressToken`) | ✅ | wird angezeigt, Skripttest `05_progress` |
 | Abbruch (`notifications/cancelled`) | ✅ | Skripttest `06_cancellation` |
 | Pagination | ✅ | `inspect`, `list` und die Skript-Engine folgen `nextCursor` über alle Seiten; `prompts list` / `resources list` blättern mit `--cursor` |
@@ -90,4 +90,5 @@ Legende: ✅ abgedeckt · ⚠️ teilweise · ❌ fehlt · — entfällt laut Sp
 | Datum | Spec | Änderung |
 |---|---|---|
 | 25.09.2026 | 2026-07-28 | Erster Abgleich. go-sdk v1.7.0 → v1.8.0 |
+| 25.09.2026 | 2026-07-28 | `complete`; Multi Round-Trip (Elicitation, Sampling, Roots); Notifications über `subscriptions/listen`; OAuth, Bearer, Header; `ping`/`logging` für 2026-07-28; `http-check`; `x-mcp-header` |
 | 25.09.2026 | 2026-07-28 | `inspect`: Protokoll-Rückstand, Tool-Namen, `title`, Schema-Typ, Reihenfolge, Icon-Schemata, Cache-Angaben, Extensions; Pagination überall |

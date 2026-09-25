@@ -126,6 +126,28 @@ func (c *Checker) Run(ctx context.Context) *Report {
 	rep.SupportedVersions = discover.SupportedVersions
 	add("server/discover", Pass, "supportedVersions %v", discover.SupportedVersions)
 
+	// Servers SHOULD identify themselves in every result's _meta
+	for _, probe := range []struct {
+		method string
+		res    *response
+	}{{"server/discover", base}, {"tools/list", nil}} {
+		res := probe.res
+		if res == nil {
+			if res, err = c.send(ctx, request{rpcMethod: probe.method}); err != nil || res.rpc == nil || res.rpc.Error != nil {
+				continue
+			}
+		}
+		var result struct {
+			Meta map[string]json.RawMessage `json:"_meta"`
+		}
+		_ = json.Unmarshal(res.rpc.Result, &result)
+		if _, ok := result.Meta["io.modelcontextprotocol/serverInfo"]; ok {
+			add("serverInfo in "+probe.method+" _meta", Pass, "present")
+		} else {
+			add("serverInfo in "+probe.method+" _meta", Warn, "missing; servers SHOULD send io.modelcontextprotocol/serverInfo with every result")
+		}
+	}
+
 	ct := base.header.Get("Content-Type")
 	if strings.HasPrefix(ct, "application/json") || strings.HasPrefix(ct, "text/event-stream") {
 		add("response Content-Type", Pass, "%s", ct)

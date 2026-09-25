@@ -25,9 +25,9 @@ Legend: ✅ covered · ⚠️ partial · ❌ missing · — not applicable per s
 | `server/discover` (`supportedVersions`, `instructions`, cache hints) | ✅ | `inspect` shows `instructions`, capabilities and extensions; `http-check` shows `supportedVersions` (over HTTP) |
 | `resultType` / multi round-trip (`InputRequiredResult`) | ✅ | via the go-sdk; answers from scripts (`elicit_response`, `sample_response`, `add_root`) or `--elicit` / `--sample` / `--root`; script test `13_input_requests` |
 | `CacheableResult` (`ttlMs`, `cacheScope`) | ✅ | `inspect` checks the first page of tools/prompts/resources/list for servers on 2026-07-28 or later |
-| `serverInfo` in result `_meta` | ❌ | not checked |
+| `serverInfo` in result `_meta` | ✅ | `http-check` (discover and `tools/list`) |
 | Extensions (`capabilities.extensions`) | ✅ | shown by `inspect`, JSON field `extensions` |
-| OpenTelemetry `_meta` (`traceparent` …) | ❌ | |
+| OpenTelemetry `_meta` (`traceparent` …) | — | whether a server propagates the trace context is not observable from outside |
 | Progress (`progressToken`) | ✅ | displayed, script test `05_progress` |
 | Cancellation (`notifications/cancelled`) | ✅ | script test `06_cancellation` |
 | Pagination | ✅ | `inspect`, `list` and the script engine follow `nextCursor` across all pages; `prompts list` / `resources list` page with `--cursor` |
@@ -90,4 +90,5 @@ Legend: ✅ covered · ⚠️ partial · ❌ missing · — not applicable per s
 | Date | Spec | Change |
 |---|---|---|
 | 2026-09-25 | 2026-07-28 | First review. go-sdk v1.7.0 → v1.8.0 |
+| 2026-09-25 | 2026-07-28 | `complete`; multi round-trip (elicitation, sampling, roots); notifications via `subscriptions/listen`; OAuth, bearer, headers; `ping`/`logging` for 2026-07-28; `http-check`; `x-mcp-header` |
 | 2026-09-25 | 2026-07-28 | `inspect`: protocol lag, tool names, `title`, schema type, order, icon schemes, cache hints, extensions; pagination everywhere |

@@ -93,7 +93,7 @@ Nach der Installation könnt ihr euren ersten Server hinzufügen und sofort test
 mcp-tester profile add my-server -c "npx -y @modelcontextprotocol/server-everything"
 
 # Verfügbare Tools auflisten
-mcp-tester tools list -p my-server
+mcp-tester list -p my-server
 ```
 
 **Über Curl (Linux/macOS):**
@@ -168,7 +168,7 @@ mcp-tester inspect -p local --min-score 90
 
 #### Tools, Resources & Prompts
 ```bash
-mcp-tester tools list -p local
+mcp-tester list -p local
 mcp-tester resources list --cursor "NEXT_TOKEN" -p local
 mcp-tester prompts get code_review --args '{"file_path": "main.go"}' -p local
 mcp-tester complete prompt:code_review file_path ma -p local

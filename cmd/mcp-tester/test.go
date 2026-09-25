@@ -47,7 +47,15 @@ var testCmd = &cobra.Command{
 		}
 		defer session.Close()
 		runner := scripting.NewRunner(session, raw)
-		_, err = runner.Run(ctx, string(script), format)
-		return err
+		result, err := runner.Run(ctx, string(script), format)
+		if err != nil {
+			return err
+		}
+		if result.Failed > 0 {
+			// A failed script is a test result, not a usage mistake
+			cmd.SilenceUsage = true
+			return fmt.Errorf("%d of %d script commands failed", result.Failed, result.Executed)
+		}
+		return nil
 	},
 }

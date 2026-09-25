@@ -7,7 +7,7 @@ The `mcp-tester` scripting engine enables automated test workflows for MCP serve
 - **Commands**: One command per line.
 - **Comments**: Lines starting with `#` or `//` are ignored. Trailing comments are also supported.
 - **Variables**: Referenced with a `$` prefix (e.g., `$name`). Substitution uses regex matching (`\$([A-Za-z_][A-Za-z0-9_]*)`). Referencing an unknown variable aborts execution with a clear line-referenced error.
-- **Strings**: Can be enclosed in double quotes (`"..."`) or single quotes (`'...'`) if they contain spaces or special characters.
+- **Strings**: Can be enclosed in double quotes (`"..."`) or single quotes (`'...'`) if they contain spaces or special characters. Inside double quotes `\"` and `\\` are escapes (`"missing: [\"code\"]"`); every other backslash stays literal. Single quotes are taken verbatim. An unterminated quote fails the line.
 - **Lists / Objects**: JSON arrays (`'["a.png", "b.png"]'`) or JSON objects (`'{"key": "value"}'`) can be passed directly as arguments.
 
 ---
@@ -84,7 +84,7 @@ set_var <variable_name> <path>
 - **Paths**:
     - `rawResponse`: Stores the complete JSON response from the server.
     - `structuredContent.<path>`: Navigates through the JSON structure (dot notation).
-    - `$.<path>`: Short form for `structuredContent`.
+    - `$.<path>`: Short form for `structuredContent.<path>`; if the field is not there, the top level of the result is tried.
 
 ### 6. `input_var`
 Prompts the user for input during the test.
@@ -155,3 +155,5 @@ A script is started via the `test` menu item or directly via the CLI:
 ```bash
 mcp-tester test --script my_test.mcp --profile my_server
 ```
+
+The command exits with status 1 as soon as one script command fails, so it can gate CI or a Taskfile. With `--format json`, stdout carries only the summary (including a `failures` list with line and error); per-command output goes to stderr.

@@ -35,6 +35,13 @@ func (r *Runner) extractValue(path string) (any, error) {
 		return nil, fmt.Errorf("no previous response available")
 	}
 
+	// "$." is the documented shorthand for structuredContent; look there first
+	if rest, ok := strings.CutPrefix(path, "$."); ok {
+		if val, err := r.resolvePath("structuredContent." + rest); err == nil {
+			return val, nil
+		}
+	}
+
 	// 1. Try resolving the path as-is (works for nested structuredContent or top-level $. fields if literally present)
 	if val, err := r.resolvePath(path); err == nil {
 		return val, nil

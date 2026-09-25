@@ -197,6 +197,7 @@ Execute complex test scenarios:
 - [The MCP Handbook (Online)](https://mlcgo.eu/books/mcp-handbuch/) — A comprehensive introduction and reference to Model Context Protocol (German).
 - [Scripting Reference (EN)](docs/SCRIPTING.md) — Detailed documentation of the test grammar.
 - [Scripting Referenz (DE)](docs/SCRIPTING.de.md) — Detailed documentation of the test grammar (German).
+- [Changelog](CHANGELOG.md) — Changes per version (Added/Changed/Fixed).
 - [Spec Coverage (EN)](docs/SPEC_COVERAGE.md) — Which features of the current MCP specification are checked, with date.
 
 ---

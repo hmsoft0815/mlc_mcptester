@@ -1,0 +1,30 @@
+// Multi round-trip requests (SEP-2322): the server asks the client for input.
+// Answers are queued before the call; an unexpected request fails the call.
+
+echo "--- Elicitation: accepted with content ---"
+elicit_response accept '{"confirm": true, "reason": "cleanup"}'
+call_tool confirm_delete item:"report.pdf"
+assert_elicited "report.pdf"
+assert_contains "Deleted report.pdf (reason: cleanup)"
+
+echo "--- Elicitation: declined ---"
+elicit_response decline
+call_tool confirm_delete item:"x"
+assert_contains "user chose decline"
+
+echo "--- Elicitation without a queued answer fails the call ---"
+expect_error call_tool confirm_delete item:"y"
+assert_contains "no elicit_response queued"
+
+echo "--- Sampling ---"
+sample_response "The text is short."
+call_tool summarize text:"A long story about MCP."
+assert_sampled "A long story about MCP."
+assert_contains "Summary (mcp-tester): The text is short."
+
+echo "--- Roots ---"
+add_root file:///home/user/project project
+add_root file:///srv/data
+call_tool list_roots
+assert_contains "Roots (2)"
+assert_contains "file:///home/user/project"

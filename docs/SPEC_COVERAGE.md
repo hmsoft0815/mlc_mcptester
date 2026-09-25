@@ -20,9 +20,10 @@ Legend: ✅ covered · ⚠️ partial · ❌ missing · — not applicable per s
 | Feature | Status | Notes |
 |---|---|---|
 | Version negotiation, fallback to older revisions | ✅ | done by the go-sdk; `inspect` shows the negotiated version |
+| Per-request metadata (`protocolVersion`, `clientCapabilities`, `clientInfo`) | ✅ | all commands and scripts via the go-sdk; only `--raw` deliberately bypasses it |
 | Rating outdated revisions | ✅ | `inspect`: 10 points per revision behind (max. 30), unknown version 10 |
 | `server/discover` (`supportedVersions`, `instructions`, cache hints) | ⚠️ | `inspect` shows `instructions`, capabilities and extensions; the go-sdk does not expose `supportedVersions` or discover's cache hints |
-| `resultType` / multi round-trip (`InputRequiredResult`) | ❌ | the tester declares no client capabilities and answers no `inputRequests` |
+| `resultType` / multi round-trip (`InputRequiredResult`) | ✅ | via the go-sdk; answers from scripts (`elicit_response`, `sample_response`, `add_root`) or `--elicit` / `--sample` / `--root`; script test `13_input_requests` |
 | `CacheableResult` (`ttlMs`, `cacheScope`) | ✅ | `inspect` checks the first page of tools/prompts/resources/list for servers on 2026-07-28 or later |
 | `serverInfo` in result `_meta` | ❌ | not checked |
 | Extensions (`capabilities.extensions`) | ✅ | shown by `inspect`, JSON field `extensions` |
@@ -70,9 +71,9 @@ Legend: ✅ covered · ⚠️ partial · ❌ missing · — not applicable per s
 
 | Feature | Status | Notes |
 |---|---|---|
-| Elicitation (form / URL) | ❌ | |
-| Sampling | ❌ | deprecated since 2026-07-28 |
-| Roots | ❌ | deprecated since 2026-07-28 |
+| Elicitation (form / URL) | ✅ | both modes declared; `assert_elicited` |
+| Sampling | ✅ | `sample_response`, `assert_sampled`; deprecated since 2026-07-28 |
+| Roots | ✅ | `add_root`, `--root`; deprecated since 2026-07-28 |
 
 ## Extensions
 

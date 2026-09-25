@@ -9,6 +9,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/hmsoft0815/mlc_mcptester/internal/client"
 	"github.com/hmsoft0815/mlc_mcptester/internal/i18n"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
@@ -26,6 +27,11 @@ type Runner struct {
 	// out receives per-command progress. It is stderr in JSON mode so that
 	// stdout carries nothing but the summary document.
 	out io.Writer
+	// Responder answers elicitation and sampling requests with the answers
+	// queued by elicit_response / sample_response. Optional.
+	Responder *client.Responder
+	// Client receives roots added by add_root. Optional.
+	Client *mcp.Client
 }
 
 // TestResult holds numeric summary of test execution
@@ -77,6 +83,9 @@ func (r *Runner) Run(ctx context.Context, script string, outputFormat string) (*
 
 	if outputFormat == "json" && r.out == nil {
 		r.out = os.Stderr
+	}
+	if r.Responder != nil && r.Responder.Out == nil {
+		r.Responder.Out = r.w()
 	}
 
 	for i, line := range lines {
@@ -211,6 +220,16 @@ func (r *Runner) dispatchParts(ctx context.Context, i int, parts []string) error
 		return r.handlePingCommand(ctx, i)
 	case "complete":
 		return r.handleCompleteCommand(ctx, i, parts)
+	case "elicit_response":
+		return r.handleElicitResponseCommand(i, parts)
+	case "sample_response":
+		return r.handleSampleResponseCommand(i, parts)
+	case "add_root":
+		return r.handleAddRootCommand(i, parts)
+	case "assert_elicited":
+		return r.handleAssertElicitedCommand(i, parts)
+	case "assert_sampled":
+		return r.handleAssertSampledCommand(i, parts)
 	case "logging":
 		return r.handleLoggingCommand(ctx, i, parts)
 	default:

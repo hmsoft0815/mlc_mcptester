@@ -140,6 +140,23 @@ set_var first values.0
 
 ---
 
+### 13. Eingabeanfragen: `elicit_response`, `sample_response`, `add_root`
+Seit Spec 2026-07-28 fragt ein Server über *Multi Round-Trip Requests* nach Eingaben: `tools/call`, `prompts/get` oder `resources/read` liefert `inputRequests`, der Client antwortet und wiederholt den Aufruf. Der Tester erledigt das automatisch; das Skript legt die Antworten **vor** dem Aufruf fest. Eine Anfrage ohne vorbereitete Antwort lässt den Aufruf scheitern.
+```mcp
+elicit_response accept '{"confirm": true}'   # auch: decline, cancel
+sample_response "Antwort des Modells"        # Antwort auf sampling/createMessage
+add_root file:///home/user/project project   # angeboten über roots/list
+```
+Antworten werden der Reihe nach verbraucht (Warteschlange). `assert_elicited <text>` prüft die Nachricht der letzten Elicitation, `assert_sampled <text>` den Prompt der letzten Sampling-Anfrage.
+```mcp
+elicit_response accept '{"confirm": true}'
+call_tool confirm_delete item:"report.pdf"
+assert_elicited "report.pdf"
+```
+Auf der Kommandozeile gibt es dieselben Antworten mit `--elicit 'accept:{"confirm":true}'`, `--sample "text"` und `--root file:///pfad` (jeweils wiederholbar); dort wird eine unbeantwortete Elicitation abgelehnt.
+
+---
+
 ## Beispiel-Skript
 
 ```mcp

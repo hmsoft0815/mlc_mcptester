@@ -8,12 +8,23 @@ import (
 	"os/exec"
 	"strings"
 
+	mcpclient "github.com/hmsoft0815/mlc_mcptester/internal/client"
 	"github.com/hmsoft0815/mlc_mcptester/internal/version"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
+// cliResponder answers input requests (elicitation, sampling) for the one-shot
+// commands from --elicit / --sample; unanswered elicitations are declined.
+var cliResponder = &mcpclient.Responder{Out: os.Stderr}
+
 // getClient returns a new MCP client with optional logging and notification handlers.
 func getClient(verbose bool) *mcp.Client {
+	return newClient(verbose, cliResponder)
+}
+
+// newClient builds the client with responder answering input requests and the
+// roots given by --root.
+func newClient(verbose bool, responder *mcpclient.Responder) *mcp.Client {
 	opts := &mcp.ClientOptions{
 		// Handler for logging notifications from the server
 		LoggingMessageHandler: func(ctx context.Context, req *mcp.LoggingMessageRequest) {
@@ -28,13 +39,19 @@ func getClient(verbose bool) *mcp.Client {
 		opts.Logger = slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	}
 
-	return mcp.NewClient(
+	responder.Install(opts)
+
+	c := mcp.NewClient(
 		&mcp.Implementation{
 			Name:    version.AppName,
 			Version: version.Version,
 		},
 		opts,
 	)
+	for _, uri := range rootURIs {
+		c.AddRoots(&mcp.Root{URI: uri})
+	}
+	return c
 }
 
 // getTransport returns the appropriate MCP transport based on the provided command or URL.

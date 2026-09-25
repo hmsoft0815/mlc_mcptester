@@ -140,6 +140,23 @@ set_var first values.0
 
 ---
 
+### 13. Input requests: `elicit_response`, `sample_response`, `add_root`
+Since spec 2026-07-28 a server asks the client for input via *multi round-trip requests*: `tools/call`, `prompts/get` or `resources/read` returns `inputRequests`, the client answers and retries. The tester does this automatically; the script prepares the answers **before** the call. A request without a prepared answer fails the call.
+```mcp
+elicit_response accept '{"confirm": true}'   # also: decline, cancel
+sample_response "The model's reply"          # answer to sampling/createMessage
+add_root file:///home/user/project project   # offered via roots/list
+```
+Answers are used in order (queue). `assert_elicited <text>` checks the message of the last elicitation request, `assert_sampled <text>` the prompt of the last sampling request.
+```mcp
+elicit_response accept '{"confirm": true}'
+call_tool confirm_delete item:"report.pdf"
+assert_elicited "report.pdf"
+```
+On the command line the same answers are given with `--elicit 'accept:{"confirm":true}'`, `--sample "text"` and `--root file:///path` (all repeatable); there an unanswered elicitation is declined.
+
+---
+
 ## Example Script
 
 ```mcp

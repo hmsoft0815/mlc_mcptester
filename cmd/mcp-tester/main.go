@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	mcpclient "github.com/hmsoft0815/mlc_mcptester/internal/client"
 	"github.com/hmsoft0815/mlc_mcptester/internal/i18n"
 	"github.com/hmsoft0815/mlc_mcptester/internal/version"
 	"github.com/spf13/cobra"
@@ -21,6 +22,9 @@ var (
 	lang          string
 	format        string
 	transportType string
+	elicitAnswers []string
+	sampleAnswers []string
+	rootURIs      []string
 )
 
 // rootCmd represents the base command when called without any subcommands.
@@ -29,8 +33,19 @@ var rootCmd = &cobra.Command{
 	Short:   "MCP-Tester is a tool to test Model Context Protocol (MCP) servers",
 	Long:    fmt.Sprintf("MCP-Tester v%s - Developed by %s\n\nA command-line tool to test various MCP server transports, list tool schemas, and invoke tools for testing purposes.", version.Version, version.Author),
 	Version: version.Version,
-	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		i18n.Lang = lang
+		for _, a := range elicitAnswers {
+			res, err := mcpclient.ParseElicitAnswer(a, "")
+			if err != nil {
+				return fmt.Errorf("--elicit: %w", err)
+			}
+			cliResponder.QueueElicit(res)
+		}
+		for _, text := range sampleAnswers {
+			cliResponder.QueueSample(text)
+		}
+		return nil
 	},
 }
 
@@ -48,6 +63,9 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&downloadIcons, "download-icons", "", "Download icons to the specified directory")
 	rootCmd.PersistentFlags().StringVar(&lang, "lang", "en", "Language for output (en, de)")
 	rootCmd.PersistentFlags().StringVar(&format, "format", "text", "Output format (text, json)")
+	rootCmd.PersistentFlags().StringArrayVar(&elicitAnswers, "elicit", nil, `Answer to the next elicitation: accept, decline, cancel or 'accept:{"key":"value"}' (repeatable; unanswered ones are declined)`)
+	rootCmd.PersistentFlags().StringArrayVar(&sampleAnswers, "sample", nil, "Model reply to the next sampling request (repeatable)")
+	rootCmd.PersistentFlags().StringArrayVar(&rootURIs, "root", nil, "Root URI offered to the server via roots/list (repeatable)")
 }
 
 func main() {

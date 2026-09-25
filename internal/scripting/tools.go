@@ -3,12 +3,14 @@ package scripting
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
 
 	"github.com/hmsoft0815/mlc_mcptester/internal/client"
 	"github.com/hmsoft0815/mlc_mcptester/internal/conformance"
+	"github.com/modelcontextprotocol/go-sdk/jsonrpc"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
@@ -170,19 +172,30 @@ func (r *Runner) executeRawCall(ctx context.Context, name string, args map[strin
 
 // executeSDKCall calls the tool with the given name and arguments using the SDK call method.
 func (r *Runner) executeSDKCall(ctx context.Context, name string, args map[string]any) (map[string]any, string, error) {
-	meta := map[string]any{"progressToken": fmt.Sprintf("script-progress-%s", name)}
-	rawResponse, err := client.CallToolRaw(ctx, r.session, name, args, meta)
+	// The SDK path sends the per-request metadata 2026-07-28 requires and runs
+	// the multi round-trip middleware, which answers input requests through
+	// the client's handlers (see Runner.Responder). --raw bypasses both.
+	params := &mcp.CallToolParams{Name: name, Arguments: args}
+	params.SetProgressToken(fmt.Sprintf("script-progress-%s", name))
+	result, err := r.session.CallTool(ctx, params)
 	if err != nil {
+		var wireErr *jsonrpc.Error
+		if errors.As(err, &wireErr) {
+			return nil, "", &client.RPCError{Code: wireErr.Code, Message: wireErr.Message, Data: wireErr.Data}
+		}
 		return nil, "", err
 	}
 
-	// Try to unmarshal into SDK result for backward compatibility if needed,
-	// but we mainly need the text for the runner's state.
-	var sdkResult mcp.CallToolResult
-	data, _ := json.Marshal(rawResponse)
-	_ = json.Unmarshal(data, &sdkResult)
+	data, err := json.Marshal(result)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to marshal result: %w", err)
+	}
+	var rawResponse map[string]any
+	if err := json.Unmarshal(data, &rawResponse); err != nil {
+		return nil, "", fmt.Errorf("failed to unmarshal result: %w", err)
+	}
 
-	text := r.processSDKResult(&sdkResult)
+	text := r.processSDKResult(result)
 	return rawResponse, text, nil
 }
 

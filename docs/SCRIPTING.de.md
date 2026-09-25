@@ -157,6 +157,19 @@ Auf der Kommandozeile gibt es dieselben Antworten mit `--elicit 'accept:{"confir
 
 ---
 
+### 14. Notifications: `subscribe`, `wait_notification`
+Der Tester öffnet einen `subscriptions/listen`-Stream für jede Liste, die der Server als `listChanged` kennzeichnet, und zeichnet `notifications/tools|prompts|resources/list_changed` und `notifications/resources/updated` auf.
+```mcp
+subscribe mcp://time                             # Resource-Updates für diese URI
+wait_notification tools/list_changed             # wartet bis zu 5s (Default)
+wait_notification resources/updated mcp://time 2s
+```
+`wait_notification` ist erfüllt durch eine Notification seit dem letzten Warten, auch eine, die vor dem Befehl eintraf, und verbraucht sie. Mit `expect_error` prüft es, dass nichts ankommt.
+
+Auf der Kommandozeile zeigt `mcp-tester listen [--subscribe <uri>] [--duration 30s]` eintreffende Notifications an.
+
+---
+
 ## Beispiel-Skript
 
 ```mcp

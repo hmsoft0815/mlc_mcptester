@@ -157,6 +157,19 @@ On the command line the same answers are given with `--elicit 'accept:{"confirm"
 
 ---
 
+### 14. Notifications: `subscribe`, `wait_notification`
+The tester opens a `subscriptions/listen` stream for every list the server marks as `listChanged`, and records `notifications/tools|prompts|resources/list_changed` and `notifications/resources/updated`.
+```mcp
+subscribe mcp://time                             # resource updates for this URI
+wait_notification tools/list_changed             # waits up to 5s (default)
+wait_notification resources/updated mcp://time 2s
+```
+`wait_notification` succeeds with a notification received since the last wait, also one that arrived before the command, and consumes it. With `expect_error`, it checks that nothing arrives.
+
+On the command line, `mcp-tester listen [--subscribe <uri>] [--duration 30s]` prints notifications as they arrive.
+
+---
+
 ## Example Script
 
 ```mcp

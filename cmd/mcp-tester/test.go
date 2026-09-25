@@ -43,7 +43,8 @@ var testCmd = &cobra.Command{
 		}
 		// Scripts must say how to answer input requests; an unexpected one fails
 		responder := &mcpclient.Responder{Strict: true}
-		client := newClient(verbose, responder)
+		notes := &mcpclient.Notifications{}
+		client := newClient(verbose, responder, notes)
 		session, err := client.Connect(ctx, transport, nil)
 		if err != nil {
 			return fmt.Errorf("failed to connect: %w", err)
@@ -52,6 +53,7 @@ var testCmd = &cobra.Command{
 		runner := scripting.NewRunner(session, raw)
 		runner.Responder = responder
 		runner.Client = client
+		runner.Notifications = notes
 		result, err := runner.Run(ctx, string(script), format)
 		if err != nil {
 			return err

@@ -40,13 +40,16 @@ func main() {
 				Prompts:   &mcp.PromptCapabilities{ListChanged: true},
 				Resources: &mcp.ResourceCapabilities{ListChanged: true, Subscribe: true},
 			},
-			CompletionHandler: complete,
+			CompletionHandler:  complete,
+			SubscribeHandler:   subscribe,
+			UnsubscribeHandler: unsubscribe,
 		},
 	)
 
 	registerBasicTools(s)
 	registerExtraTools(s)
 	registerInputTools(s)
+	registerNotifyTools(s)
 	registerResources(s)
 	registerPrompts(s)
 
@@ -54,7 +57,8 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Starting Ultimate Test Server on %s (SSE: /sse, Streamable HTTP: /mcp)...\n", *addr)
 		mux := http.NewServeMux()
 		sseHandler := mcp.NewSSEHandler(func(*http.Request) *mcp.Server { return s }, nil)
-		streamableHandler := mcp.NewStreamableHTTPHandler(func(*http.Request) *mcp.Server { return s }, nil)
+		// Stateless: the SDK serves protocol 2026-07-28 over HTTP only in this mode
+		streamableHandler := mcp.NewStreamableHTTPHandler(func(*http.Request) *mcp.Server { return s }, &mcp.StreamableHTTPOptions{Stateless: true})
 		mux.Handle("/sse", sseHandler)
 		mux.Handle("/sse/", sseHandler)
 		mux.Handle("/mcp", streamableHandler)

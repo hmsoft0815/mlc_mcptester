@@ -32,6 +32,8 @@ type Runner struct {
 	Responder *client.Responder
 	// Client receives roots added by add_root. Optional.
 	Client *mcp.Client
+	// Notifications records server notifications for wait_notification. Optional.
+	Notifications *client.Notifications
 }
 
 // TestResult holds numeric summary of test execution
@@ -86,6 +88,9 @@ func (r *Runner) Run(ctx context.Context, script string, outputFormat string) (*
 	}
 	if r.Responder != nil && r.Responder.Out == nil {
 		r.Responder.Out = r.w()
+	}
+	if r.Notifications != nil && r.Notifications.Out == nil {
+		r.Notifications.Out = r.w()
 	}
 
 	for i, line := range lines {
@@ -230,6 +235,10 @@ func (r *Runner) dispatchParts(ctx context.Context, i int, parts []string) error
 		return r.handleAssertElicitedCommand(i, parts)
 	case "assert_sampled":
 		return r.handleAssertSampledCommand(i, parts)
+	case "subscribe":
+		return r.handleSubscribeCommand(ctx, i, parts)
+	case "wait_notification":
+		return r.handleWaitNotificationCommand(ctx, i, parts)
 	case "logging":
 		return r.handleLoggingCommand(ctx, i, parts)
 	default:

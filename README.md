@@ -211,3 +211,11 @@ Dieses Projekt steht unter der [MIT Lizenz](LICENSE).
 ## Projektdokumentation (`.mlcai/`)
 
 `.mlcai/` ist ein **privates Git-Submodul**: interne Planung, Backlog und Arbeitsnotizen, gepflegt mit dem MLC Doc Hub. Es ist nicht öffentlich zugänglich — **ohne** `--recurse-submodules` klonen; für den Build wird es nicht gebraucht. Links nach `.mlcai/` funktionieren nur mit Zugriff (`git submodule update --init .mlcai`).
+
+## Wer ist „Claude“ in den Commits?
+
+Einige Commits in diesem Repository sind zusammen mit Claude entstanden, dem
+KI-Modell von Anthropic. Es schreibt Code mit, hält Dokumentation und Backlog
+aktuell und sucht Fehler in der Build-Pipeline – jede Änderung wird geprüft,
+bevor sie übernommen wird. Wir verstecken das nicht:
+[wie wir mit Claude arbeiten](https://mlcgo.eu/ai/).

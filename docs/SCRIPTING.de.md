@@ -212,6 +212,18 @@ Auf der Kommandozeile zeigt `mcp-tester apps` jede App mit ihren Tools, den vor 
 
 ---
 
+### 18. `timeout`
+Führt einen Befehl mit Zeitlimit in **Millisekunden** aus. Ist das Limit abgelaufen, wird die Anfrage abgebrochen, und der Befehl scheitert mit einem Deadline-Fehler.
+```mcp
+timeout 5000 call_tool echo message:"hi"
+
+# ein langsames Tool darf das Skript nicht aufhalten: der Timeout ist der erwartete Fehler
+expect_error timeout 500 call_tool progressTest seconds:5
+assert_contains "deadline"
+```
+
+---
+
 ## Beispiel-Skript
 
 ```mcp

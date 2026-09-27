@@ -212,6 +212,18 @@ On the command line, `mcp-tester apps` lists every app with its tools, tools hid
 
 ---
 
+### 18. `timeout`
+Runs one command with a time limit in **milliseconds**. When the limit passes, the request is cancelled and the command fails with a context deadline error.
+```mcp
+timeout 5000 call_tool echo message:"hi"
+
+# a slow tool must not hang the script: the timeout is the expected error
+expect_error timeout 500 call_tool progressTest seconds:5
+assert_contains "deadline"
+```
+
+---
+
 ## Example Script
 
 ```mcp

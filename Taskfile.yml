@@ -176,11 +176,13 @@ tasks:
     deps: [all]
     cmds:
       - |
-        ./bin/test-server -addr :18081 > sse_server.log 2>&1 &
+        # The server log only matters when a test fails: shown then, removed always
+        log=$(mktemp)
+        ./bin/test-server -addr :18081 > "$log" 2>&1 &
         echo "Waiting for SSE server to start..."
         sleep 2
         # Use trap to ensure server is killed even if tests fail
-        trap "pkill -f './bin/test-server -addr :18081' || true" EXIT
+        trap 'status=$?; pkill -f "./bin/test-server -addr :18081" || true; [ $status -eq 0 ] || cat "$log"; rm -f "$log"' EXIT
         ./bin/mcp-tester inspect --url http://localhost:18081/sse
         ./bin/mcp-tester test --url http://localhost:18081/sse --script tests/01_simple.mcp
 
@@ -189,11 +191,13 @@ tasks:
     deps: [all]
     cmds:
       - |
-        ./bin/test-server -addr :18082 > sse_server.log 2>&1 &
+        # The server log only matters when a test fails: shown then, removed always
+        log=$(mktemp)
+        ./bin/test-server -addr :18082 > "$log" 2>&1 &
         echo "Waiting for Streamable HTTP server to start..."
         sleep 2
         # Use trap to ensure server is killed even if tests fail
-        trap "pkill -f './bin/test-server -addr :18082' || true" EXIT
+        trap 'status=$?; pkill -f "./bin/test-server -addr :18082" || true; [ $status -eq 0 ] || cat "$log"; rm -f "$log"' EXIT
         ./bin/mcp-tester inspect --url http://localhost:18082/mcp
         ./bin/mcp-tester test --url http://localhost:18082/mcp --script tests/01_simple.mcp
 
@@ -258,7 +262,7 @@ tasks:
   clean:
     desc: Remove binaries and temporary files
     cmds:
-      - rm -rf bin task_test.mcp type_test.mcp assert_test.mcp *.png sse_server.log
+      - rm -rf bin task_test.mcp type_test.mcp assert_test.mcp *.png
 
   dropzone:
     desc: Copy the built binaries to the dropzone for testing

@@ -2,6 +2,7 @@
 
 <img src="docs/assets/hero.jpg" alt="MCP-Tester — Illustration" width="820">
 
+[![mcpcheck](docs/mcpcheck.svg)](docs/mcpcheck.json) Referenz-Server [`cmd/test-server`](#der-everything-test-server), geprüft mit `task badge`
 
 > **[mlcgo.eu](https://mlcgo.eu)** — tools, libraries and manuals · [Product page](https://mlcgo.eu/products/mlc-tester/)
 
@@ -180,7 +181,7 @@ mcp-tester inspect -p local --min-score 90
 
 `inspect` schreibt auf Wunsch eine Badge, die andere Projekte in ihr README einbinden:
 
-![mcpcheck](docs/assets/mcpcheck-example.svg)
+![mcpcheck](docs/mcpcheck.svg)
 
 ```bash
 mcp-tester inspect -p local --badge docs/mcpcheck.svg --badge-json docs/mcpcheck.json

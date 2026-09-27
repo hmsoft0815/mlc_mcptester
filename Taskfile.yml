@@ -165,6 +165,12 @@ tasks:
     cmds:
       - ./bin/mcp-tester inspect --profile local
 
+  badge:
+    desc: Write the mcpcheck badge of the reference server (docs/mcpcheck.svg, docs/mcpcheck.json)
+    deps: [all]
+    cmds:
+      - ./bin/mcp-tester inspect --command ./bin/test-server --format json --badge docs/mcpcheck.svg --badge-json docs/mcpcheck.json > /dev/null
+
   test-sse:
     desc: Test the SSE transport
     deps: [all]

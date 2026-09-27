@@ -24,7 +24,7 @@ Legende: ✅ abgedeckt · ⚠️ teilweise · ❌ fehlt · — nicht anwendbar o
 | Bewertung veralteter Revisionen | ✅ | `inspect`: 10 Punkte Abzug je Revision Rückstand (max. 30), unbekannte Version 10 |
 | `server/discover` (`supportedVersions`, `instructions`, Cache-Angaben) | ✅ | `inspect` zeigt `instructions`, Capabilities und Extensions; `http-check` zeigt `supportedVersions` (über HTTP) |
 | `resultType` / Multi Round-Trip (`InputRequiredResult`) | ✅ | über das go-sdk; Antworten per Skript (`elicit_response`, `sample_response`, `add_root`) oder `--elicit` / `--sample` / `--root`; Skripttest `13_input_requests` |
-| `CacheableResult` (`ttlMs`, `cacheScope`) | ✅ | `inspect` prüft die erste Seite von tools/prompts/resources/list bei Servern ab 2026-07-28 |
+| `CacheableResult` (`ttlMs`, `cacheScope`) | ✅ | `inspect` liest die erste Seite von tools/prompts/resources/list roh bei Servern ab 2026-07-28: fehlende oder ungültige Felder (MUST) sind eine Warnung; `ttlMs` 0 und, mit Zugangsdaten, `public`-Listen sind INFO ohne Einfluss auf den Score; `--read-resources` liest die erste Resource, `public`-Inhalte mit Zugangsdaten sind eine Warnung (gemeinsame Caches dürfen sie anderen Nutzern ausliefern) |
 | `serverInfo` in `_meta` der Ergebnisse | ✅ | `http-check` (discover und `tools/list`) |
 | Extensions (`capabilities.extensions`) | ✅ | `inspect` zeigt sie an, JSON-Feld `extensions` |
 | OpenTelemetry-`_meta` (`traceparent` …) | — | ob ein Server den Trace-Kontext weitergibt, ist von außen nicht beobachtbar |

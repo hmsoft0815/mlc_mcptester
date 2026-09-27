@@ -71,16 +71,37 @@ func checkIconSource(src string) string {
 	return "relative URI, only https and data: are allowed"
 }
 
-// checkCacheScope returns why a list result's cache hints are not valid, or "".
-func checkCacheScope(ttlMs int, scope string) string {
-	if ttlMs < 0 {
-		return fmt.Sprintf("ttlMs %d is negative", ttlMs)
+// checkCacheHints reads the cache hints of a raw result (2026-07-28: servers
+// MUST send ttlMs >= 0 and cacheScope "public" or "private"). It works on the
+// wire format because the SDK turns a missing ttlMs into 0. ttlMs is -1 when
+// it cannot be read; problems lists every violation.
+func checkCacheHints(result map[string]any) (ttlMs float64, scope string, problems []string) {
+	ttlMs = -1
+	switch v, ok := result["ttlMs"]; {
+	case !ok:
+		problems = append(problems, "ttlMs is missing")
+	case v == nil:
+		problems = append(problems, "ttlMs is null")
+	default:
+		n, isNum := v.(float64)
+		switch {
+		case !isNum:
+			problems = append(problems, fmt.Sprintf("ttlMs %v is not a number", v))
+		case n < 0:
+			problems = append(problems, fmt.Sprintf("ttlMs %v is negative", n))
+		default:
+			ttlMs = n
+		}
 	}
-	switch scope {
-	case "public", "private":
-		return ""
-	case "":
-		return "cacheScope is missing"
+	switch v, ok := result["cacheScope"]; {
+	case !ok:
+		problems = append(problems, "cacheScope is missing")
+	default:
+		scope, _ = v.(string)
+		if scope != "public" && scope != "private" {
+			problems = append(problems, fmt.Sprintf("cacheScope %v is neither \"public\" nor \"private\"", v))
+			scope = ""
+		}
 	}
-	return fmt.Sprintf("cacheScope %q is neither \"public\" nor \"private\"", scope)
+	return ttlMs, scope, problems
 }

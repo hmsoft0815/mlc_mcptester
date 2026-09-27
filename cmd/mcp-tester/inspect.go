@@ -34,6 +34,7 @@ type InspectionReport struct {
 	PromptsFound          int      `json:"promptsFound"`
 	ResourcesFound        int      `json:"resourcesFound"`
 	Errors                []string `json:"errors,omitempty"`
+	Infos                 []string `json:"infos,omitempty"` // observations that do not affect the score
 }
 
 // listFailurePenalty is deducted for each list request that fails although its
@@ -45,6 +46,7 @@ var (
 	badgeSVG       string
 	badgeJSON      string
 	badgeHideScore bool
+	readResources  bool
 )
 
 func init() {
@@ -52,6 +54,7 @@ func init() {
 	inspectCmd.Flags().StringVar(&badgeSVG, "badge", "", "Write an mcpcheck status badge (SVG) to this file")
 	inspectCmd.Flags().StringVar(&badgeJSON, "badge-json", "", "Write the badge as shields.io endpoint JSON to this file")
 	inspectCmd.Flags().BoolVar(&badgeHideScore, "badge-no-score", false, "Leave the quality score off the badge")
+	inspectCmd.Flags().BoolVar(&readResources, "read-resources", false, "Also read the first resource and check its cache hints")
 	rootCmd.AddCommand(inspectCmd)
 }
 
@@ -109,6 +112,8 @@ var inspectCmd = &cobra.Command{
 			score -= listFailurePenalty
 		}
 		warn := func(msg string) { recommendations = append(recommendations, msg) }
+		infos := []string{}
+		info := func(msg string) { infos = append(infos, msg) }
 		d := newDeductions(map[string]int{
 			"description":  20,
 			"outputSchema": 10,
@@ -119,6 +124,7 @@ var inspectCmd = &cobra.Command{
 			"title":        5,
 			"icon":         15,
 			"cache":        3,
+			"cacheScope":   10,
 			"xMCPHeader":   20,
 		})
 		// inspect never calls a tool — it cannot know which ones are free of
@@ -191,14 +197,41 @@ var inspectCmd = &cobra.Command{
 				}
 			}
 		}
-		// Cache hints are part of list results since 2026-07-28 (CacheableResult)
-		checkCache := func(method string, result mcp.CacheableResult) {
+		// Cache hints are part of cacheable results since 2026-07-28. Read from
+		// the wire: the SDK turns a missing ttlMs into 0 and fills cacheScope.
+		authenticated := u != "" && (bearerToken != "" || len(headerFlags) > 0 ||
+			oauthEnabled || oauthClientCredentials || oauthEnterprise)
+		cacheHints := func(method string, params map[string]any) (float64, string, bool) {
+			if params == nil {
+				params = map[string]any{}
+			}
+			params["_meta"] = mcpclient.RequestMeta(session, nil)
+			result, err := mcpclient.CallRaw(ctx, session, method, params)
+			if err != nil {
+				return 0, "", false
+			}
+			ttl, scope, problems := checkCacheHints(result)
+			if len(problems) > 0 {
+				warn(i18n.T(i18n.MsgCacheHints, method, strings.Join(problems, "; ")))
+				d.add("cache", 1)
+			}
+			return ttl, scope, true
+		}
+		// Collected per finding, so the INFO lines name all lists at once
+		var staleLists, publicLists []string
+		checkCache := func(method string) {
 			if !modern {
 				return
 			}
-			if msg := checkCacheScope(result.GetTTLMs(), result.GetCacheScope()); msg != "" {
-				warn(i18n.T(i18n.MsgCacheHints, method, msg))
-				d.add("cache", 1)
+			ttl, scope, ok := cacheHints(method, nil)
+			if !ok {
+				return
+			}
+			if ttl == 0 {
+				staleLists = append(staleLists, method)
+			}
+			if scope == "public" && authenticated {
+				publicLists = append(publicLists, method)
 			}
 		}
 
@@ -219,9 +252,7 @@ var inspectCmd = &cobra.Command{
 			for _, p := range prompts {
 				checkIcons("prompt '"+p.Name+"'", p.Icons)
 			}
-			if first, err := session.ListPrompts(ctx, nil); err == nil {
-				checkCache("prompts/list", first)
-			}
+			checkCache("prompts/list")
 		}
 
 		tools, err := mcpclient.ListAllTools(ctx, session)
@@ -296,9 +327,7 @@ var inspectCmd = &cobra.Command{
 				score -= totalDeductionInputSchema
 				score += totalBonusSafety
 			}
-			if first, err := session.ListTools(ctx, nil); err == nil {
-				checkCache("tools/list", first)
-			}
+			checkCache("tools/list")
 		}
 
 		resources, err := mcpclient.ListAllResources(ctx, session)
@@ -313,9 +342,29 @@ var inspectCmd = &cobra.Command{
 			for _, r := range resources {
 				checkIcons("resource '"+r.URI+"'", r.Icons)
 			}
-			if first, err := session.ListResources(ctx, nil); err == nil {
-				checkCache("resources/list", first)
+			checkCache("resources/list")
+			// Resource contents are typically per user: "public" under
+			// credentials can leak them through shared caches
+			switch {
+			case !modern || len(resources) == 0:
+			case readResources:
+				uri := resources[0].URI
+				if _, scope, ok := cacheHints("resources/read", map[string]any{"uri": uri}); !ok {
+					info(i18n.T(i18n.MsgResourceReadFailed, uri, "no result"))
+				} else if scope == "public" && authenticated {
+					warn(i18n.T(i18n.MsgCachePublicResource, uri))
+					d.add("cacheScope", 10)
+				}
+			case authenticated:
+				info(i18n.T(i18n.MsgReadResourcesHint))
 			}
+		}
+
+		if len(staleLists) > 0 {
+			info(i18n.T(i18n.MsgCacheStale, strings.Join(staleLists, ", ")))
+		}
+		if len(publicLists) > 0 {
+			info(i18n.T(i18n.MsgCachePublicList, strings.Join(publicLists, ", ")))
 		}
 
 		// Skills are instructions that reach the model: count them, details via 'skills'
@@ -346,6 +395,7 @@ var inspectCmd = &cobra.Command{
 		report.Score = score
 		report.Recommendations = recommendations
 		report.Errors = protocolErrors
+		report.Infos = infos
 
 		if format == "json" {
 			out, _ := json.MarshalIndent(report, "", "  ")
@@ -361,6 +411,9 @@ var inspectCmd = &cobra.Command{
 				for _, rec := range recommendations {
 					fmt.Println("- " + rec)
 				}
+			}
+			for _, i := range infos {
+				fmt.Println("- " + i)
 			}
 			if declaredOutputSchemas > 0 {
 				fmt.Println()

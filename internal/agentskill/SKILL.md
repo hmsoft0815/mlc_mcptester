@@ -37,7 +37,9 @@ wrong. Run it from the shell; it is not an MCP server itself.
 | Behaviour tests | `mcp-tester test --script tests/foo.mcp -p X` |
 
 Protocol errors (`inspect`) and FAIL (`http-check`) are MUST violations that real
-clients break on — fix them. Score hints are recommendations; a score below 100
+clients break on — fix them. INFO lines never affect the score. With
+credentials, add `--read-resources` to `inspect`: it then warns when per-user
+resource content is cacheable as `"public"`. Score hints are recommendations; a score below 100
 is not automatically a bug.
 
 Every tool result is checked against the tool's `outputSchema` the way the

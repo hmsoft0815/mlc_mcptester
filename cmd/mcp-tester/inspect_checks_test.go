@@ -70,19 +70,28 @@ func TestCheckIconSource(t *testing.T) {
 	}
 }
 
-func TestCheckCacheScope(t *testing.T) {
-	if msg := checkCacheScope(300000, "public"); msg != "" {
-		t.Errorf("valid hints rejected: %s", msg)
-	}
-	if msg := checkCacheScope(0, "private"); msg != "" {
-		t.Errorf("valid hints rejected: %s", msg)
-	}
+func TestCheckCacheHints(t *testing.T) {
 	for _, tt := range []struct {
-		ttl   int
-		scope string
-	}{{-1, "public"}, {0, ""}, {0, "shared"}} {
-		if msg := checkCacheScope(tt.ttl, tt.scope); msg == "" {
-			t.Errorf("checkCacheScope(%d, %q) accepted invalid hints", tt.ttl, tt.scope)
-		}
+		name     string
+		result   map[string]any
+		ttl      float64
+		scope    string
+		problems int
+	}{
+		{"valid public", map[string]any{"ttlMs": 300000.0, "cacheScope": "public"}, 300000, "public", 0},
+		{"valid stale private", map[string]any{"ttlMs": 0.0, "cacheScope": "private"}, 0, "private", 0},
+		{"both missing", map[string]any{}, -1, "", 2},
+		{"ttl missing", map[string]any{"cacheScope": "public"}, -1, "public", 1},
+		{"negative ttl", map[string]any{"ttlMs": -1.0, "cacheScope": "public"}, -1, "public", 1},
+		{"ttl a string", map[string]any{"ttlMs": "60", "cacheScope": "public"}, -1, "public", 1},
+		{"unknown scope", map[string]any{"ttlMs": 0.0, "cacheScope": "shared"}, 0, "", 1},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			ttl, scope, problems := checkCacheHints(tt.result)
+			if ttl != tt.ttl || scope != tt.scope || len(problems) != tt.problems {
+				t.Errorf("got ttl %v, scope %q, problems %q; want %v, %q, %d problems",
+					ttl, scope, problems, tt.ttl, tt.scope, tt.problems)
+			}
+		})
 	}
 }

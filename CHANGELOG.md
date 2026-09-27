@@ -5,9 +5,12 @@ All notable changes to mcp-tester. Format: [Keep a Changelog](https://keepachang
 ## [Unreleased]
 
 ### Added
+- `inspect`: INFO lines (JSON field `infos`) that do not affect the score; `ttlMs` 0 on lists and, with credentials, `public` lists are reported there.
+- `inspect --read-resources`: reads the first resource; `cacheScope: "public"` on its content with credentials is a warning (shared caches may serve it to other users).
 - test-server: pagination (five entries per page), cache hints (`ttlMs`, `cacheScope`), `instructions`, tool annotations, URL-mode elicitation (`connect_account`); script test `19_server_features`.
 
 ### Changed
+- `inspect` reads cache hints from the wire, so a missing `ttlMs` (MUST) is reported instead of being read as 0; invalid cache hints are a WARNING.
 - `task test-scripts` runs script tests 12–19 (completion, input requests, notifications, tasks, skills, parsing, apps, server features); `task test-inspect` requires score 100 for the reference server.
 
 ## [1.6.0] - 2026-09-27

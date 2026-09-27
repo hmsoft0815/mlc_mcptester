@@ -66,6 +66,13 @@ const (
 	MsgInputSchema          MessageKey = "input_schema"
 	MsgOutputSchema         MessageKey = "output_schema"
 	MsgAnnotations          MessageKey = "annotations"
+
+	// Cache hints beyond validity: INFO lines do not affect the score
+	MsgCacheStale          MessageKey = "cache_stale"
+	MsgCachePublicList     MessageKey = "cache_public_list"
+	MsgCachePublicResource MessageKey = "cache_public_resource"
+	MsgResourceReadFailed  MessageKey = "resource_read_failed"
+	MsgReadResourcesHint   MessageKey = "read_resources_hint"
 )
 
 var messages = map[string]map[MessageKey]string{
@@ -105,7 +112,7 @@ var messages = map[string]map[MessageKey]string{
 		MsgNoTitle:              "HINT: Tool '%s' has no title for display in user interfaces.",
 		MsgInvalidIcon:          "WARNING: Icon of %s: %s (%s).",
 		MsgToolOrderUnstable:    "WARNING: tools/list returns the tools in a different order on each call; clients cannot cache the list reliably.",
-		MsgCacheHints:           "HINT: %s: invalid cache hints: %s.",
+		MsgCacheHints:           "WARNING: %s: invalid cache hints: %s (servers MUST send ttlMs >= 0 and cacheScope \"public\" or \"private\").",
 		MsgInvalidXMCPHeader:    "WARNING: Tool '%s' has an invalid x-mcp-header (%s); clients on Streamable HTTP must drop the tool.",
 		MsgSkillsInvalid:        "WARNING: The published skills violate the Skills extension; details with 'mcp-tester skills --verify'.",
 		MsgInstructions:         "    - Instructions: %d characters\n",
@@ -127,6 +134,16 @@ var messages = map[string]map[MessageKey]string{
 		MsgInputSchema:          "Input Schema: %+v\n",
 		MsgOutputSchema:         "Output Schema: %+v\n",
 		MsgAnnotations:          "Annotations: %+v\n",
+
+		MsgCacheStale: "INFO: %s: marked immediately stale (ttlMs 0), so clients fetch these lists again every time. " +
+			"If a list stays the same for a while, a TTL spares them that; list_changed notifications still announce changes.",
+		MsgCachePublicList: "INFO: %s: cacheScope \"public\" although you connected with credentials, so shared gateways and proxies " +
+			"may serve these lists to other users. Fine if they are the same for everyone, otherwise use \"private\".",
+		MsgCachePublicResource: "WARNING: resources/read of '%s' has cacheScope \"public\" although you connected with credentials: " +
+			"shared gateways and proxies may serve the content to other users. Use \"private\" for per-user content.",
+		MsgResourceReadFailed: "INFO: resources/read of '%s' failed (%v); its cache hints were not checked.",
+		MsgReadResourcesHint: "NOTE: With credentials, cacheScope \"public\" on resource contents can leak them to other users through shared caches. " +
+			"inspect lists only; --read-resources also reads the first resource and checks its cache hints.",
 	},
 	"de": {
 		MsgInspectionTitle: "=== MCP Server Inspektion: %s ===\n",
@@ -164,7 +181,7 @@ var messages = map[string]map[MessageKey]string{
 		MsgNoTitle:              "HINT: Tool '%s' hat keinen title für die Anzeige in Oberflächen.",
 		MsgInvalidIcon:          "WARNUNG: Icon von %s: %s (%s).",
 		MsgToolOrderUnstable:    "WARNUNG: tools/list liefert die Tools bei jedem Aufruf in anderer Reihenfolge; Clients können die Liste nicht zuverlässig cachen.",
-		MsgCacheHints:           "HINT: %s: ungültige Cache-Angaben: %s.",
+		MsgCacheHints:           "WARNUNG: %s: ungültige Cache-Angaben: %s (Server MÜSSEN ttlMs >= 0 und cacheScope \"public\" oder \"private\" senden).",
 		MsgInvalidXMCPHeader:    "WARNUNG: Tool '%s' hat ein ungültiges x-mcp-header (%s); Clients über Streamable HTTP müssen das Tool verwerfen.",
 		MsgSkillsInvalid:        "WARNUNG: Die veröffentlichten Skills verletzen die Skills-Extension; Details mit 'mcp-tester skills --verify'.",
 		MsgInstructions:         "    - Instructions: %d Zeichen\n",
@@ -186,6 +203,16 @@ var messages = map[string]map[MessageKey]string{
 		MsgInputSchema:          "Input-Schema: %+v\n",
 		MsgOutputSchema:         "Output-Schema: %+v\n",
 		MsgAnnotations:          "Annotationen: %+v\n",
+
+		MsgCacheStale: "INFO: %s: als sofort veraltet markiert (ttlMs 0), Clients holen die Listen also jedes Mal neu. " +
+			"Bleibt eine Liste eine Weile gleich, erspart ihnen eine TTL das; Änderungen kündigen list_changed-Notifications weiterhin an.",
+		MsgCachePublicList: "INFO: %s: cacheScope \"public\", obwohl mit Zugangsdaten verbunden wurde; gemeinsame Gateways und Proxys " +
+			"dürfen diese Listen anderen Nutzern ausliefern. In Ordnung, wenn sie für alle gleich sind, sonst \"private\".",
+		MsgCachePublicResource: "WARNUNG: resources/read von '%s' hat cacheScope \"public\", obwohl mit Zugangsdaten verbunden wurde: " +
+			"gemeinsame Gateways und Proxys dürfen den Inhalt anderen Nutzern ausliefern. Für nutzerbezogene Inhalte \"private\" verwenden.",
+		MsgResourceReadFailed: "INFO: resources/read von '%s' ist fehlgeschlagen (%v); die Cache-Angaben wurden nicht geprüft.",
+		MsgReadResourcesHint: "HINWEIS: Mit Zugangsdaten können Resource-Inhalte mit cacheScope \"public\" über gemeinsame Caches bei anderen Nutzern landen. " +
+			"inspect listet nur; --read-resources liest zusätzlich die erste Resource und prüft ihre Cache-Angaben.",
 	},
 }
 

@@ -96,7 +96,7 @@ Because it runs mainly in CI, where the exit code and `--format json` matter, no
 
 ## The "Everything" Test Server
 
-This project includes a reference server (`cmd/test-server`) that demonstrates the MCP protocol: tools with output schemas, resources and templates, prompts, completion, logging, progress, elicitation, sampling, roots, notifications via `subscriptions/listen` and `x-mcp-header`. With `-addr :8080` it runs over HTTP, with `-auth` additionally OAuth-protected by a built-in test authorization server.
+This project includes a reference server (`cmd/test-server`) that demonstrates the MCP protocol: tools with output schemas, resources and templates, prompts, completion, logging, progress, elicitation, sampling, roots, notifications via `subscriptions/listen`, `x-mcp-header`, URL-mode elicitation, tool annotations, `instructions`, cache hints and pagination (five entries per page). `task test-inspect` requires 100/100 for it. With `-addr :8080` it runs over HTTP, with `-auth` additionally OAuth-protected by a built-in test authorization server.
 
 ---
 
@@ -212,7 +212,7 @@ mcp-tester inspect -p local --badge docs/mcpcheck.svg --badge-json docs/mcpcheck
 ```
 
 - **spec 2026-07-28**: the protocol revision the server negotiated. This is deliberately not the test date, because the revision shows whether the server is up to date.
-- **95/100**: the `inspect` quality score. With `--badge-no-score`, only the revision appears.
+- **100/100**: the `inspect` quality score. With `--badge-no-score`, only the revision appears.
 - **Colour**: green; yellow for a score below 80 or an older revision; red ("failing") on protocol errors, whatever the score.
 - The test date and the tester version appear in the SVG tooltip and in the JSON file. Link the badge to the JSON so readers can see when and with what the server was checked.
 - The badge is written even when the check fails (red), so a stale green badge does not stay behind. The SVG is self-contained and needs no external service. The JSON follows the [shields.io endpoint schema](https://shields.io/badges/endpoint-badge), so it also works with `https://img.shields.io/endpoint?url=<raw URL of the JSON>`.

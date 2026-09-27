@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
   "label": "mcpcheck",
-  "message": "spec 2026-07-28 · 95/100",
+  "message": "spec 2026-07-28 · 100/100",
   "color": "4c1",
   "revision": "2026-07-28",
   "latestRevision": "2026-07-28",
-  "score": 95,
+  "score": 100,
   "errors": 0,
   "tester": "1.6.0",
-  "checked": "2026-09-27T10:45:57Z"
+  "checked": "2026-09-27T10:58:22Z"
 }

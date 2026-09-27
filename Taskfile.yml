@@ -158,12 +158,29 @@ tasks:
       - ./bin/mcp-tester test --profile local --script tests/09_error_codes.mcp -v
       - echo "--- Running Array Arguments & Var Safety Test ---"
       - ./bin/mcp-tester test --profile local --script tests/11_array_args.mcp -v
+      - echo "--- Running Completion Test ---"
+      - ./bin/mcp-tester test --profile local --script tests/12_completion.mcp
+      - echo "--- Running Input Requests Test ---"
+      - ./bin/mcp-tester test --profile local --script tests/13_input_requests.mcp
+      - echo "--- Running Notifications Test ---"
+      - ./bin/mcp-tester test --profile local --script tests/14_notifications.mcp
+      - echo "--- Running Tasks Test ---"
+      - ./bin/mcp-tester test --profile local --script tests/15_tasks.mcp
+      - echo "--- Running Skills Test ---"
+      - ./bin/mcp-tester test --profile local --script tests/16_skills.mcp
+      - echo "--- Running Parsing Test ---"
+      - ./bin/mcp-tester test --profile local --script tests/17_parsing.mcp
+      - echo "--- Running Apps Test ---"
+      - ./bin/mcp-tester test --profile local --script tests/18_apps.mcp
+      - echo "--- Running Server Features Test ---"
+      - ./bin/mcp-tester test --profile local --script tests/19_server_features.mcp
 
   test-inspect:
     desc: Test the server inspection tool
     deps: [all]
     cmds:
-      - ./bin/mcp-tester inspect --profile local
+      # The reference server is the example: any finding fails the build
+      - ./bin/mcp-tester inspect --profile local --min-score 100
 
   badge:
     desc: Write the mcpcheck badge of the reference server (docs/mcpcheck.svg, docs/mcpcheck.json)

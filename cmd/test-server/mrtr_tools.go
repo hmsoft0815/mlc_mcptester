@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	neturl "net/url"
 	"strings"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -11,6 +12,10 @@ import (
 type confirmDeleteResult struct {
 	Deleted bool   `json:"deleted" jsonschema:"Whether the item was deleted"`
 	Reason  string `json:"reason,omitempty" jsonschema:"The user's reason, or why nothing was deleted"`
+}
+
+type connectAccountResult struct {
+	Connected bool `json:"connected" jsonschema:"Whether the user completed the sign-in"`
 }
 
 type summarizeResult struct {
@@ -29,6 +34,7 @@ type listRootsResult struct {
 func registerInputTools(s *mcp.Server) {
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "confirm_delete",
+		Annotations: &mcp.ToolAnnotations{DestructiveHint: ptr(true)},
 		Title:       "Confirm Delete",
 		Description: "Asks the user to confirm before deleting an item (elicitation, form mode)",
 	}, func(ctx context.Context, req *mcp.CallToolRequest, args struct {
@@ -67,8 +73,40 @@ func registerInputTools(s *mcp.Server) {
 		return textResult("Not deleted: user chose " + res.Action), confirmDeleteResult{Reason: "user chose " + res.Action}, nil
 	})
 
+	// URL mode: the user leaves the client for a page of the server (e.g. a
+	// third-party sign-in); nothing sensitive passes through the client.
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "connect_account",
+		Title:       "Connect Account",
+		Description: "Asks the user to sign in to a demo service in the browser (elicitation, URL mode)",
+	}, func(ctx context.Context, req *mcp.CallToolRequest, args struct {
+		Service string `json:"service" jsonschema:"Service to connect"`
+	}) (*mcp.CallToolResult, connectAccountResult, error) {
+		var none connectAccountResult
+		resp, ok := req.Params.InputResponses["signin"]
+		if !ok {
+			return &mcp.CallToolResult{InputRequests: mcp.InputRequestMap{
+				"signin": &mcp.ElicitParams{
+					Mode:          "url",
+					Message:       fmt.Sprintf("Sign in to %s to connect your account", args.Service),
+					URL:           "https://example.com/connect?service=" + neturl.QueryEscape(args.Service),
+					ElicitationID: "signin-" + args.Service,
+				},
+			}}, none, nil
+		}
+		res, ok := resp.(*mcp.ElicitResult)
+		if !ok {
+			return nil, none, fmt.Errorf("unexpected input response %T", resp)
+		}
+		if res.Action != "accept" {
+			return textResult("Not connected: user chose " + res.Action), none, nil
+		}
+		return textResult("Connected " + args.Service), connectAccountResult{Connected: true}, nil
+	})
+
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "summarize",
+		Annotations: &mcp.ToolAnnotations{ReadOnlyHint: true},
 		Title:       "Summarize",
 		Description: "Asks the client's LLM to summarize a text (sampling)",
 	}, func(ctx context.Context, req *mcp.CallToolRequest, args struct {
@@ -113,6 +151,7 @@ func registerInputTools(s *mcp.Server) {
 
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "list_roots",
+		Annotations: &mcp.ToolAnnotations{ReadOnlyHint: true},
 		Title:       "List Roots",
 		Description: "Lists the client's roots (roots/list)",
 	}, func(ctx context.Context, req *mcp.CallToolRequest, args struct{}) (*mcp.CallToolResult, listRootsResult, error) {
@@ -134,6 +173,8 @@ func registerInputTools(s *mcp.Server) {
 		return textResult(fmt.Sprintf("Roots (%d): %s", len(uris), strings.Join(uris, ", "))), listRootsResult{Roots: uris}, nil
 	})
 }
+
+func ptr[T any](v T) *T { return &v }
 
 func textResult(text string) *mcp.CallToolResult {
 	return &mcp.CallToolResult{Content: []mcp.Content{&mcp.TextContent{Text: text}}}

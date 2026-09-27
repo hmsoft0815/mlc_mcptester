@@ -2,6 +2,14 @@
 
 All notable changes to mcp-tester. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versions: [SemVer](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- test-server: pagination (five entries per page), cache hints (`ttlMs`, `cacheScope`), `instructions`, tool annotations, URL-mode elicitation (`connect_account`); script test `19_server_features`.
+
+### Changed
+- `task test-scripts` runs script tests 12–19 (completion, input requests, notifications, tasks, skills, parsing, apps, server features); `task test-inspect` requires score 100 for the reference server.
+
 ## [1.6.0] - 2026-09-27
 
 ### Added

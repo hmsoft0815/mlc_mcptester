@@ -13,6 +13,7 @@ func registerExtraTools(s *mcp.Server) {
 	// exempts from outputSchema.
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "error_trigger",
+		Annotations: &mcp.ToolAnnotations{ReadOnlyHint: true},
 		Title:       "Error Trigger",
 		Description: "Triggers a simulated server error for testing error handling",
 		Icons: []mcp.Icon{
@@ -38,6 +39,7 @@ func registerExtraTools(s *mcp.Server) {
 
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "join_strings",
+		Annotations: &mcp.ToolAnnotations{ReadOnlyHint: true},
 		Title:       "Join Strings",
 		Description: "Joins a list of strings (tests array argument support)",
 		Icons: []mcp.Icon{

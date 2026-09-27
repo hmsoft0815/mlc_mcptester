@@ -96,7 +96,7 @@ Weil er vor allem in CI läuft, und dort zählen Exit-Code und `--format json`, 
 
 ## Der "Everything" Test-Server
 
-Im Projekt ist ein Referenz-Server (`cmd/test-server`) enthalten, der die Möglichkeiten des MCP-Protokolls vorführt: Tools mit Output-Schemata, Resources und Templates, Prompts, Completion, Logging, Progress, Elicitation, Sampling, Roots, Notifications über `subscriptions/listen` und `x-mcp-header`. Mit `-addr :8080` läuft er über HTTP, mit `-auth` zusätzlich OAuth-geschützt mit eingebautem Test-Autorisierungsserver.
+Im Projekt ist ein Referenz-Server (`cmd/test-server`) enthalten, der die Möglichkeiten des MCP-Protokolls vorführt: Tools mit Output-Schemata, Resources und Templates, Prompts, Completion, Logging, Progress, Elicitation, Sampling, Roots, Notifications über `subscriptions/listen`, `x-mcp-header`, Elicitation im URL-Modus, Tool-Annotations, `instructions`, Cache-Hinweise und Paginierung (fünf Einträge pro Seite). `task test-inspect` verlangt für ihn 100/100. Mit `-addr :8080` läuft er über HTTP, mit `-auth` zusätzlich OAuth-geschützt mit eingebautem Test-Autorisierungsserver.
 
 ---
 
@@ -213,7 +213,7 @@ mcp-tester inspect -p local --badge docs/mcpcheck.svg --badge-json docs/mcpcheck
 ```
 
 - **spec 2026-07-28**: die Protokoll-Revision, die der Server ausgehandelt hat. Das ist bewusst nicht das Testdatum, denn die Revision zeigt, ob der Server auf dem aktuellen Stand ist.
-- **95/100**: der Quality Score von `inspect`. Mit `--badge-no-score` erscheint nur die Revision.
+- **100/100**: der Quality Score von `inspect`. Mit `--badge-no-score` erscheint nur die Revision.
 - **Farbe**: grün; gelb bei Score unter 80 oder älterer Revision; rot („failing“) bei Protokollfehlern, unabhängig vom Score.
 - Testdatum und Tester-Version stehen im Tooltip der SVG und in der JSON-Datei. Verlinkt die Badge auf die JSON, dann ist nachvollziehbar, wann und womit geprüft wurde.
 - Die Badge wird auch bei fehlgeschlagener Prüfung geschrieben (rot), damit keine veraltete grüne Badge stehen bleibt. Die SVG ist eigenständig und braucht keinen externen Dienst. Die JSON folgt dem [shields.io-Endpoint-Schema](https://shields.io/badges/endpoint-badge) und funktioniert daher auch mit `https://img.shields.io/endpoint?url=<Raw-URL der JSON>`.

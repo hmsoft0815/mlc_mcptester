@@ -19,6 +19,23 @@ import (
 // Test-Icon (Ein kleiner grüner Kreis als SVG)
 const serverIcon = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0OCIgaGVpZ2h0PSI0OCIgdmlld0JveD0iMCAwIDQ4IDQ4Ij48Y2lyY2xlIGN4PSIyNCIgY3k9IjI0IiByPSIyMCIgZmlsbD0iIzRDRkY1MCIvPjwvc3ZnPg=="
 
+// instructions reach the model via server/discover (initialize before 2026-07-28).
+const instructions = `Reference server for mcp-tester: every tool demonstrates one protocol feature.
+Tools ending in _job run as tasks when the client supports the Tasks extension.
+confirm_delete, ask_name and connect_account ask the user; summarize asks the client's model; list_roots asks for roots.`
+
+// cacheHints sets the cache-control fields (2026-07-28): lists may be cached
+// for a minute by anyone — list_changed notifications announce changes —
+// while resource contents are per user and stale at once, the clock changes.
+func cacheHints(ctx context.Context, req mcp.Request, c *mcp.Cacheable) {
+	switch req.(type) {
+	case *mcp.ListToolsRequest, *mcp.ListPromptsRequest, *mcp.ListResourcesRequest, *mcp.ListResourceTemplatesRequest:
+		c.TTLMs, c.CacheScope = 60_000, "public"
+	case *mcp.ReadResourceRequest:
+		c.TTLMs, c.CacheScope = 0, "private"
+	}
+}
+
 func main() {
 	showVersion := flag.Bool("version", false, "print the version and exit")
 	addr := flag.String("addr", "", "Listen address for HTTP/SSE (e.g. \":8080\"). If empty, uses stdio.")
@@ -47,9 +64,14 @@ func main() {
 		},
 		&mcp.ServerOptions{
 			Capabilities:       caps,
+			Instructions:       instructions,
 			CompletionHandler:  complete,
 			SubscribeHandler:   subscribe,
 			UnsubscribeHandler: unsubscribe,
+			// Small pages, so clients have to follow nextCursor: there are
+			// more tools than fit on one page.
+			PageSize:     5,
+			SetCacheable: cacheHints,
 		},
 	)
 
@@ -105,6 +127,7 @@ func main() {
 func registerBasicTools(s *mcp.Server) {
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "echo",
+		Annotations: &mcp.ToolAnnotations{ReadOnlyHint: true},
 		Title:       "Echo",
 		Description: "Echoes the input back to the user",
 		Icons: []mcp.Icon{
@@ -135,6 +158,7 @@ func registerBasicTools(s *mcp.Server) {
 	// Add Tool with Output Schema
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "add",
+		Annotations: &mcp.ToolAnnotations{ReadOnlyHint: true},
 		Title:       "Add Numbers",
 		Description: "Adds two numbers together",
 		Icons: []mcp.Icon{
@@ -181,6 +205,7 @@ func registerBasicTools(s *mcp.Server) {
 	// progressTest Tool (Simulation für Progress und Cancellation)
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "progressTest",
+		Annotations: &mcp.ToolAnnotations{ReadOnlyHint: true},
 		Title:       "Progress Test",
 		Description: "A long running tool to test progress and cancellation",
 		Icons: []mcp.Icon{

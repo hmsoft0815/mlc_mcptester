@@ -97,3 +97,4 @@ Legend: ✅ covered · ⚠️ partial · ❌ missing · — not applicable or no
 | 2026-09-25 | 2026-07-28 | Auth extensions (client credentials, enterprise/ID-JAG), `auth-check`; MCP Apps (`apps`, `verify_apps`) |
 | 2026-09-25 | 2026-07-28 | `complete`; multi round-trip (elicitation, sampling, roots); notifications via `subscriptions/listen`; OAuth, bearer, headers; `ping`/`logging` for 2026-07-28; `http-check`; `x-mcp-header` |
 | 2026-09-25 | 2026-07-28 | `inspect`: protocol lag, tool names, `title`, schema type, order, icon schemes, cache hints, extensions; pagination everywhere |
+| 2026-09-27 | 2026-07-28 | Re-check: no newer revision, the draft has only editorial changes since 2026-07-28, go-sdk v1.8.0 is current; Skills extension (SEP-2640) Final since 2026-09-11, implementation matches the final text. The reference server now demonstrates pagination, cache hints, `instructions`, tool annotations and URL-mode elicitation; script tests 12–19 run in CI |

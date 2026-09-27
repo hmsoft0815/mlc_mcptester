@@ -15,6 +15,7 @@ import (
 func registerHeaderTools(s *mcp.Server) {
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "route_query",
+		Annotations: &mcp.ToolAnnotations{ReadOnlyHint: true},
 		Title:       "Route Query",
 		Description: "Runs a query in a region; the region travels as the Mcp-Param-Region header",
 		InputSchema: map[string]any{

@@ -16,6 +16,7 @@ type addToolResult struct {
 func registerNotifyTools(s *mcp.Server) {
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "add_tool",
+		Annotations: &mcp.ToolAnnotations{DestructiveHint: ptr(false)},
 		Title:       "Add Tool",
 		Description: "Adds a tool at runtime; the server sends notifications/tools/list_changed",
 	}, func(ctx context.Context, req *mcp.CallToolRequest, args struct {

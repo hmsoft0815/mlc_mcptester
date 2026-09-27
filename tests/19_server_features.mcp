@@ -1,0 +1,20 @@
+// Features of the reference server that other scripts do not reach:
+// URL-mode elicitation and pagination (the server lists five tools per page).
+
+echo "--- Elicitation, URL mode ---"
+elicit_response accept
+call_tool connect_account service:"demo"
+assert_elicited "https://example.com/connect?service=demo"
+assert_contains "Connected demo"
+set_var connected $.connected
+assert_equals $connected "true"
+
+elicit_response decline
+call_tool connect_account service:"demo"
+assert_contains "user chose decline"
+
+echo "--- Pagination: tools beyond the first page are found ---"
+call_tool touch_resource uri:mcp://time
+assert_contains "Touched mcp://time"
+call_tool join_strings paths:'["a", "b"]'
+assert_contains "a, b"

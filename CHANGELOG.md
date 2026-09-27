@@ -2,7 +2,7 @@
 
 All notable changes to mcp-tester. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versions: [SemVer](https://semver.org/).
 
-## [Unreleased]
+## [1.6.1] - 2026-09-27
 
 ### Added
 - `inspect`: INFO lines (JSON field `infos`) that do not affect the score; `ttlMs` 0 on lists and, with credentials, `public` lists are reported there.

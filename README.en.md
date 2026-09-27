@@ -63,6 +63,24 @@ Because `mcp-tester` checks the server from the outside against the specificatio
 - **Current specification**: protocol 2026-07-28 with fallback to older revisions; coverage documented with dates.
 - **Raw mode** for deep debugging of non-conforming servers.
 
+## Quick Start
+
+1. **Install** – into your home directory, no `sudo`:
+   ```bash
+   curl -sSL https://raw.githubusercontent.com/hmsoft0815/mlc_mcptester/main/scripts/install.sh | bash   # to ~/.local/bin
+   # or: go install github.com/hmsoft0815/mlc_mcptester/cmd/mcp-tester@latest                          # to ~/go/bin
+   ```
+2. **Teach your agents** – installs a skill file for Claude Code, Gemini CLI, OpenCode and Codex, each in the harness's user directory (`--dry-run` shows where first):
+   ```bash
+   mcp-tester agent-skill install
+   ```
+   Run it again after upgrading the tester; the skill always matches the installed version.
+3. **Check your first server:**
+   ```bash
+   mcp-tester inspect -c "<command that starts your MCP server>"
+   ```
+4. **Read on:** [commands](#2-commands-excerpt), [test scripts](docs/SCRIPTING.md), [status badge](#status-badge-for-your-readme), [spec coverage](docs/SPEC_COVERAGE.md).
+
 ## FAQ
 
 **`mcp-tester` reports errors – what now?**
@@ -72,7 +90,7 @@ Our recommendation is clear: test against the current specification and take the
 No. The score is based on our own experience and assessments; a value below 100 does not automatically call for a change to the MCP server. We still think the number is very useful information, which is why it is there. **Protocol errors** (`inspect`) and **FAIL** (`http-check`) are different: they violate MUST rules of the specification, and real clients fail on them.
 
 **Why is `mcp-tester` not an MCP server itself?**
-Because it runs mainly in CI, where the exit code and `--format json` matter, not a tool call. Agents with shell access, such as Claude Code, OpenCode or Gemini CLI, call the CLI directly. The bundled skill file [`skills/mcp-tester/SKILL.md`](skills/mcp-tester/SKILL.md) tells them how: which command is for what, how to write `.mcp` scripts and what to watch for in CI. Usually a single server is under test anyway, so an extra server adds nothing. Then there is security: a tool that starts arbitrary processes and calls URLs would be a wide-open door, while the CLI runs only with the rights you give it. A server mode would still help hosts without a shell; the idea is noted but not planned yet.
+Because it runs mainly in CI, where the exit code and `--format json` matter, not a tool call. Agents with shell access, such as Claude Code, OpenCode or Gemini CLI, call the CLI directly. The bundled skill file, which `mcp-tester agent-skill install` puts into each harness, tells them how: which command is for what, how to write `.mcp` scripts and what to watch for in CI. Usually a single server is under test anyway, so an extra server adds nothing. Then there is security: a tool that starts arbitrary processes and calls URLs would be a wide-open door, while the CLI runs only with the rights you give it. A server mode would still help hosts without a shell; the idea is noted but not planned yet.
 
 ---
 
@@ -102,7 +120,7 @@ mcp-tester profile add my-server -c "npx -y @modelcontextprotocol/server-everyth
 mcp-tester list -p my-server
 ```
 
-**Via Curl (Linux/macOS):**
+**Via Curl (Linux/macOS)** – installs to `~/.local/bin` (other target: `INSTALL_DIR=…`):
 ```bash
 curl -sSL https://raw.githubusercontent.com/hmsoft0815/mlc_mcptester/main/scripts/install.sh | bash
 ```
@@ -221,7 +239,7 @@ Execute complex test scenarios:
 - [The MCP Handbook (Online)](https://mlcgo.eu/books/mcp-handbuch/) — A comprehensive introduction and reference to Model Context Protocol (German).
 - [Scripting Reference (EN)](docs/SCRIPTING.md) — Detailed documentation of the test grammar.
 - [Scripting Referenz (DE)](docs/SCRIPTING.de.md) — Detailed documentation of the test grammar (German).
-- [Agent skill](skills/mcp-tester/SKILL.md) — Compact guide for AI agents: commands, `.mcp` scripts, CI.
+- [Agent skill](internal/agentskill/SKILL.md) — Compact guide for AI agents; install with `mcp-tester agent-skill install`.
 - [Changelog](CHANGELOG.md) — Changes per version (Added/Changed/Fixed).
 - [Spec Coverage (EN)](docs/SPEC_COVERAGE.md) — Which features of the current MCP specification are checked, with date.
 

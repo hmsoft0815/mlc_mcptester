@@ -6,9 +6,10 @@ All notable changes to mcp-tester. Format: [Keep a Changelog](https://keepachang
 
 ### Added
 - `inspect --badge`, `--badge-json`, `--badge-no-score`: writes an "mcpcheck" status badge (SVG, shields.io endpoint JSON) showing the negotiated spec revision and the quality score.
-- `skills/mcp-tester/SKILL.md`: agent skill for writing and running `.mcp` scripts and choosing the right check.
+- `agent-skill install` / `agent-skill print`: installs the embedded agent skill (which check when, `.mcp` scripts, CI) for Claude Code, Gemini CLI, OpenCode and Codex in their user-level skill directories.
 
 ### Changed
+- `scripts/install.sh` installs to `~/.local/bin` (or `INSTALL_DIR`) without sudo and prints the next steps.
 - test-server: every tool has a `title`; `list_roots`, `summarize`, `confirm_delete`, `ask_name` and `add_tool` declare an `outputSchema`.
 
 ## [1.5.0] - 2026-09-25

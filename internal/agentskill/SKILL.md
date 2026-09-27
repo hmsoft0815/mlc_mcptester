@@ -1,6 +1,8 @@
 ---
 name: mcp-tester
 description: Test, inspect and gate MCP servers with the mcp-tester CLI — write and run .mcp test scripts, check spec conformance (inspect, http-check, auth-check, apps, skills) and produce CI results or an mcpcheck badge. Use when building, debugging or reviewing an MCP server, or when a CI job should verify one.
+metadata:
+  mcp-tester-version: "{{VERSION}}"
 ---
 
 # mcp-tester
@@ -86,7 +88,8 @@ More commands: `call_tool_raw` (unchecked JSON arguments), `timeout 5000 <cmd>` 
 `complete`, `sample_response`, `add_root`, `assert_sampled`, `start_task` /
 `wait_task` / `get_task` / `cancel_task`, `list_skills` / `verify_skills`,
 `verify_apps`, `assert_number`, `assert_string_length`, `echo`. Full reference:
-`docs/SCRIPTING.md` in the mcp-tester repository.
+https://github.com/hmsoft0815/mlc_mcptester/blob/main/docs/SCRIPTING.md
+(update this skill with `mcp-tester agent-skill install` after upgrading).
 
 Pitfalls:
 - An unknown argument name is a script error, not a server error — check the

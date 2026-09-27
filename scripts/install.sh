@@ -39,21 +39,33 @@ VERSION=${LATEST_TAG#v}
 FILENAME="${BINARY_NAME}_${VERSION}_${OS}_${ARCH}.tar.gz"
 URL="https://github.com/$REPO/releases/download/$LATEST_TAG/$FILENAME"
 
+# Ziel: im Benutzerverzeichnis, ohne sudo; INSTALL_DIR überschreibt
+INSTALL_DIR="${INSTALL_DIR:-$HOME/.local/bin}"
+TMP=$(mktemp -d)
+trap 'rm -rf "$TMP"' EXIT
+
 echo -e "Downloading $BINARY_NAME $LATEST_TAG for $OS/$ARCH..."
-curl -L "$URL" -o "$FILENAME"
+curl -fsSL "$URL" -o "$TMP/$FILENAME"
 
-# 4. Entpacken
-echo -e "Extracting..."
-tar -xzf "$FILENAME" $BINARY_NAME
+# 4. Entpacken und installieren
+tar -xzf "$TMP/$FILENAME" -C "$TMP" $BINARY_NAME
+mkdir -p "$INSTALL_DIR"
+install -m 755 "$TMP/$BINARY_NAME" "$INSTALL_DIR/$BINARY_NAME"
 
-# 5. Aufräumen
-rm "$FILENAME"
+echo -e "${GREEN}Installed $BINARY_NAME $LATEST_TAG to $INSTALL_DIR/$BINARY_NAME${NC}"
 
-# 6. Abschlussmeldung
-chmod +x $BINARY_NAME
-mv $BINARY_NAME /tmp/$BINARY_NAME # Sicherstellen, dass wir im Pfad schieben können falls gewünscht
+# 5. PATH prüfen
+case ":$PATH:" in
+    *":$INSTALL_DIR:"*) ;;
+    *) echo -e "Add ${BLUE}$INSTALL_DIR${NC} to your PATH, e.g. in ~/.bashrc or ~/.zshrc:"
+       echo -e "  ${BLUE}export PATH=\"$INSTALL_DIR:\$PATH\"${NC}" ;;
+esac
 
-echo -e "${GREEN}Successfully downloaded $BINARY_NAME!${NC}"
-echo -e "To install it globally, run:"
-echo -e "  ${BLUE}sudo mv /tmp/$BINARY_NAME /usr/local/bin/${NC}"
-echo -e "Or use it locally from: ${BLUE}/tmp/$BINARY_NAME${NC}"
+# 6. Nächste Schritte
+echo
+echo "Next steps:"
+if "$INSTALL_DIR/$BINARY_NAME" agent-skill --help >/dev/null 2>&1; then
+    echo -e "  ${BLUE}$BINARY_NAME agent-skill install${NC}   # teach your coding agents (Claude Code, Gemini CLI, OpenCode, Codex) to use it"
+fi
+echo -e "  ${BLUE}$BINARY_NAME inspect -c \"<command that starts your MCP server>\"${NC}"
+echo "  Docs: https://github.com/$REPO#readme"

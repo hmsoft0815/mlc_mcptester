@@ -49,6 +49,7 @@ func main() {
 
 	ctx := context.Background()
 	caps := &mcp.ServerCapabilities{
+		//lint:ignore SA1019 logging is deprecated since 2026-07-28 (SEP-2577); the reference server demonstrates it while clients support it; remove with T-20260927-05
 		Logging:   &mcp.LoggingCapabilities{},
 		Tools:     &mcp.ToolCapabilities{ListChanged: true},
 		Prompts:   &mcp.PromptCapabilities{ListChanged: true},
@@ -149,6 +150,7 @@ func registerBasicTools(s *mcp.Server) {
 	}, func(ctx context.Context, request *mcp.CallToolRequest, args map[string]any) (*mcp.CallToolResult, any, error) {
 		msg, _ := args["message"].(string)
 		// Only delivered if the client asked for debug logs (per request since 2026-07-28)
+		//lint:ignore SA1019 logging is deprecated since 2026-07-28 (SEP-2577); the reference server demonstrates it while clients support it; remove with T-20260927-05
 		_ = request.Session.Log(ctx, &mcp.LoggingMessageParams{Level: "debug", Logger: "echo", Data: "echo called with " + msg})
 		return &mcp.CallToolResult{
 			Content: []mcp.Content{&mcp.TextContent{Text: "Echo: " + msg}},

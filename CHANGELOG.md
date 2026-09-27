@@ -6,6 +6,7 @@ All notable changes to mcp-tester. Format: [Keep a Changelog](https://keepachang
 
 ### Added
 - `inspect`: INFO lines (JSON field `infos`) that do not affect the score; `ttlMs` 0 on lists and, with credentials, `public` lists are reported there.
+- Deprecated features (SEP-2577) are reported as INFO: `inspect` for a 2026-07-28 server that still declares logging, `call` and `test` (on stderr) for a server that asks for sampling or roots via multi round-trip. Servers on older revisions, where these features are regular, are not reported.
 - `inspect --read-resources`: reads the first resource; `cacheScope: "public"` on its content with credentials is a warning (shared caches may serve it to other users).
 - test-server: pagination (five entries per page), cache hints (`ttlMs`, `cacheScope`), `instructions`, tool annotations, URL-mode elicitation (`connect_account`); script test `19_server_features`.
 

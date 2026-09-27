@@ -176,6 +176,7 @@ var inspectCmd = &cobra.Command{
 			fmt.Println()
 
 			fmt.Print(i18n.T(i18n.MsgCompletions, caps.Completions != nil))
+			//lint:ignore SA1019 logging is deprecated since 2026-07-28 (SEP-2577) but still used by servers and regular before; remove with T-20260927-05
 			fmt.Print(i18n.T(i18n.MsgLogging, caps.Logging != nil))
 			fmt.Print(i18n.T(i18n.MsgProgress))
 			fmt.Print(i18n.T(i18n.MsgCancel))
@@ -379,8 +380,13 @@ var inspectCmd = &cobra.Command{
 			}
 		}
 
-		// Logging is deprecated as of MCP specification 2026-07-28 (SEP-2577).
-		// No score deduction for servers without logging capabilities.
+		// Logging is deprecated as of 2026-07-28 (SEP-2577): no deduction
+		// either way, but a server that still declares it should know that
+		// support is running out. Older revisions keep it as a regular feature.
+		//lint:ignore SA1019 logging is deprecated since 2026-07-28 (SEP-2577) but still used by servers and regular before; remove with T-20260927-05
+		if modern && caps.Logging != nil {
+			info(i18n.T(i18n.MsgDeprecatedLogging))
+		}
 
 		score -= d.total()
 

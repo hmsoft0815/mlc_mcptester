@@ -44,6 +44,9 @@ var testCmd = &cobra.Command{
 		}
 		// Scripts must say how to answer input requests; an unexpected one fails
 		responder := &mcpclient.Responder{Strict: true}
+		watch := &mcpclient.DeprecationWatch{}
+		transport = watch.Wrap(transport)
+		defer reportDeprecatedUse(watch)
 		notes := &mcpclient.Notifications{}
 		// Announced as a UI-capable host, so verify_apps sees UI tools
 		client := newClient(verbose, responder, notes, appcheck.Declare)

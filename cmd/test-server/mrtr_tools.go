@@ -116,8 +116,10 @@ func registerInputTools(s *mcp.Server) {
 		resp, ok := req.Params.InputResponses["llm"]
 		if !ok {
 			return &mcp.CallToolResult{InputRequests: mcp.InputRequestMap{
+				//lint:ignore SA1019 sampling is deprecated since 2026-07-28 (SEP-2577); the reference server demonstrates it while clients support it; remove with T-20260927-05
 				"llm": &mcp.CreateMessageParams{
 					MaxTokens: 100,
+					//lint:ignore SA1019 sampling is deprecated since 2026-07-28 (SEP-2577); the reference server demonstrates it while clients support it; remove with T-20260927-05
 					Messages: []*mcp.SamplingMessage{{
 						Role:    "user",
 						Content: &mcp.TextContent{Text: "Summarize in one sentence: " + args.Text},
@@ -129,9 +131,11 @@ func registerInputTools(s *mcp.Server) {
 		var model string
 		var text *mcp.TextContent
 		switch res := resp.(type) {
+		//lint:ignore SA1019 sampling is deprecated since 2026-07-28 (SEP-2577); the reference server demonstrates it while clients support it; remove with T-20260927-05
 		case *mcp.CreateMessageResult:
 			model = res.Model
 			text, _ = res.Content.(*mcp.TextContent)
+		//lint:ignore SA1019 sampling is deprecated since 2026-07-28 (SEP-2577); the reference server demonstrates it while clients support it; remove with T-20260927-05
 		case *mcp.CreateMessageWithToolsResult:
 			model = res.Model
 			for _, c := range res.Content {
@@ -159,9 +163,11 @@ func registerInputTools(s *mcp.Server) {
 		resp, ok := req.Params.InputResponses["roots"]
 		if !ok {
 			return &mcp.CallToolResult{InputRequests: mcp.InputRequestMap{
+				//lint:ignore SA1019 roots are deprecated since 2026-07-28 (SEP-2577); the reference server demonstrates it while clients support it; remove with T-20260927-05
 				"roots": &mcp.ListRootsParams{},
 			}}, none, nil
 		}
+		//lint:ignore SA1019 roots are deprecated since 2026-07-28 (SEP-2577); the reference server demonstrates it while clients support it; remove with T-20260927-05
 		res, ok := resp.(*mcp.ListRootsResult)
 		if !ok {
 			return nil, none, fmt.Errorf("unexpected input response %T", resp)

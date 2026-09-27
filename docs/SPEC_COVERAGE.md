@@ -68,15 +68,15 @@ Legend: ✅ covered · ⚠️ partial · ❌ missing · — not applicable or no
 | Resource not found `-32602` (was `-32002`) | ✅ | `http-check`; in scripts via `assert_error_code -32602` |
 | `subscriptions/listen`, `list_changed`, resource updates | ✅ | script commands `subscribe`, `wait_notification`; `listen` command; script test `14_notifications` (stdio and HTTP) |
 | `completion/complete` | ✅ | `complete` command and script command, script test `12_completion` |
-| Logging | ✅ | up to 2025-11-25 `setLevel`; from 2026-07-28 per request via `_meta` (`call --log-level`, script command `logging`); deprecated since 2026-07-28 |
+| Logging | ✅ | up to 2025-11-25 `setLevel`; from 2026-07-28 per request via `_meta` (`call --log-level`, script command `logging`); deprecated since 2026-07-28: `inspect` reports a 2026-07-28 server that still declares the capability as INFO |
 
 ## Client features (MRTR)
 
 | Feature | Status | Notes |
 |---|---|---|
 | Elicitation (form / URL) | ✅ | both modes declared; `assert_elicited` |
-| Sampling | ✅ | `sample_response`, `assert_sampled`; deprecated since 2026-07-28 |
-| Roots | ✅ | `add_root`, `--root`; deprecated since 2026-07-28 |
+| Sampling | ✅ | `sample_response`, `assert_sampled`; deprecated since 2026-07-28: `call` and `test` report a server that asks for it via multi round-trip as INFO |
+| Roots | ✅ | `add_root`, `--root`; deprecated since 2026-07-28: reported like sampling |
 
 ## Extensions
 

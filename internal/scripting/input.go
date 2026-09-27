@@ -61,10 +61,12 @@ func (r *Runner) handleAddRootCommand(i int, parts []string) error {
 	if r.Client == nil {
 		return fmt.Errorf("line %d: this runner cannot offer roots", i+1)
 	}
+	//lint:ignore SA1019 roots are deprecated since 2026-07-28 (SEP-2577) but still used by servers and regular before; remove with T-20260927-05
 	root := &mcp.Root{URI: parts[1]}
 	if len(parts) == 3 {
 		root.Name = parts[2]
 	}
+	//lint:ignore SA1019 roots are deprecated since 2026-07-28 (SEP-2577) but still used by servers and regular before; remove with T-20260927-05
 	r.Client.AddRoots(root)
 	r.roots = append(r.roots, root)
 	return nil

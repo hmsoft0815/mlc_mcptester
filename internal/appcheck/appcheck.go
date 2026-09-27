@@ -72,6 +72,7 @@ func (r *Report) Failed() bool {
 // register UI tools only for capable hosts expose them.
 func Declare(opts *mcp.ClientOptions) {
 	if opts.Capabilities == nil {
+		//lint:ignore SA1019 roots are deprecated since 2026-07-28 (SEP-2577) but still used by servers and regular before; remove with T-20260927-05
 		opts.Capabilities = &mcp.ClientCapabilities{RootsV2: &mcp.RootCapabilities{ListChanged: true}}
 	}
 	opts.Capabilities.AddExtension(Extension, map[string]any{"mimeTypes": []string{MIMEType}})

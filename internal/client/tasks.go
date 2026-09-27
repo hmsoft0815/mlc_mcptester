@@ -22,8 +22,9 @@ var terminalStatus = map[string]bool{"completed": true, "failed": true, "cancell
 type TaskClient struct {
 	Session   *mcp.ClientSession
 	Responder *Responder // answers the task's inputRequests
-	Roots     []*mcp.Root
-	Out       io.Writer // one line per status change; optional
+	//lint:ignore SA1019 roots are deprecated since 2026-07-28 (SEP-2577) but still used by servers and regular before; remove with T-20260927-05
+	Roots []*mcp.Root
+	Out   io.Writer // one line per status change; optional
 	// MaxPoll caps the server's pollIntervalMs, to keep tests fast.
 	MaxPoll time.Duration
 

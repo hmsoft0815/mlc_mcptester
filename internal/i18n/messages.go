@@ -73,6 +73,10 @@ const (
 	MsgCachePublicResource MessageKey = "cache_public_resource"
 	MsgResourceReadFailed  MessageKey = "resource_read_failed"
 	MsgReadResourcesHint   MessageKey = "read_resources_hint"
+
+	// Deprecated features (SEP-2577) the server still uses
+	MsgDeprecatedLogging MessageKey = "deprecated_logging"
+	MsgDeprecatedFeature MessageKey = "deprecated_feature"
 )
 
 var messages = map[string]map[MessageKey]string{
@@ -144,6 +148,10 @@ var messages = map[string]map[MessageKey]string{
 		MsgResourceReadFailed: "INFO: resources/read of '%s' failed (%v); its cache hints were not checked.",
 		MsgReadResourcesHint: "NOTE: With credentials, cacheScope \"public\" on resource contents can leak them to other users through shared caches. " +
 			"inspect lists only; --read-resources also reads the first resource and checks its cache hints.",
+
+		MsgDeprecatedLogging: "INFO: The server declares the logging capability, deprecated since 2026-07-28 (SEP-2577) and supported for at least twelve more months. " +
+			"Plan the move to stderr (stdio) or OpenTelemetry.",
+		MsgDeprecatedFeature: "INFO: The server asked for %s, deprecated since 2026-07-28 (SEP-2577) and supported for at least twelve more months.",
 	},
 	"de": {
 		MsgInspectionTitle: "=== MCP Server Inspektion: %s ===\n",
@@ -213,6 +221,10 @@ var messages = map[string]map[MessageKey]string{
 		MsgResourceReadFailed: "INFO: resources/read von '%s' ist fehlgeschlagen (%v); die Cache-Angaben wurden nicht geprüft.",
 		MsgReadResourcesHint: "HINWEIS: Mit Zugangsdaten können Resource-Inhalte mit cacheScope \"public\" über gemeinsame Caches bei anderen Nutzern landen. " +
 			"inspect listet nur; --read-resources liest zusätzlich die erste Resource und prüft ihre Cache-Angaben.",
+
+		MsgDeprecatedLogging: "INFO: Der Server meldet die Logging-Fähigkeit, seit 2026-07-28 veraltet (SEP-2577) und noch mindestens zwölf Monate unterstützt. " +
+			"Den Umstieg auf stderr (stdio) oder OpenTelemetry einplanen.",
+		MsgDeprecatedFeature: "INFO: Der Server hat %s angefordert, seit 2026-07-28 veraltet (SEP-2577) und noch mindestens zwölf Monate unterstützt.",
 	},
 }
 

@@ -51,6 +51,9 @@ var callCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
+		watch := &client.DeprecationWatch{}
+		transport = watch.Wrap(transport)
+		defer reportDeprecatedUse(watch)
 
 		// Set up the client.
 		mcpClient := getClient(verbose)
@@ -69,6 +72,7 @@ var callCmd = &cobra.Command{
 		// Up to 2025-11-25 the level is session state; since 2026-07-28 it
 		// travels with the request (below)
 		if logLevel != "" && !client.IsStateless(session) {
+			//lint:ignore SA1019 logging is deprecated since 2026-07-28 (SEP-2577) but still used by servers and regular before; remove with T-20260927-05
 			if err := session.SetLoggingLevel(ctx, &mcp.SetLoggingLevelParams{Level: mcp.LoggingLevel(logLevel)}); err != nil && callLogLevel != "" {
 				return fmt.Errorf("failed to set logging level: %w", err)
 			}
@@ -208,8 +212,10 @@ func checkResult(outputSchema any, result map[string]any) error {
 // callTask runs the call as a task: it declares the Tasks extension, polls
 // the task and returns its final result. The server may also answer at once.
 func callTask(ctx context.Context, session *mcp.ClientSession, name string, args map[string]any) (*mcp.CallToolResult, error) {
+	//lint:ignore SA1019 roots are deprecated since 2026-07-28 (SEP-2577) but still used by servers and regular before; remove with T-20260927-05
 	var roots []*mcp.Root
 	for _, uri := range rootURIs {
+		//lint:ignore SA1019 roots are deprecated since 2026-07-28 (SEP-2577) but still used by servers and regular before; remove with T-20260927-05
 		roots = append(roots, &mcp.Root{URI: uri})
 	}
 	tc := &client.TaskClient{Session: session, Responder: cliResponder, Roots: roots, Out: os.Stderr}

@@ -38,6 +38,7 @@ type Runner struct {
 	// logLevel is sent with each tool call on protocol 2026-07-28 and later.
 	logLevel string
 	// roots added by add_root, also offered to tasks that ask for them
+	//lint:ignore SA1019 roots are deprecated since 2026-07-28 (SEP-2577) but still used by servers and regular before; remove with T-20260927-05
 	roots []*mcp.Root
 	// taskMode makes call_tool's machinery start or run a task (call_task, start_task)
 	taskMode taskMode

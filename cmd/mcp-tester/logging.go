@@ -42,6 +42,7 @@ var loggingCmd = &cobra.Command{
 				session.InitializeResult().ProtocolVersion, level, level)
 		}
 		fmt.Printf("Setting logging level to %s...\n", level)
+		//lint:ignore SA1019 logging is deprecated since 2026-07-28 (SEP-2577) but still used by servers and regular before; remove with T-20260927-05
 		if err := session.SetLoggingLevel(ctx, &mcp.SetLoggingLevelParams{Level: mcp.LoggingLevel(level)}); err != nil {
 			return fmt.Errorf("failed to set logging level: %w", err)
 		}

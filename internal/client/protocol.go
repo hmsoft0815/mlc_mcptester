@@ -31,6 +31,7 @@ func WithLogLevel(meta mcp.Meta, level string) mcp.Meta {
 	if meta == nil {
 		meta = mcp.Meta{}
 	}
+	//lint:ignore SA1019 logging is deprecated since 2026-07-28 (SEP-2577) but still used by servers and regular before; remove with T-20260927-05
 	meta[mcp.MetaKeyLogLevel] = level
 	return meta
 }

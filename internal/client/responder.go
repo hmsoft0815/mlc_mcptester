@@ -89,10 +89,12 @@ func (r *Responder) LastSamplePrompt() string {
 // roots, elicitation in form and URL mode, and sampling.
 func (r *Responder) Install(opts *mcp.ClientOptions) {
 	opts.Capabilities = &mcp.ClientCapabilities{
+		//lint:ignore SA1019 roots are deprecated since 2026-07-28 (SEP-2577) but still used by servers and regular before; remove with T-20260927-05
 		RootsV2:     &mcp.RootCapabilities{ListChanged: true},
 		Elicitation: &mcp.ElicitationCapabilities{Form: &mcp.FormElicitationCapabilities{}, URL: &mcp.URLElicitationCapabilities{}},
 	}
 	opts.ElicitationHandler = r.handleElicit
+	//lint:ignore SA1019 sampling is deprecated since 2026-07-28 (SEP-2577) but still used by servers and regular before; remove with T-20260927-05
 	opts.CreateMessageHandler = r.handleSample
 }
 
@@ -113,6 +115,7 @@ func (r *Responder) handleElicit(ctx context.Context, req *mcp.ElicitRequest) (*
 	return res, nil
 }
 
+//lint:ignore SA1019 sampling is deprecated since 2026-07-28 (SEP-2577) but still used by servers and regular before; remove with T-20260927-05
 func (r *Responder) handleSample(ctx context.Context, req *mcp.CreateMessageRequest) (*mcp.CreateMessageResult, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -130,6 +133,7 @@ func (r *Responder) handleSample(ctx context.Context, req *mcp.CreateMessageRequ
 	var text string
 	text, r.samples = r.samples[0], r.samples[1:]
 	r.logf("[SAMPLE] %s → %s\n", r.lastSample, text)
+	//lint:ignore SA1019 sampling is deprecated since 2026-07-28 (SEP-2577) but still used by servers and regular before; remove with T-20260927-05
 	return &mcp.CreateMessageResult{
 		Role:    "assistant",
 		Model:   "mcp-tester",
@@ -154,24 +158,33 @@ func contentSuffix(content map[string]any) string {
 // Answer answers one input request that arrived outside the SDK's own
 // multi round-trip handling, e.g. in a task's inputRequests. roots supplies
 // the answer to roots/list.
+//
+//lint:ignore SA1019 roots are deprecated since 2026-07-28 (SEP-2577) but still used by servers and regular before; remove with T-20260927-05
 func (r *Responder) Answer(ctx context.Context, ir mcp.InputRequest, roots []*mcp.Root) (any, error) {
 	switch p := ir.(type) {
 	case *mcp.ElicitParams:
 		return r.handleElicit(ctx, &mcp.ElicitRequest{Params: p})
+	//lint:ignore SA1019 sampling is deprecated since 2026-07-28 (SEP-2577) but still used by servers and regular before; remove with T-20260927-05
 	case *mcp.CreateMessageParams:
 		return r.handleSample(ctx, &mcp.CreateMessageRequest{Params: p})
+	//lint:ignore SA1019 sampling is deprecated since 2026-07-28 (SEP-2577) but still used by servers and regular before; remove with T-20260927-05
 	case *mcp.CreateMessageWithToolsParams:
+		//lint:ignore SA1019 sampling is deprecated since 2026-07-28 (SEP-2577) but still used by servers and regular before; remove with T-20260927-05
 		params := &mcp.CreateMessageParams{MaxTokens: p.MaxTokens}
 		for _, m := range p.Messages {
 			for _, c := range m.Content {
+				//lint:ignore SA1019 sampling is deprecated since 2026-07-28 (SEP-2577) but still used by servers and regular before; remove with T-20260927-05
 				params.Messages = append(params.Messages, &mcp.SamplingMessage{Role: m.Role, Content: c})
 			}
 		}
 		return r.handleSample(ctx, &mcp.CreateMessageRequest{Params: params})
+	//lint:ignore SA1019 roots are deprecated since 2026-07-28 (SEP-2577) but still used by servers and regular before; remove with T-20260927-05
 	case *mcp.ListRootsParams:
 		if roots == nil {
+			//lint:ignore SA1019 roots are deprecated since 2026-07-28 (SEP-2577) but still used by servers and regular before; remove with T-20260927-05
 			roots = []*mcp.Root{}
 		}
+		//lint:ignore SA1019 roots are deprecated since 2026-07-28 (SEP-2577) but still used by servers and regular before; remove with T-20260927-05
 		return &mcp.ListRootsResult{Roots: roots}, nil
 	}
 	return nil, fmt.Errorf("unsupported input request %T", ir)

@@ -68,15 +68,15 @@ Legende: ✅ abgedeckt · ⚠️ teilweise · ❌ fehlt · — nicht anwendbar o
 | Resource-not-found `-32602` (statt `-32002`) | ✅ | `http-check`; in Skripten per `assert_error_code -32602` |
 | `subscriptions/listen`, `list_changed`, Resource-Updates | ✅ | Skriptbefehle `subscribe`, `wait_notification`; Befehl `listen`; Skripttest `14_notifications` (stdio und HTTP) |
 | `completion/complete` | ✅ | Befehl `complete`, Skriptbefehl `complete`, Skripttest `12_completion` |
-| Logging | ✅ | bis 2025-11-25 `setLevel`; ab 2026-07-28 pro Request über `_meta` (`call --log-level`, Skriptbefehl `logging`); deprecated seit 2026-07-28 |
+| Logging | ✅ | bis 2025-11-25 `setLevel`; ab 2026-07-28 pro Request über `_meta` (`call --log-level`, Skriptbefehl `logging`); deprecated seit 2026-07-28: `inspect` meldet einen 2026-07-28-Server, der die Fähigkeit noch angibt, als INFO |
 
 ## Client-Features (MRTR)
 
 | Feature | Status | Anmerkung |
 |---|---|---|
 | Elicitation (Form / URL) | ✅ | beide Modi angekündigt; `assert_elicited` |
-| Sampling | ✅ | `sample_response`, `assert_sampled`; deprecated seit 2026-07-28 |
-| Roots | ✅ | `add_root`, `--root`; deprecated seit 2026-07-28 |
+| Sampling | ✅ | `sample_response`, `assert_sampled`; deprecated seit 2026-07-28: `call` und `test` melden einen Server, der es per Multi Round-Trip anfordert, als INFO |
+| Roots | ✅ | `add_root`, `--root`; deprecated seit 2026-07-28: Meldung wie bei Sampling |
 
 ## Extensions
 

@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	mcpclient "github.com/hmsoft0815/mlc_mcptester/internal/client"
+	"github.com/hmsoft0815/mlc_mcptester/internal/i18n"
 	"github.com/hmsoft0815/mlc_mcptester/internal/version"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
@@ -56,9 +57,18 @@ func newClient(verbose bool, responder *mcpclient.Responder, notes *mcpclient.No
 		opts,
 	)
 	for _, uri := range rootURIs {
+		//lint:ignore SA1019 roots are deprecated since 2026-07-28 (SEP-2577) but still used by servers and regular before; remove with T-20260927-05
 		c.AddRoots(&mcp.Root{URI: uri})
 	}
 	return c
+}
+
+// reportDeprecatedUse tells the user which deprecated client features the
+// server asked for, on stderr so JSON output stays clean.
+func reportDeprecatedUse(w *mcpclient.DeprecationWatch) {
+	for _, feature := range w.Used() {
+		fmt.Fprintln(os.Stderr, i18n.T(i18n.MsgDeprecatedFeature, feature))
+	}
 }
 
 // getTransport returns the appropriate MCP transport based on the provided command or URL.

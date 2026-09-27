@@ -2,6 +2,14 @@
 
 All notable changes to mcp-tester. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versions: [SemVer](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+- `--format json`: progress notifications and server logs went to stdout ahead of the JSON, so `jq` and other parsers failed; they now go to stderr (regression check `task test-json-output`).
+
+### Added
+- Script reference: `timeout` (milliseconds).
+
 ## [1.6.1] - 2026-09-27
 
 ### Added

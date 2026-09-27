@@ -218,6 +218,13 @@ tasks:
         ./bin/mcp-tester inspect --url http://localhost:18082/mcp
         ./bin/mcp-tester test --url http://localhost:18082/mcp --script tests/01_simple.mcp
 
+  test-json-output:
+    desc: With --format json, stdout must be pure JSON even when the server sends progress and logs
+    deps: [all]
+    cmds:
+      - ./bin/mcp-tester --format json test --profile local --script tests/05_progress.mcp 2>/dev/null | python3 -m json.tool > /dev/null
+      - ./bin/mcp-tester --format json call echo --log-level debug --args '{"message":"x"}' --profile local 2>/dev/null | python3 -m json.tool > /dev/null
+
   test-all:
     desc: Run all tests
     cmds:
@@ -233,6 +240,7 @@ tasks:
       - task: test-vars
       - task: test-scripts
       - task: test-inspect
+      - task: test-json-output
       - task: test-sse
       - task: test-streamable-http
 

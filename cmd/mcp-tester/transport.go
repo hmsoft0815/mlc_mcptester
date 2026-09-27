@@ -27,14 +27,15 @@ func getClient(verbose bool) *mcp.Client {
 // roots given by --root. With notes, list-changed and resource-updated
 // notifications are recorded, which makes the SDK open subscriptions/listen.
 func newClient(verbose bool, responder *mcpclient.Responder, notes *mcpclient.Notifications, configure ...func(*mcp.ClientOptions)) *mcp.Client {
+	// Notifications go to stderr: with --format json, stdout carries only the result
 	opts := &mcp.ClientOptions{
 		// Handler for logging notifications from the server
 		LoggingMessageHandler: func(ctx context.Context, req *mcp.LoggingMessageRequest) {
-			fmt.Printf("[SERVER LOG] [%s] %s: %v\n", req.Params.Level, req.Params.Logger, req.Params.Data)
+			fmt.Fprintf(os.Stderr, "[SERVER LOG] [%s] %s: %v\n", req.Params.Level, req.Params.Logger, req.Params.Data)
 		},
 		// Handler for progress notifications from the server
 		ProgressNotificationHandler: func(ctx context.Context, req *mcp.ProgressNotificationClientRequest) {
-			fmt.Printf("[PROGRESS] Token: %v, Done: %.2f, Total: %.2f, Msg: %s\n", req.Params.ProgressToken, req.Params.Progress, req.Params.Total, req.Params.Message)
+			fmt.Fprintf(os.Stderr, "[PROGRESS] Token: %v, Done: %.2f, Total: %.2f, Msg: %s\n", req.Params.ProgressToken, req.Params.Progress, req.Params.Total, req.Params.Message)
 		},
 	}
 	if verbose {

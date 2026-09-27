@@ -71,6 +71,9 @@ Our recommendation is clear: test against the current specification and take the
 **Do I have to reach a quality score of 100/100?**
 No. The score is based on our own experience and assessments; a value below 100 does not automatically call for a change to the MCP server. We still think the number is very useful information, which is why it is there. **Protocol errors** (`inspect`) and **FAIL** (`http-check`) are different: they violate MUST rules of the specification, and real clients fail on them.
 
+**Why is `mcp-tester` not an MCP server itself?**
+Because it runs mainly in CI, where the exit code and `--format json` matter, not a tool call. Agents with shell access, such as Claude Code, OpenCode or Gemini CLI, call the CLI directly. The bundled skill file [`skills/mcp-tester/SKILL.md`](skills/mcp-tester/SKILL.md) tells them how: which command is for what, how to write `.mcp` scripts and what to watch for in CI. Usually a single server is under test anyway, so an extra server adds nothing. Then there is security: a tool that starts arbitrary processes and calls URLs would be a wide-open door, while the CLI runs only with the rights you give it. A server mode would still help hosts without a shell; the idea is noted but not planned yet.
+
 ---
 
 ## The "Everything" Test Server
@@ -218,6 +221,7 @@ Execute complex test scenarios:
 - [The MCP Handbook (Online)](https://mlcgo.eu/books/mcp-handbuch/) — A comprehensive introduction and reference to Model Context Protocol (German).
 - [Scripting Reference (EN)](docs/SCRIPTING.md) — Detailed documentation of the test grammar.
 - [Scripting Referenz (DE)](docs/SCRIPTING.de.md) — Detailed documentation of the test grammar (German).
+- [Agent skill](skills/mcp-tester/SKILL.md) — Compact guide for AI agents: commands, `.mcp` scripts, CI.
 - [Changelog](CHANGELOG.md) — Changes per version (Added/Changed/Fixed).
 - [Spec Coverage (EN)](docs/SPEC_COVERAGE.md) — Which features of the current MCP specification are checked, with date.
 

@@ -71,6 +71,9 @@ Unsere Empfehlung ist klar: gegen die aktuelle Spezifikation testen und die Meld
 **Muss ich den Quality Score auf 100/100 bringen?**
 Nein. Der Score beruht auf unseren eigenen Erfahrungen und Bewertungen; ein Wert unter 100 muss nicht automatisch eine Änderung am MCP-Server auslösen. Wir halten die Zahl trotzdem für eine sehr hilfreiche Information, deshalb gibt es sie. Anders sind **Protokollfehler** (`inspect`) und **FAIL** (`http-check`): Das sind Verstöße gegen MUST-Regeln der Spezifikation, an denen echte Clients scheitern.
 
+**Warum ist `mcp-tester` nicht selbst ein MCP-Server?**
+Weil er vor allem in CI läuft, und dort zählen Exit-Code und `--format json`, nicht ein Tool-Aufruf. Agents mit Shell-Zugriff, etwa Claude Code, OpenCode oder Gemini CLI, rufen die CLI direkt auf. Wie das geht, erklärt ihnen die mitgelieferte Skill-Datei [`skills/mcp-tester/SKILL.md`](skills/mcp-tester/SKILL.md): welcher Befehl wofür, wie man `.mcp`-Skripte schreibt und was in CI zu beachten ist. Meist wird ohnehin ein einzelner Server getestet, da bringt ein zusätzlicher Server keinen Vorteil. Hinzu kommt die Sicherheit: Ein Tool, das beliebige Prozesse startet und URLs aufruft, wäre ein großes Einfallstor, während die CLI nur mit den Rechten läuft, die ihr gebt. Für Hosts ohne Shell wäre ein Server-Modus dennoch nützlich; die Idee ist notiert, aber noch nicht geplant.
+
 ---
 
 ## Der "Everything" Test-Server
@@ -216,6 +219,7 @@ Führe komplexe Test-Szenarien aus:
 - [Das MCP-Handbuch (Online)](https://mlcgo.eu/books/mcp-handbuch/) — Die umfassende Einführung und Referenz in das Model Context Protocol (Deutsch).
 - [Scripting Referenz (DE)](docs/SCRIPTING.de.md) — Detaillierte Dokumentation der Test-Grammatik.
 - [Scripting Reference (EN)](docs/SCRIPTING.md) — Detailed documentation of the test grammar.
+- [Agent-Skill](skills/mcp-tester/SKILL.md) — Kompakte Anleitung für KI-Agents: Befehle, `.mcp`-Skripte, CI (Englisch).
 - [Changelog](CHANGELOG.md) — Änderungen je Version (Added/Changed/Fixed).
 - [Spec-Abdeckung (DE)](docs/SPEC_COVERAGE.de.md) — Welche Features der aktuellen MCP-Spezifikation geprüft werden, mit Datum.
 

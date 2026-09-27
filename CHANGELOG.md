@@ -6,6 +6,10 @@ All notable changes to mcp-tester. Format: [Keep a Changelog](https://keepachang
 
 ### Added
 - `inspect --badge`, `--badge-json`, `--badge-no-score`: writes an "mcpcheck" status badge (SVG, shields.io endpoint JSON) showing the negotiated spec revision and the quality score.
+- `skills/mcp-tester/SKILL.md`: agent skill for writing and running `.mcp` scripts and choosing the right check.
+
+### Changed
+- test-server: every tool has a `title`; `list_roots`, `summarize`, `confirm_delete`, `ask_name` and `add_tool` declare an `outputSchema`.
 
 ## [1.5.0] - 2026-09-25
 

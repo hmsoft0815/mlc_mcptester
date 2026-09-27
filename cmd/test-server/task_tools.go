@@ -11,9 +11,15 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
+type askNameResult struct {
+	Answered bool   `json:"answered" jsonschema:"Whether the user gave a name"`
+	Name     string `json:"name,omitempty" jsonschema:"The name the user gave"`
+}
+
 // registerTaskTools adds tools that run as tasks (io.modelcontextprotocol/tasks)
 // for clients that declare the extension, and synchronously otherwise.
 func registerTaskTools(s *mcp.Server) {
+	// No output schema: the result only reports that the job finished.
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "long_job",
 		Title:       "Long Job",
@@ -37,7 +43,8 @@ func registerTaskTools(s *mcp.Server) {
 		Name:        "ask_name",
 		Title:       "Ask Name",
 		Description: "Asks for the user's name: inside a task via input_required, otherwise via multi round-trip",
-	}, func(ctx context.Context, req *mcp.CallToolRequest, args struct{}) (*mcp.CallToolResult, any, error) {
+	}, func(ctx context.Context, req *mcp.CallToolRequest, args struct{}) (*mcp.CallToolResult, askNameResult, error) {
+		var none askNameResult
 		question := &mcp.ElicitParams{
 			Mode:    "form",
 			Message: "What is your name?",
@@ -51,21 +58,23 @@ func registerTaskTools(s *mcp.Server) {
 		if mcptasks.IsTask(ctx) {
 			responses, err := mcptasks.RequestInput(ctx, mcp.InputRequestMap{"name": question})
 			if err != nil {
-				return nil, nil, err
+				return nil, none, err
 			}
 			answer = responses["name"]
 		} else if resp, ok := req.Params.InputResponses["name"]; ok {
 			answer = resp
 		} else {
-			return &mcp.CallToolResult{InputRequests: mcp.InputRequestMap{"name": question}}, nil, nil
+			return &mcp.CallToolResult{InputRequests: mcp.InputRequestMap{"name": question}}, none, nil
 		}
 		res, ok := answer.(*mcp.ElicitResult)
 		if !ok || res.Action != "accept" {
-			return textResult("No name given"), nil, nil
+			return textResult("No name given"), none, nil
 		}
-		return textResult(fmt.Sprintf("Hello, %v!", res.Content["name"])), nil, nil
+		name := fmt.Sprint(res.Content["name"])
+		return textResult("Hello, " + name + "!"), askNameResult{Answered: true, Name: name}, nil
 	})
 
+	// No output schema: it never returns a result, only a JSON-RPC error.
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "failing_job",
 		Title:       "Failing Job",

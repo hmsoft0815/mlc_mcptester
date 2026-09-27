@@ -192,7 +192,7 @@ mcp-tester inspect -p local --badge docs/mcpcheck.svg --badge-json docs/mcpcheck
 ```
 
 - **spec 2026-07-28**: die Protokoll-Revision, die der Server ausgehandelt hat. Das ist bewusst nicht das Testdatum, denn die Revision zeigt, ob der Server auf dem aktuellen Stand ist.
-- **85/100**: der Quality Score von `inspect`. Mit `--badge-no-score` erscheint nur die Revision.
+- **95/100**: der Quality Score von `inspect`. Mit `--badge-no-score` erscheint nur die Revision.
 - **Farbe**: grün; gelb bei Score unter 80 oder älterer Revision; rot („failing“) bei Protokollfehlern, unabhängig vom Score.
 - Testdatum und Tester-Version stehen im Tooltip der SVG und in der JSON-Datei. Verlinkt die Badge auf die JSON, dann ist nachvollziehbar, wann und womit geprüft wurde.
 - Die Badge wird auch bei fehlgeschlagener Prüfung geschrieben (rot), damit keine veraltete grüne Badge stehen bleibt. Die SVG ist eigenständig und braucht keinen externen Dienst. Die JSON folgt dem [shields.io-Endpoint-Schema](https://shields.io/badges/endpoint-badge) und funktioniert daher auch mit `https://img.shields.io/endpoint?url=<Raw-URL der JSON>`.

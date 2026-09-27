@@ -8,6 +8,20 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
+type confirmDeleteResult struct {
+	Deleted bool   `json:"deleted" jsonschema:"Whether the item was deleted"`
+	Reason  string `json:"reason,omitempty" jsonschema:"The user's reason, or why nothing was deleted"`
+}
+
+type summarizeResult struct {
+	Summary string `json:"summary" jsonschema:"The summary"`
+	Model   string `json:"model" jsonschema:"The model that wrote it"`
+}
+
+type listRootsResult struct {
+	Roots []string `json:"roots" jsonschema:"URIs of the client's roots"`
+}
+
 // registerInputTools adds tools that need input from the client via multi
 // round-trip requests (SEP-2322): the first call returns inputRequests, the
 // retry carries the client's inputResponses. For clients on older protocol
@@ -19,7 +33,8 @@ func registerInputTools(s *mcp.Server) {
 		Description: "Asks the user to confirm before deleting an item (elicitation, form mode)",
 	}, func(ctx context.Context, req *mcp.CallToolRequest, args struct {
 		Item string `json:"item" jsonschema:"Item to delete"`
-	}) (*mcp.CallToolResult, any, error) {
+	}) (*mcp.CallToolResult, confirmDeleteResult, error) {
+		var none confirmDeleteResult
 		resp, ok := req.Params.InputResponses["confirm"]
 		if !ok {
 			return &mcp.CallToolResult{InputRequests: mcp.InputRequestMap{
@@ -35,19 +50,21 @@ func registerInputTools(s *mcp.Server) {
 						"required": []string{"confirm"},
 					},
 				},
-			}}, nil, nil
+			}}, none, nil
 		}
 		res, ok := resp.(*mcp.ElicitResult)
 		if !ok {
-			return nil, nil, fmt.Errorf("unexpected input response %T", resp)
+			return nil, none, fmt.Errorf("unexpected input response %T", resp)
 		}
 		switch {
 		case res.Action == "accept" && res.Content["confirm"] == true:
-			return textResult(fmt.Sprintf("Deleted %s (reason: %v)", args.Item, res.Content["reason"])), nil, nil
+			reason, _ := res.Content["reason"].(string)
+			return textResult(fmt.Sprintf("Deleted %s (reason: %v)", args.Item, res.Content["reason"])),
+				confirmDeleteResult{Deleted: true, Reason: reason}, nil
 		case res.Action == "accept":
-			return textResult("Not deleted: not confirmed"), nil, nil
+			return textResult("Not deleted: not confirmed"), confirmDeleteResult{Reason: "not confirmed"}, nil
 		}
-		return textResult("Not deleted: user chose " + res.Action), nil, nil
+		return textResult("Not deleted: user chose " + res.Action), confirmDeleteResult{Reason: "user chose " + res.Action}, nil
 	})
 
 	mcp.AddTool(s, &mcp.Tool{
@@ -56,7 +73,8 @@ func registerInputTools(s *mcp.Server) {
 		Description: "Asks the client's LLM to summarize a text (sampling)",
 	}, func(ctx context.Context, req *mcp.CallToolRequest, args struct {
 		Text string `json:"text" jsonschema:"Text to summarize"`
-	}) (*mcp.CallToolResult, any, error) {
+	}) (*mcp.CallToolResult, summarizeResult, error) {
+		var none summarizeResult
 		resp, ok := req.Params.InputResponses["llm"]
 		if !ok {
 			return &mcp.CallToolResult{InputRequests: mcp.InputRequestMap{
@@ -67,7 +85,7 @@ func registerInputTools(s *mcp.Server) {
 						Content: &mcp.TextContent{Text: "Summarize in one sentence: " + args.Text},
 					}},
 				},
-			}}, nil, nil
+			}}, none, nil
 		}
 		// The SDK hands sampling results over in either shape
 		var model string
@@ -85,34 +103,35 @@ func registerInputTools(s *mcp.Server) {
 				}
 			}
 		default:
-			return nil, nil, fmt.Errorf("unexpected input response %T", resp)
+			return nil, none, fmt.Errorf("unexpected input response %T", resp)
 		}
 		if text == nil {
-			return nil, nil, fmt.Errorf("sampling returned no text")
+			return nil, none, fmt.Errorf("sampling returned no text")
 		}
-		return textResult(fmt.Sprintf("Summary (%s): %s", model, text.Text)), nil, nil
+		return textResult(fmt.Sprintf("Summary (%s): %s", model, text.Text)), summarizeResult{Summary: text.Text, Model: model}, nil
 	})
 
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "list_roots",
 		Title:       "List Roots",
 		Description: "Lists the client's roots (roots/list)",
-	}, func(ctx context.Context, req *mcp.CallToolRequest, args struct{}) (*mcp.CallToolResult, any, error) {
+	}, func(ctx context.Context, req *mcp.CallToolRequest, args struct{}) (*mcp.CallToolResult, listRootsResult, error) {
+		var none listRootsResult
 		resp, ok := req.Params.InputResponses["roots"]
 		if !ok {
 			return &mcp.CallToolResult{InputRequests: mcp.InputRequestMap{
 				"roots": &mcp.ListRootsParams{},
-			}}, nil, nil
+			}}, none, nil
 		}
 		res, ok := resp.(*mcp.ListRootsResult)
 		if !ok {
-			return nil, nil, fmt.Errorf("unexpected input response %T", resp)
+			return nil, none, fmt.Errorf("unexpected input response %T", resp)
 		}
 		uris := make([]string, len(res.Roots))
 		for i, r := range res.Roots {
 			uris[i] = r.URI
 		}
-		return textResult(fmt.Sprintf("Roots (%d): %s", len(uris), strings.Join(uris, ", "))), nil, nil
+		return textResult(fmt.Sprintf("Roots (%d): %s", len(uris), strings.Join(uris, ", "))), listRootsResult{Roots: uris}, nil
 	})
 }
 

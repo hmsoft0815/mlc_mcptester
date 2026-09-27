@@ -9,8 +9,11 @@ import (
 )
 
 func registerExtraTools(s *mcp.Server) {
+	// No output schema: the result is always isError, which the specification
+	// exempts from outputSchema.
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "error_trigger",
+		Title:       "Error Trigger",
 		Description: "Triggers a simulated server error for testing error handling",
 		Icons: []mcp.Icon{
 			{Source: serverIcon, MIMEType: "image/svg+xml"},
@@ -35,6 +38,7 @@ func registerExtraTools(s *mcp.Server) {
 
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "join_strings",
+		Title:       "Join Strings",
 		Description: "Joins a list of strings (tests array argument support)",
 		Icons: []mcp.Icon{
 			{Source: serverIcon, MIMEType: "image/svg+xml"},

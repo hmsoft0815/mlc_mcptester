@@ -10,6 +10,8 @@ import (
 // registerHeaderTools adds a tool whose region parameter is mirrored into the
 // Mcp-Param-Region HTTP header (x-mcp-header, spec 2026-07-28), so clients and
 // http-check can exercise header mirroring and its server-side validation.
+//
+// No output schema: the result only repeats the inputs.
 func registerHeaderTools(s *mcp.Server) {
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "route_query",

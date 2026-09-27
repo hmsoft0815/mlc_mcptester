@@ -105,6 +105,7 @@ func main() {
 func registerBasicTools(s *mcp.Server) {
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "echo",
+		Title:       "Echo",
 		Description: "Echoes the input back to the user",
 		Icons: []mcp.Icon{
 			{Source: serverIcon, MIMEType: "image/svg+xml"},
@@ -134,6 +135,7 @@ func registerBasicTools(s *mcp.Server) {
 	// Add Tool with Output Schema
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "add",
+		Title:       "Add Numbers",
 		Description: "Adds two numbers together",
 		Icons: []mcp.Icon{
 			{Source: serverIcon, MIMEType: "image/svg+xml"},
@@ -179,6 +181,7 @@ func registerBasicTools(s *mcp.Server) {
 	// progressTest Tool (Simulation für Progress und Cancellation)
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "progressTest",
+		Title:       "Progress Test",
 		Description: "A long running tool to test progress and cancellation",
 		Icons: []mcp.Icon{
 			{Source: serverIcon, MIMEType: "image/svg+xml"},

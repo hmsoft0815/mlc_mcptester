@@ -1,6 +1,6 @@
 # Abdeckung der MCP-Spezifikation
 
-**Stand: 27.09.2026** · Spezifikation **2026-07-28** (neueste stabile Revision, der Draft ist seither unverändert) · mcp-tester **1.6.1** · go-sdk **v1.8.0**
+**Stand: 27.09.2026** · Spezifikation **2026-07-28** (neueste stabile Revision, der Draft ist seither unverändert) · mcp-tester **1.6.2** · go-sdk **v1.8.0**
 
 Die MCP-Spezifikation ändert sich laufend. Diese Seite hält fest, was mcp-tester zum genannten Datum prüfen kann und was nicht. Bei jeder neuen Spec-Revision oder jedem SDK-Update wird sie neu abgeglichen und das Datum angepasst.
 

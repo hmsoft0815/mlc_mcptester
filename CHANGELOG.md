@@ -2,7 +2,7 @@
 
 All notable changes to mcp-tester. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versions: [SemVer](https://semver.org/).
 
-## [Unreleased]
+## [1.6.0] - 2026-09-27
 
 ### Added
 - `inspect --badge`, `--badge-json`, `--badge-no-score`: writes an "mcpcheck" status badge (SVG, shields.io endpoint JSON) showing the negotiated spec revision and the quality score.

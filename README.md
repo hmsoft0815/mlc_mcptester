@@ -55,7 +55,7 @@ Weil `mcp-tester` den Server von außen gegen die Spezifikation prüft, findet e
 - **Auth-Extensions**: Client Credentials (Maschine-zu-Maschine) und Enterprise-Login per ID-JAG; `auth-check` zeigt, welche Flows ein Server anbietet.
 - **Skills-Extension**: Skills eines Servers auflisten und verifizieren (`skills --verify`): Manifest, Digests, Frontmatter, Namensregeln. Das Go-Paket [`pkg/mcpskills`](pkg/mcpskills) stellt Skills aus einem Verzeichnis bereit.
 - **Tasks-Extension**: lang laufende Tool-Aufrufe als Task starten, pollen, abbrechen, Eingaben nachreichen. Für Server-Autoren gibt es das Go-Paket [`pkg/mcptasks`](pkg/mcptasks), das die Extension auf Servern mit dem offiziellen go-sdk nachrüstet.
-- **Server Inspector** (`inspect`): Spec-Abgleich, Best Practices und Quality Score; `--min-score` als CI-Gate.
+- **Server Inspector** (`inspect`): Spec-Abgleich, Best Practices und Quality Score; `--min-score` als CI-Gate, `--badge` für eine Status-Badge im README.
 - **HTTP-Konformität** (`http-check`): Pflicht-Header, Fehlercodes, Origin, Sessions nach Spec 2026-07-28.
 - **Autorisierung**: Bearer-Token, eigene Header und der OAuth-2.1-Ablauf (PKCE, Protected Resource Metadata, `iss`-Prüfung).
 - **Strikte Ergebnisprüfung**: Jedes Ergebnis wird gegen das `outputSchema` geprüft, so streng wie das offizielle TypeScript-SDK.
@@ -175,6 +175,26 @@ mcp-tester inspect -c "npx -y @modelcontextprotocol/server-everything"
 # Als CI-Gate: Exit 1 bei Protokollfehlern oder Score unter der Schwelle
 mcp-tester inspect -p local --min-score 90
 ```
+
+#### Status-Badge für das eigene README
+
+`inspect` schreibt auf Wunsch eine Badge, die andere Projekte in ihr README einbinden:
+
+![mcpcheck](docs/assets/mcpcheck-example.svg)
+
+```bash
+mcp-tester inspect -p local --badge docs/mcpcheck.svg --badge-json docs/mcpcheck.json
+```
+
+```md
+[![mcpcheck](docs/mcpcheck.svg)](docs/mcpcheck.json)
+```
+
+- **spec 2026-07-28**: die Protokoll-Revision, die der Server ausgehandelt hat. Das ist bewusst nicht das Testdatum, denn die Revision zeigt, ob der Server auf dem aktuellen Stand ist.
+- **85/100**: der Quality Score von `inspect`. Mit `--badge-no-score` erscheint nur die Revision.
+- **Farbe**: grün; gelb bei Score unter 80 oder älterer Revision; rot („failing“) bei Protokollfehlern, unabhängig vom Score.
+- Testdatum und Tester-Version stehen im Tooltip der SVG und in der JSON-Datei. Verlinkt die Badge auf die JSON, dann ist nachvollziehbar, wann und womit geprüft wurde.
+- Die Badge wird auch bei fehlgeschlagener Prüfung geschrieben (rot), damit keine veraltete grüne Badge stehen bleibt. Die SVG ist eigenständig und braucht keinen externen Dienst. Die JSON folgt dem [shields.io-Endpoint-Schema](https://shields.io/badges/endpoint-badge) und funktioniert daher auch mit `https://img.shields.io/endpoint?url=<Raw-URL der JSON>`.
 
 #### Tools, Resources & Prompts
 ```bash

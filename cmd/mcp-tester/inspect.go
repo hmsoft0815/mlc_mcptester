@@ -4,14 +4,18 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 	"slices"
 	"sort"
 	"strings"
+	"time"
 
+	"github.com/hmsoft0815/mlc_mcptester/internal/badge"
 	mcpclient "github.com/hmsoft0815/mlc_mcptester/internal/client"
 	"github.com/hmsoft0815/mlc_mcptester/internal/httpcheck"
 	"github.com/hmsoft0815/mlc_mcptester/internal/i18n"
 	"github.com/hmsoft0815/mlc_mcptester/internal/skillcheck"
+	"github.com/hmsoft0815/mlc_mcptester/internal/version"
 	"github.com/hmsoft0815/mlc_mcptester/pkg/mcpskills"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/spf13/cobra"
@@ -36,10 +40,18 @@ type InspectionReport struct {
 // capability is declared: clients break on it, so it outweighs any style hint.
 const listFailurePenalty = 50
 
-var minScore int
+var (
+	minScore       int
+	badgeSVG       string
+	badgeJSON      string
+	badgeHideScore bool
+)
 
 func init() {
 	inspectCmd.Flags().IntVar(&minScore, "min-score", 0, "Exit with an error if the score is below this value")
+	inspectCmd.Flags().StringVar(&badgeSVG, "badge", "", "Write an mcpcheck status badge (SVG) to this file")
+	inspectCmd.Flags().StringVar(&badgeJSON, "badge-json", "", "Write the badge as shields.io endpoint JSON to this file")
+	inspectCmd.Flags().BoolVar(&badgeHideScore, "badge-no-score", false, "Leave the quality score off the badge")
 	rootCmd.AddCommand(inspectCmd)
 }
 
@@ -356,6 +368,12 @@ var inspectCmd = &cobra.Command{
 			}
 		}
 
+		// Written before the verdict, so a failing server gets a red badge
+		// instead of keeping the green one from its last good run.
+		if err := writeBadges(report); err != nil {
+			return err
+		}
+
 		// A finished inspection that finds problems is a result, not a usage mistake
 		if len(protocolErrors) > 0 {
 			cmd.SilenceUsage = true
@@ -367,6 +385,37 @@ var inspectCmd = &cobra.Command{
 		}
 		return nil
 	},
+}
+
+// writeBadges writes the badge files the --badge flags ask for.
+func writeBadges(report InspectionReport) error {
+	if badgeSVG == "" && badgeJSON == "" {
+		return nil
+	}
+	r := badge.Result{
+		Revision:  report.ProtocolVersion,
+		Latest:    report.LatestProtocolVersion,
+		Score:     report.Score,
+		Errors:    len(report.Errors),
+		HideScore: badgeHideScore,
+		Tester:    version.Version,
+		Checked:   time.Now(),
+	}
+	if badgeSVG != "" {
+		if err := os.WriteFile(badgeSVG, badge.SVG(r), 0o644); err != nil {
+			return fmt.Errorf("writing badge: %w", err)
+		}
+	}
+	if badgeJSON != "" {
+		data, err := badge.JSON(r)
+		if err != nil {
+			return err
+		}
+		if err := os.WriteFile(badgeJSON, append(data, '\n'), 0o644); err != nil {
+			return fmt.Errorf("writing badge JSON: %w", err)
+		}
+	}
+	return nil
 }
 
 // sameToolOrder reports whether two tools/list results name the same tools in

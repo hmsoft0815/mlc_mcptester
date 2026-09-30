@@ -16,3 +16,7 @@ GEMINI.md
 cbm.yaml
 *.tmp
 inspect_result*.txt
+
+# private Klone (dochub-cli mlcai attach) — nicht Teil dieses Repos
+/.mlcai/
+/mlcprodweb/

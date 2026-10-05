@@ -279,6 +279,12 @@ tasks:
       - GOWORK=off go test -v ./internal/... ./cmd/mcp-tester/...
 
 
+  release-prep:
+    desc: "Write VERSION into CHANGELOG, SPEC_COVERAGE and the product page, then rebuild and refresh the badge"
+    cmds:
+      - bash scripts/release-prep.sh
+      - task: badge
+
   release-test:
     desc: Test the release process locally
     cmds:

@@ -2,6 +2,14 @@
 
 All notable changes to mcp-tester. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versions: [SemVer](https://semver.org/).
 
+## [1.6.3] - 2026-10-05
+
+### Changed
+- `golang.org/x/oauth2` updated to v0.37.0; building from source now requires Go 1.26.
+
+### Removed
+- `tests/10_wollmilchsau_errors.mcp`: belonged to the Wollmilchsau server and now lives in its repository.
+
 ## [1.6.2] - 2026-09-27
 
 ### Fixed

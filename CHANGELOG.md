@@ -2,7 +2,7 @@
 
 All notable changes to mcp-tester. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versions: [SemVer](https://semver.org/).
 
-## [Unreleased]
+## [1.7.0] - 2026-10-05
 
 ### Added
 - `inspect --text-only <tool,...>` (profile: `text_only:`): tools that return plain text on purpose are exempt from the output schema hint and its deduction; an INFO line and the JSON field `textOnlyTools` name them.

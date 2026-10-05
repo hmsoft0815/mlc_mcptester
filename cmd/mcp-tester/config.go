@@ -17,6 +17,9 @@ type Profile struct {
 	// the environment, so secrets need not be stored in the file.
 	Headers map[string]string `yaml:"headers,omitempty"`
 	Bearer  string            `yaml:"bearer,omitempty"`
+	// TextOnly names tools that return plain text on purpose; inspect then
+	// expects no output schema from them (like --text-only).
+	TextOnly []string `yaml:"text_only,omitempty"`
 }
 
 // Config represents the tool's configuration file.

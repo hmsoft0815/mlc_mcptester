@@ -34,7 +34,8 @@ type InspectionReport struct {
 	PromptsFound          int      `json:"promptsFound"`
 	ResourcesFound        int      `json:"resourcesFound"`
 	Errors                []string `json:"errors,omitempty"`
-	Infos                 []string `json:"infos,omitempty"` // observations that do not affect the score
+	Infos                 []string `json:"infos,omitempty"`         // observations that do not affect the score
+	TextOnlyTools         []string `json:"textOnlyTools,omitempty"` // exempt from the output schema check (--text-only)
 }
 
 // listFailurePenalty is deducted for each list request that fails although its
@@ -47,6 +48,8 @@ var (
 	badgeJSON      string
 	badgeHideScore bool
 	readResources  bool
+	textOnlyTools  []string
+	hintsPerTool   bool
 )
 
 func init() {
@@ -55,6 +58,8 @@ func init() {
 	inspectCmd.Flags().StringVar(&badgeJSON, "badge-json", "", "Write the badge as shields.io endpoint JSON to this file")
 	inspectCmd.Flags().BoolVar(&badgeHideScore, "badge-no-score", false, "Leave the quality score off the badge")
 	inspectCmd.Flags().BoolVar(&readResources, "read-resources", false, "Also read the first resource and check its cache hints")
+	inspectCmd.Flags().StringSliceVar(&textOnlyTools, "text-only", nil, "Tools that return plain text on purpose: no output schema hint and no deduction for them")
+	inspectCmd.Flags().BoolVar(&hintsPerTool, "hints-per-tool", false, "One output schema hint per tool instead of a single summary line")
 	rootCmd.AddCommand(inspectCmd)
 }
 
@@ -91,6 +96,15 @@ var inspectCmd = &cobra.Command{
 		c, u, err := resolveSettings(config, profile, command, url)
 		if err != nil {
 			return err
+		}
+		textOnly := map[string]bool{}
+		for _, name := range textOnlyTools {
+			textOnly[name] = true
+		}
+		if config != nil {
+			for _, name := range config.Profiles[profile].TextOnly {
+				textOnly[name] = true
+			}
 		}
 		transport, err := getTransport(ctx, c, u)
 		if err != nil {
@@ -131,6 +145,8 @@ var inspectCmd = &cobra.Command{
 		// side effects — so a declared schema is all it can see, not whether the
 		// results honour it.
 		declaredOutputSchemas := 0
+		// Missing output schemas are collected so they cost one line, not one per tool
+		var noOutputSchema, exemptTextOnly []string
 
 		initResult := session.InitializeResult()
 		report.ServerName = initResult.ServerInfo.Name
@@ -296,11 +312,14 @@ var inspectCmd = &cobra.Command{
 						warn(i18n.T(i18n.MsgInputSchemaNotObject, t.Name))
 						d.add("schemaType", 5)
 					}
-					if t.OutputSchema == nil {
-						warn(i18n.T(i18n.MsgNoOutputSchema, t.Name))
-						d.add("outputSchema", 1)
-					} else {
+					switch {
+					case t.OutputSchema != nil:
 						declaredOutputSchemas++
+					case textOnly[t.Name]:
+						exemptTextOnly = append(exemptTextOnly, t.Name)
+					default:
+						noOutputSchema = append(noOutputSchema, t.Name)
+						d.add("outputSchema", 1)
 					}
 					checkIcons("tool '"+t.Name+"'", t.Icons)
 					if _, problems := httpcheck.XMCPHeaders(t.InputSchema); len(problems) > 0 {
@@ -314,6 +333,18 @@ var inspectCmd = &cobra.Command{
 							totalBonusSafety += 2
 						}
 					}
+				}
+
+				if hintsPerTool {
+					for _, name := range noOutputSchema {
+						warn(i18n.T(i18n.MsgNoOutputSchema, name))
+					}
+				} else if len(noOutputSchema) > 0 {
+					warn(i18n.T(i18n.MsgNoOutputSchemaSummary, len(noOutputSchema), strings.Join(noOutputSchema, ", ")))
+				}
+				if len(exemptTextOnly) > 0 {
+					info(i18n.T(i18n.MsgTextOnlyTools, strings.Join(exemptTextOnly, ", ")))
+					report.TextOnlyTools = exemptTextOnly
 				}
 
 				// The spec asks for a deterministic order so clients can cache the list

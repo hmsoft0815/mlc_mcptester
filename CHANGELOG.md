@@ -2,6 +2,15 @@
 
 All notable changes to mcp-tester. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versions: [SemVer](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- `inspect --text-only <tool,...>` (profile: `text_only:`): tools that return plain text on purpose are exempt from the output schema hint and its deduction; an INFO line and the JSON field `textOnlyTools` name them.
+- `inspect --hints-per-tool`: one output schema hint per tool, as before.
+
+### Changed
+- `inspect`: tools without an output schema are summed up in one HINT line instead of one line per tool. The deduction is unchanged.
+
 ## [1.6.3] - 2026-10-05
 
 ### Changed

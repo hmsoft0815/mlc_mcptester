@@ -25,6 +25,9 @@ const (
 	MsgNoDescription   MessageKey = "no_description"
 	MsgNoInputSchema   MessageKey = "no_input_schema"
 	MsgNoOutputSchema  MessageKey = "no_output_schema"
+	// MsgNoOutputSchemaSummary names all tools without output schema in one line
+	MsgNoOutputSchemaSummary MessageKey = "no_output_schema_summary"
+	MsgTextOnlyTools         MessageKey = "text_only_tools"
 	// MsgOutputSchemaUnchecked says what inspect cannot see: whether the
 	// results of tools with a declared schema actually honour it.
 	MsgOutputSchemaUnchecked MessageKey = "output_schema_unchecked"
@@ -99,6 +102,9 @@ var messages = map[string]map[MessageKey]string{
 		MsgNoDescription:   "WARNING: Tool '%s' has no description. The LLM needs this to understand the tool's purpose.",
 		MsgNoInputSchema:   "ERROR: Tool '%s' has no input schema.",
 		MsgNoOutputSchema:  "HINT: Tool '%s' has no output schema. Structured returns help the LLM process results precisely.",
+		MsgNoOutputSchemaSummary: "HINT: %d tools have no output schema: %s. Structured returns help the LLM process results precisely. " +
+			"Tools that return plain text on purpose: --text-only <tool,...>",
+		MsgTextOnlyTools: "INFO: No output schema expected (--text-only): %s",
 		MsgOutputSchemaUnchecked: "NOTE: %d tools declare an output schema. inspect calls no tools, so it cannot tell whether their results " +
 			"carry matching structuredContent; strict clients (official TypeScript SDK, e.g. OpenCode) reject calls that do not. " +
 			"Check with `mcp-tester call <tool>` or a test script.",
@@ -172,6 +178,9 @@ var messages = map[string]map[MessageKey]string{
 		MsgNoDescription:   "WARNUNG: Tool '%s' hat keine Beschreibung. Das LLM benötigt diese, um den Zweck zu verstehen.",
 		MsgNoInputSchema:   "FEHLER: Tool '%s' hat kein Input-Schema.",
 		MsgNoOutputSchema:  "HINT: Tool '%s' hat kein Output-Schema. Strukturierte Rückgaben helfen dem LLM.",
+		MsgNoOutputSchemaSummary: "HINT: %d Tools haben kein Output-Schema: %s. Strukturierte Rückgaben helfen dem LLM. " +
+			"Tools, die bewusst nur Text liefern: --text-only <tool,...>",
+		MsgTextOnlyTools: "INFO: Kein Output-Schema erwartet (--text-only): %s",
 		MsgOutputSchemaUnchecked: "HINWEIS: %d Tools geben ein Output-Schema an. inspect ruft keine Tools auf und kann daher nicht prüfen, " +
 			"ob ihre Ergebnisse passendes structuredContent liefern; strikte Clients (offizielles TypeScript-SDK, z. B. OpenCode) " +
 			"lehnen solche Aufrufe ab. Prüfen mit `mcp-tester call <tool>` oder einem Testskript.",

@@ -196,7 +196,11 @@ mcp-tester inspect -c "npx -y @modelcontextprotocol/server-everything"
 
 # Als CI-Gate: Exit 1 bei Protokollfehlern oder Score unter der Schwelle
 mcp-tester inspect -p local --min-score 90
+
+# Tools, die bewusst nur Text (Markdown, Quelltext) liefern: kein Output-Schema erwartet
+mcp-tester inspect -p local --text-only render_markdown,get_source
 ```
+Tools ohne Output-Schema fasst `inspect` in einer HINT-Zeile zusammen (`--hints-per-tool` für eine Zeile je Tool). Liefert ein Tool bewusst nur Text, nimmt `--text-only` es aus der Prüfung: kein Hinweis, kein Punktabzug; eine INFO-Zeile und im JSON das Feld `textOnlyTools` nennen die ausgenommenen Tools. Im Profil steht dieselbe Liste unter `text_only: [render_markdown, get_source]`.
 
 #### Status-Badge für das eigene README
 

@@ -21,6 +21,7 @@ profiles:
   test:
     command: "ls"
     url: "http://localhost"
+    text_only: [render_markdown, get_source]
 `
 	tmpfile, _ := os.CreateTemp("", "mcp-test-*.yml")
 	defer os.Remove(tmpfile.Name())
@@ -33,6 +34,9 @@ profiles:
 	}
 	if p, ok := config.Profiles["test"]; !ok || p.Command != "ls" || p.URL != "http://localhost" {
 		t.Errorf("invalid config loaded: %+v", config)
+	}
+	if got := config.Profiles["test"].TextOnly; len(got) != 2 || got[0] != "render_markdown" || got[1] != "get_source" {
+		t.Errorf("text_only = %v, want [render_markdown get_source]", got)
 	}
 }
 

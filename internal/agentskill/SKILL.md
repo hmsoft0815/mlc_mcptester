@@ -39,7 +39,10 @@ wrong. Run it from the shell; it is not an MCP server itself.
 Protocol errors (`inspect`) and FAIL (`http-check`) are MUST violations that real
 clients break on — fix them. INFO lines never affect the score. With
 credentials, add `--read-resources` to `inspect`: it then warns when per-user
-resource content is cacheable as `"public"`. Score hints are recommendations; a score below 100
+resource content is cacheable as `"public"`. Tools that return plain text on
+purpose (Markdown, source code) need no output schema: pass them with
+`--text-only a,b` (or `text_only:` in the profile) instead of adding a schema
+just to silence the hint. Score hints are recommendations; a score below 100
 is not automatically a bug.
 
 Every tool result is checked against the tool's `outputSchema` the way the

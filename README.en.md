@@ -195,7 +195,11 @@ mcp-tester inspect -c "npx -y @modelcontextprotocol/server-everything"
 
 # As a CI gate: exit 1 on protocol errors or a score below the threshold
 mcp-tester inspect -p local --min-score 90
+
+# Tools that return plain text (Markdown, source code) on purpose: no output schema expected
+mcp-tester inspect -p local --text-only render_markdown,get_source
 ```
+`inspect` sums up tools without an output schema in one HINT line (`--hints-per-tool` for one line per tool). If a tool returns plain text on purpose, `--text-only` exempts it: no hint, no deduction; an INFO line and the JSON field `textOnlyTools` name the exempted tools. In a profile, the same list goes under `text_only: [render_markdown, get_source]`.
 
 #### Status badge for your README
 

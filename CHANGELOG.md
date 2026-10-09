@@ -2,28 +2,23 @@
 
 All notable changes to mcp-tester. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versions: [SemVer](https://semver.org/).
 
-## [Unreleased]
+## [1.8.0] - 2026-10-09
 
 ### Added
-- `tasks`: checks a server against the Tasks extension — error codes of `tasks/*`, and with `--tool` the full life of one task.
-- `inspect`: a server declaring the Tasks extension gets its `tasks/*` error codes checked; a violation costs 10 points.
-- Script command `wait_task_status <taskId> <status> [timeout]`: polls without answering input requests.
-- Test server: tool `tool_error_job` and flag `-broken-tasks`; Taskfile task `test-tasks`.
-- `tasks --tool` checks `notifications/tasks` if the server offers them; `tasks` and `inspect` check that asking for them without the extension gives `-32021`.
-- `tasks --other-bearer <token>`: a second identity must not read, answer or cancel the task (auth binding).
-- Test server `-auth`: second user token `test-token-2`; Taskfile task `test-tasks-auth`.
-- `task test-interop-ts-server`: a reference server on the TypeScript SDK v2 must get the same verdicts as the go server (`inspect` 100/100, `http-check`, script), over stdio and Streamable HTTP.
-- `task test-interop-ts`: the official TypeScript Tasks client (`@modelcontextprotocol/ext-tasks`) drives the reference server's task tools over stdio and Streamable HTTP (needs Node 20+).
-- `pkg/mcptasks`: `GuardListen` and `GuardListenHandler` refuse task notification requests from clients without the extension (`-32021`), which the go-sdk cannot do.
+- `tasks`: checks a server against the Tasks extension; `--tool` follows one task, `--other-bearer` checks auth binding.
+- `inspect` checks the Tasks extension's error codes without calling a tool.
+- Script command `wait_task_status`: waits for a task status without answering input requests.
+- `pkg/mcptasks`: `GuardListen` and `GuardListenHandler` answer `-32021` to task notification requests without the extension.
+- Interop checks against the TypeScript SDK v2 and its Tasks client: `task test-interop-ts-server`, `task test-interop-ts` (Node 20+).
 
 ### Changed
-- `inspect`: the `readOnlyHint` bonus no longer hides MUST violations; those are deducted after the score is capped at 100, so some scores drop.
+- `inspect`: the `readOnlyHint` bonus no longer offsets MUST violations, so some scores drop. Check `--min-score` gates before upgrading.
 
 ### Fixed
-- `inspect`: the title line was empty without a profile; it now names the command or URL.
-- `pkg/mcptasks` (security): tasks were not bound to the caller, so any identity knowing a task id could read, answer or cancel it; they are now bound to the creating identity (`Store.Owner`).
-- `pkg/mcptasks`: partial answers in `tasks/update` were dropped, so clients answering keys one by one hung.
-- Raw requests abandoned on timeout now send `notifications/cancelled`, so the server stops the work and stays responsive.
+- `pkg/mcptasks` (security): any identity knowing a task id could read, answer or cancel that task.
+- `pkg/mcptasks`: partial answers in `tasks/update` were dropped; clients answering one key at a time hung.
+- Requests abandoned on timeout kept running on the server.
+- `inspect`: the title line was empty without a profile.
 
 ## [1.7.0] - 2026-10-05
 

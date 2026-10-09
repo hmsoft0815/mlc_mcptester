@@ -94,26 +94,12 @@ func GuardListenHandler(h http.Handler) http.Handler {
 			h.ServeHTTP(w, r)
 			return
 		}
-		body, err := io.ReadAll(io.LimitReader(r.Body, maxListenBody))
+		body, err := peekBody(r)
 		if err != nil {
 			http.Error(w, "reading the request body failed", http.StatusBadRequest)
 			return
 		}
-		// Hand on the whole body, also beyond the part read here
-		r.Body = struct {
-			io.Reader
-			io.Closer
-		}{io.MultiReader(bytes.NewReader(body), r.Body), r.Body}
-		if len(body) == maxListenBody {
-			h.ServeHTTP(w, r)
-			return
-		}
-		msg, err := jsonrpc.DecodeMessage(body)
-		if err != nil {
-			h.ServeHTTP(w, r)
-			return
-		}
-		req, refuse := refuseListen(msg)
+		req, refuse := refuseListenBody(body)
 		if !refuse {
 			h.ServeHTTP(w, r)
 			return
@@ -126,4 +112,31 @@ func GuardListenHandler(h http.Handler) http.Handler {
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(out)
 	})
+}
+
+// peekBody reads up to maxListenBody bytes of the request body and puts them
+// back in front of the rest, so the next handler gets the whole body.
+func peekBody(r *http.Request) ([]byte, error) {
+	body, err := io.ReadAll(io.LimitReader(r.Body, maxListenBody))
+	if err != nil {
+		return nil, err
+	}
+	r.Body = struct {
+		io.Reader
+		io.Closer
+	}{io.MultiReader(bytes.NewReader(body), r.Body), r.Body}
+	return body, nil
+}
+
+// refuseListenBody is refuseListen for a raw body; a body that fills the
+// whole peek buffer is no listen request and is not decoded.
+func refuseListenBody(body []byte) (*jsonrpc.Request, bool) {
+	if len(body) == maxListenBody {
+		return nil, false
+	}
+	msg, err := jsonrpc.DecodeMessage(body)
+	if err != nil {
+		return nil, false
+	}
+	return refuseListen(msg)
 }

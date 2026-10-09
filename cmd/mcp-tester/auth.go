@@ -86,9 +86,13 @@ func oauthHandlerFor(ctx context.Context, endpoint string, httpClient *http.Clie
 		}
 		return extauth.NewClientCredentialsHandler(&extauth.ClientCredentialsHandlerConfig{Credentials: mcpCreds, HTTPClient: httpClient})
 	}
+	return enterpriseHandler(ctx, endpoint, httpClient, mcpCreds)
+}
 
-	// Enterprise: the MCP authorization server and resource come from the
-	// server's Protected Resource Metadata
+// enterpriseHandler sets up enterprise-managed authorization (ID-JAG): the
+// MCP authorization server and resource come from the server's Protected
+// Resource Metadata, the ID token from --id-token.
+func enterpriseHandler(ctx context.Context, endpoint string, httpClient *http.Client, mcpCreds *oauthex.ClientCredentials) (auth.OAuthHandler, error) {
 	if idpIssuer == "" || idpClientID == "" || idToken == "" {
 		return nil, fmt.Errorf("--oauth-enterprise needs --idp-issuer, --idp-client-id and --id-token")
 	}

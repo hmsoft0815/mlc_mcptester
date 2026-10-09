@@ -2,6 +2,11 @@
 
 All notable changes to mcp-tester. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versions: [SemVer](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+- Test server `-auth`: authorization codes were not bound to the client they were issued to.
+
 ## [1.8.0] - 2026-10-09
 
 ### Added

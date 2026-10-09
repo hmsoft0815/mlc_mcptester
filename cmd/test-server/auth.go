@@ -172,6 +172,12 @@ func (a *authServer) token(w http.ResponseWriter, r *http.Request) {
 	a.mu.Unlock()
 
 	sum := sha256.Sum256([]byte(r.PostForm.Get("code_verifier")))
+	// The code is bound to the client it was issued to; a public client names
+	// itself in the form, a confidential one in Basic auth
+	clientID := r.PostForm.Get("client_id")
+	if id, _, basic := r.BasicAuth(); basic {
+		clientID = id
+	}
 	switch {
 	case !ok:
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid_grant", "error_description": "unknown or used code"})
@@ -181,6 +187,9 @@ func (a *authServer) token(w http.ResponseWriter, r *http.Request) {
 		return
 	case r.PostForm.Get("redirect_uri") != pending.redirectURI:
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid_grant", "error_description": "redirect_uri mismatch"})
+		return
+	case clientID != pending.clientID:
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid_grant", "error_description": "the code was issued to another client"})
 		return
 	}
 

@@ -245,6 +245,27 @@ tasks:
         trap 'status=$?; pkill -f "./bin/test-server -addr :18083" || true; [ $status -eq 0 ] || cat "$log"; rm -f "$log"' EXIT
         ./bin/mcp-tester tasks --url http://localhost:18083/mcp --bearer test-token --other-bearer test-token-2 --tool long_job --args '{"seconds":1}'
 
+  test-interop-ts:
+    desc: Run the official TypeScript Tasks client (@modelcontextprotocol/ext-tasks) against the reference server over stdio and Streamable HTTP (needs Node 20+, npm)
+    deps: [all]
+    dir: tests/interop/ts-tasks
+    preconditions:
+      - sh: command -v node && command -v npm
+        msg: test-interop-ts needs Node.js 20+ and npm
+    cmds:
+      - npm ci --no-audit --no-fund --silent
+      - node interop.mjs --stdio ../../../bin/test-server
+      - |
+        # Streamable HTTP, without and with OAuth; server logs only on failure
+        log=$(mktemp)
+        ../../../bin/test-server -addr :18085 > "$log" 2>&1 &
+        ../../../bin/test-server -addr :18086 -auth >> "$log" 2>&1 &
+        sleep 2
+        # Anchored, so it matches the servers only, not a shell whose command line contains the text
+        trap 'status=$?; pkill -f "^../../../bin/test-server -addr :1808[56]" || true; [ $status -eq 0 ] || cat "$log"; rm -f "$log"' EXIT
+        node interop.mjs --http http://localhost:18085/mcp
+        node interop.mjs --http http://localhost:18086/mcp --bearer test-token
+
   test-json-output:
     desc: With --format json, stdout must be pure JSON even when the server sends progress and logs
     deps: [all]

@@ -12,6 +12,7 @@ All notable changes to mcp-tester. Format: [Keep a Changelog](https://keepachang
 - `tasks --tool` checks `notifications/tasks` if the server offers them; `tasks` and `inspect` check that asking for them without the extension gives `-32021`.
 - `tasks --other-bearer <token>`: a second identity must not read, answer or cancel the task (auth binding).
 - Test server `-auth`: second user token `test-token-2`; Taskfile task `test-tasks-auth`.
+- `task test-interop-ts`: the official TypeScript Tasks client (`@modelcontextprotocol/ext-tasks`) drives the reference server's task tools over stdio and Streamable HTTP (needs Node 20+).
 - `pkg/mcptasks`: `GuardListen` and `GuardListenHandler` refuse task notification requests from clients without the extension (`-32021`), which the go-sdk cannot do.
 
 ### Changed

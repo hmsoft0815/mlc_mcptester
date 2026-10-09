@@ -235,6 +235,8 @@ mcp-tester tasks -p local --tool long_job --args '{"seconds":30}' --cancel
 mcp-tester tasks -u https://example.com/mcp --bearer "$TOKEN_A" --other-bearer "$TOKEN_B" --tool long_job
 ```
 
+`task test-interop-ts` also runs the extension's official TypeScript client (`@modelcontextprotocol/ext-tasks`) against our reference server, over stdio and Streamable HTTP (needs Node 20+). This checks `pkg/mcptasks`, and with it the tester's assumptions, against an independent implementation of the spec.
+
 With `--tool` the tool runs **twice**, once without and once with the extension, so pick one that is safe to run more than once. MUST violations give FAIL and exit 1. For server authors, [`pkg/mcptasks`](pkg/mcptasks) adds the extension to go-sdk servers, including binding tasks to the identity that created them.
 
 #### Status badge for your README

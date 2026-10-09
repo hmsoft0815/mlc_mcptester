@@ -1,0 +1,16 @@
+{
+  "name": "mcp-tester-interop-ts-tasks",
+  "private": true,
+  "description": "Runs the official TypeScript Tasks client (@modelcontextprotocol/ext-tasks) against the mcp-tester reference server",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node interop.mjs --stdio ../../../bin/test-server"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/client": "2.3.1",
+    "@modelcontextprotocol/ext-tasks": "0.2.2"
+  }
+}

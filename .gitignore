@@ -20,3 +20,6 @@ inspect_result*.txt
 # private Klone (dochub-cli mlcai attach) — nicht Teil dieses Repos
 /.mlcai/
 /mlcprodweb/
+
+# npm dependencies of the interop tests
+node_modules/

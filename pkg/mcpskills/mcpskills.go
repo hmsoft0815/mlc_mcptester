@@ -15,15 +15,12 @@ package mcpskills
 
 import (
 	"context"
-	"fmt"
 	"io/fs"
 	"mime"
 	"path"
-	"sort"
 	"strings"
 	"unicode/utf8"
 
-	"github.com/modelcontextprotocol/go-sdk/jsonrpc"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
@@ -76,6 +73,7 @@ type file struct {
 }
 
 type catalog struct {
+	scheme string
 	skills []Skill
 	byURI  map[string]Skill
 	files  map[string]*file
@@ -121,86 +119,6 @@ func Serve(s *mcp.Server, fsys fs.FS, opts *Options) ([]Skill, error) {
 	return c.skills, nil
 }
 
-func load(fsys fs.FS, scheme string) (*catalog, error) {
-	c := &catalog{byURI: map[string]Skill{}, files: map[string]*file{}, dirs: map[string][]*mcp.Resource{}}
-	uriOf := func(p string) string { return scheme + "://" + p }
-
-	var roots []string
-	err := fs.WalkDir(fsys, ".", func(p string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		if !d.IsDir() && d.Name() == "SKILL.md" {
-			roots = append(roots, path.Dir(p))
-		}
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-	sort.Strings(roots)
-
-	for _, root := range roots {
-		if root == "." {
-			return nil, fmt.Errorf("SKILL.md at the top of the skills directory: each skill needs its own directory")
-		}
-		md, err := fs.ReadFile(fsys, path.Join(root, "SKILL.md"))
-		if err != nil {
-			return nil, err
-		}
-		fm, err := ParseFrontmatter(md)
-		if err != nil {
-			return nil, fmt.Errorf("%s: %w", root, err)
-		}
-		if problems := ValidateFrontmatter(fm); len(problems) > 0 {
-			return nil, fmt.Errorf("%s: %s", root, strings.Join(problems, "; "))
-		}
-		if name := fm["name"].(string); name != path.Base(root) {
-			return nil, fmt.Errorf("%s: frontmatter name %q must equal the directory name", root, name)
-		}
-
-		// Every file below the root, nested skills included (they are supporting files)
-		sk := Skill{URI: uriOf(root + "/SKILL.md"), Frontmatter: fm}
-		var total int64
-		err = fs.WalkDir(fsys, root, func(p string, d fs.DirEntry, err error) error {
-			if err != nil {
-				return err
-			}
-			uri := uriOf(p)
-			if d.IsDir() {
-				if _, ok := c.dirs[uri]; !ok {
-					c.dirs[uri] = []*mcp.Resource{}
-				}
-				if p != root {
-					c.addChild(uriOf(path.Dir(p)), &mcp.Resource{URI: uri, Name: d.Name(), MIMEType: DirectoryMIMEType})
-				}
-				return nil
-			}
-			data, err := fs.ReadFile(fsys, p)
-			if err != nil {
-				return err
-			}
-			if _, ok := c.files[uri]; !ok {
-				f := &file{uri: uri, data: data, mime: mimeType(p, data)}
-				c.files[uri] = f
-				c.addChild(uriOf(path.Dir(p)), &mcp.Resource{URI: uri, Name: d.Name(), MIMEType: f.mime})
-			}
-			sk.Resources = append(sk.Resources, SkillResource{URI: uri, Digest: Digest(data), Size: int64(len(data))})
-			total += int64(len(data))
-			return nil
-		})
-		if err != nil {
-			return nil, err
-		}
-		if len(sk.Resources) > MaxResources || total > MaxTotalSize {
-			return nil, fmt.Errorf("%s: %d files / %d bytes exceed the limits (%d files, %d bytes)", root, len(sk.Resources), total, MaxResources, MaxTotalSize)
-		}
-		c.skills = append(c.skills, sk)
-		c.byURI[sk.URI] = sk
-	}
-	return c, nil
-}
-
 func (c *catalog) addChild(dir string, res *mcp.Resource) {
 	for _, existing := range c.dirs[dir] {
 		if existing.URI == res.URI {
@@ -241,72 +159,4 @@ func (c *catalog) read(ctx context.Context, req *mcp.ReadResourceRequest) (*mcp.
 		contents.Blob = f.data
 	}
 	return &mcp.ReadResourceResult{Contents: []*mcp.ResourceContents{contents}}, nil
-}
-
-// wire types
-
-// ListParams are the params of skills/list.
-type ListParams struct {
-	mcp.ParamsBase
-	Cursor string `json:"cursor,omitempty"`
-}
-
-// ListResult is the result of skills/list.
-type ListResult struct {
-	mcp.ResultBase
-	ResultType string  `json:"resultType"`
-	Skills     []Skill `json:"skills"`
-	NextCursor string  `json:"nextCursor,omitempty"`
-	TTLMs      int     `json:"ttlMs"`
-	CacheScope string  `json:"cacheScope"`
-}
-
-// URIParams are the params of skills/get and resources/directory/read.
-type URIParams struct {
-	mcp.ParamsBase
-	URI    string `json:"uri"`
-	Cursor string `json:"cursor,omitempty"`
-}
-
-// GetResult is the result of skills/get.
-type GetResult struct {
-	mcp.ResultBase
-	ResultType string `json:"resultType"`
-	Skill      Skill  `json:"skill"`
-	TTLMs      int    `json:"ttlMs"`
-	CacheScope string `json:"cacheScope"`
-}
-
-// DirectoryResult is the result of resources/directory/read.
-type DirectoryResult struct {
-	mcp.ResultBase
-	ResultType string          `json:"resultType"`
-	Resources  []*mcp.Resource `json:"resources"`
-	NextCursor string          `json:"nextCursor,omitempty"`
-}
-
-func (c *catalog) list(ctx context.Context, _ *mcp.ServerSession, p *ListParams) (*ListResult, error) {
-	skills := c.skills
-	if skills == nil {
-		skills = []Skill{}
-	}
-	return &ListResult{ResultType: "complete", Skills: skills, TTLMs: c.ttlMs, CacheScope: "public"}, nil
-}
-
-func (c *catalog) get(ctx context.Context, _ *mcp.ServerSession, p *URIParams) (*GetResult, error) {
-	sk, ok := c.byURI[p.URI]
-	if !ok {
-		return nil, &jsonrpc.Error{Code: codeInvalidParams, Message: fmt.Sprintf("not a skill served here: %q", p.URI)}
-	}
-	return &GetResult{ResultType: "complete", Skill: sk, TTLMs: c.ttlMs, CacheScope: "public"}, nil
-}
-
-func (c *catalog) readDir(ctx context.Context, _ *mcp.ServerSession, p *URIParams) (*DirectoryResult, error) {
-	children, ok := c.dirs[strings.TrimSuffix(p.URI, "/")]
-	if !ok {
-		return nil, &jsonrpc.Error{Code: codeInvalidParams, Message: fmt.Sprintf("not a directory resource: %q", p.URI)}
-	}
-	sorted := append([]*mcp.Resource{}, children...)
-	sort.Slice(sorted, func(i, j int) bool { return sorted[i].URI < sorted[j].URI })
-	return &DirectoryResult{ResultType: "complete", Resources: sorted}, nil
 }

@@ -87,7 +87,7 @@ Weil `mcp-tester` den Server von außen gegen die Spezifikation prüft, findet e
 Unsere Empfehlung ist klar: gegen die aktuelle Spezifikation testen und die Meldungen ernst nehmen. Die Ausgabe nennt Methode, Feld, Fehlercode und die verletzte Regel. Moderne LLMs wie Claude oder Gemini machen daraus in der Regel schnell konkrete Vorschläge zur Behebung – gebt ihnen die Ausgabe (gern mit `--format json`) einfach mit.
 
 **Muss ich den Quality Score auf 100/100 bringen?**
-Nein. Der Score beruht auf unseren eigenen Erfahrungen und Bewertungen; ein Wert unter 100 muss nicht automatisch eine Änderung am MCP-Server auslösen. Wir halten die Zahl trotzdem für eine sehr hilfreiche Information, deshalb gibt es sie. Der Bonus für `readOnlyHint` gleicht nur Qualitätsabzüge aus; Verstöße gegen MUST-Regeln (fehlgeschlagene Listen, `inputSchema` kein Objekt, Cache-Felder, `x-mcp-header`, Skills, Tasks) werden erst nach der Kappung auf 100 abgezogen und kosten immer Punkte. Anders sind **Protokollfehler** (`inspect`) und **FAIL** (`http-check`): Das sind Verstöße gegen MUST-Regeln der Spezifikation, an denen echte Clients scheitern. Zeilen mit **INFO** gehen gar nicht in den Score ein: Sie beschreiben Entscheidungen, die legitim sein können, etwa `ttlMs: 0` (Listen sofort veraltet) oder `cacheScope: "public"` bei einer Verbindung mit Zugangsdaten. Wer mit Anmeldung testet, sollte `--read-resources` ergänzen: Dann liest `inspect` die erste Resource und warnt, wenn nutzerbezogene Inhalte als `public` markiert sind und damit über gemeinsame Caches bei anderen Nutzern landen können.
+Nein. Der Score beruht auf unseren eigenen Erfahrungen und Bewertungen; ein Wert unter 100 muss nicht automatisch eine Änderung am MCP-Server auslösen. Wir halten die Zahl trotzdem für eine sehr hilfreiche Information, deshalb gibt es sie. Wie der Score entsteht und was sich nach Version 1.7.0 an der Bewertung geändert hat, steht unter [So entsteht der Score](#so-entsteht-der-score). Anders sind **Protokollfehler** (`inspect`) und **FAIL** (`http-check`): Das sind Verstöße gegen MUST-Regeln der Spezifikation, an denen echte Clients scheitern. Zeilen mit **INFO** gehen gar nicht in den Score ein: Sie beschreiben Entscheidungen, die legitim sein können, etwa `ttlMs: 0` (Listen sofort veraltet) oder `cacheScope: "public"` bei einer Verbindung mit Zugangsdaten. Wer mit Anmeldung testet, sollte `--read-resources` ergänzen: Dann liest `inspect` die erste Resource und warnt, wenn nutzerbezogene Inhalte als `public` markiert sind und damit über gemeinsame Caches bei anderen Nutzern landen können.
 
 **Warum ist `mcp-tester` nicht selbst ein MCP-Server?**
 Weil er vor allem in CI läuft, und dort zählen Exit-Code und `--format json`, nicht ein Tool-Aufruf. Agents mit Shell-Zugriff, etwa Claude Code, OpenCode oder Gemini CLI, rufen die CLI direkt auf. Wie das geht, erklärt ihnen die mitgelieferte Skill-Datei, die `mcp-tester agent-skill install` in das jeweilige Harness installiert: welcher Befehl wofür, wie man `.mcp`-Skripte schreibt und was in CI zu beachten ist. Meist wird ohnehin ein einzelner Server getestet, da bringt ein zusätzlicher Server keinen Vorteil. Hinzu kommt die Sicherheit: Ein Tool, das beliebige Prozesse startet und URLs aufruft, wäre ein großes Einfallstor, während die CLI nur mit den Rechten läuft, die ihr gebt. Für Hosts ohne Shell wäre ein Server-Modus dennoch nützlich; die Idee ist notiert, aber noch nicht geplant.
@@ -176,7 +176,7 @@ mcp-tester list -u https://example.com/mcp --oauth-enterprise --idp-issuer https
 # Welche Flows bietet der Server an, und stimmen die Metadaten?
 mcp-tester auth-check -u https://example.com/mcp
 ```
-Im Profil: `headers:` und `bearer:`, `${VAR}` wird aus der Umgebung ersetzt. `./bin/test-server -addr :8080 -auth` startet einen geschützten Test-Server mit eingebautem Autorisierungsserver (statisches Token `test-token`).
+Im Profil: `headers:` und `bearer:`, `${VAR}` wird aus der Umgebung ersetzt. `./bin/test-server -addr :8080 -auth` startet einen geschützten Test-Server mit eingebautem Autorisierungsserver (statische Tokens `test-token` und, als zweiter Nutzer, `test-token-2`).
 
 #### HTTP-Konformität (`http-check`)
 Prüft einen Streamable-HTTP-Endpunkt mit gezielt gebauten Requests gegen die Transportregeln von Spec 2026-07-28: Pflicht-Header (`MCP-Protocol-Version`, `Mcp-Method`, `Mcp-Name`, Base64-Werte, `Mcp-Param-*` aus `x-mcp-header`), Fehlercodes mit HTTP-Status (`-32020`, `-32022`, 404/`-32601`), Origin-Prüfung (403), 405 für GET/DELETE und keine Sessions. MUST-Verstöße: FAIL und Exit 1, SHOULD-Verstöße: WARN.
@@ -201,6 +201,42 @@ mcp-tester inspect -p local --min-score 90
 mcp-tester inspect -p local --text-only render_markdown,get_source
 ```
 Tools ohne Output-Schema fasst `inspect` in einer HINT-Zeile zusammen (`--hints-per-tool` für eine Zeile je Tool). Liefert ein Tool bewusst nur Text, nimmt `--text-only` es aus der Prüfung: kein Hinweis, kein Punktabzug; eine INFO-Zeile und im JSON das Feld `textOnlyTools` nennen die ausgenommenen Tools. Im Profil steht dieselbe Liste unter `text_only: [render_markdown, get_source]`.
+
+#### So entsteht der Score
+
+Jeder Server startet mit 100 Punkten. Davon gehen zwei Arten von Abzügen ab:
+
+- **Qualitätsabzüge**: fehlende Beschreibungen, Titel, Output-Schemas oder Prompts, Namensregeln, Icons, veraltete Protokoll-Revision und Ähnliches. Je Kategorie sind sie gedeckelt, damit ein Server mit vielen Tools für denselben Fehler nicht ohne Grenze bestraft wird.
+- **Verstöße gegen MUST-Regeln der Spec**: fehlgeschlagene `*/list`-Aufrufe, `inputSchema` nicht vom Typ `object`, fehlende Cache-Felder, ungültige `x-mcp-header`, Verstöße gegen die Skills- oder die Tasks-Extension.
+
+Für Tools mit `readOnlyHint` gibt es einen Bonus von bis zu 20 Punkten. Er gleicht **nur Qualitätsabzüge** aus. Danach wird auf 100 gekappt, und erst dann werden die MUST-Verstöße abgezogen.
+
+> **Geänderte Bewertung nach Version 1.7.0**
+>
+> Bis einschließlich 1.7.0 wurde der Bonus vor der Kappung auf alle Abzüge angerechnet. Ein Server mit vielen `readOnlyHint`-Tools konnte so MUST-Verstöße vollständig verdecken und trotzdem 100/100 erreichen. Jetzt kostet jeder MUST-Verstoß sichtbar Punkte. Neu geprüft werden außerdem die Fehlercodes der Tasks-Extension, darunter `-32021` für `subscriptions/listen` ohne Extension. Server, die auf dem go-sdk aufbauen und die Tasks-Extension erklären, verletzen diese Regel ohne Zusatz-Code und verlieren jetzt 10 Punkte. Abhilfe bietet [`pkg/mcptasks`](pkg/mcptasks) mit `GuardListen` bzw. `GuardListenHandler`.
+>
+> **Was ihr tun solltet:** Lasst `inspect` einmal mit der neuen Version laufen. Sinkt der Score, nennt die Ausgabe die Ursache als WARNING. Wer `--min-score` als CI-Gate nutzt, sollte vor dem Update prüfen, ob die Schwelle noch erreicht wird. Gegebenenfalls die Ursache beheben oder die Schwelle vorübergehend senken. Badges mit Score ändern sich beim nächsten Lauf entsprechend.
+
+#### Tasks-Extension prüfen (`tasks`)
+
+`inspect` prüft bei Servern mit Tasks-Extension nur die Fehlercodes und ruft dabei kein Tool auf. Tiefer geht `tasks`:
+
+```bash
+# Fehlercodes von tasks/get, tasks/update, tasks/cancel und subscriptions/listen, ohne Tool-Aufruf
+mcp-tester tasks -p local
+
+# Einen Task vollständig verfolgen: Handle, dauerhafte Anlage, jede tasks/get-Antwort,
+# Statusübergänge, Rückfragen und, falls angeboten, notifications/tasks
+mcp-tester tasks -p local --tool long_job --args '{"seconds":2}' --elicit 'accept:{"name":"Ada"}'
+
+# Abbruch direkt nach dem Start
+mcp-tester tasks -p local --tool long_job --args '{"seconds":30}' --cancel
+
+# Über HTTP mit Anmeldung: eine zweite Identität darf den Task nicht erreichen
+mcp-tester tasks -u https://example.com/mcp --bearer "$TOKEN_A" --other-bearer "$TOKEN_B" --tool long_job
+```
+
+Mit `--tool` läuft das Tool **zweimal**, einmal ohne und einmal mit Extension. Wählt also eines, das ohne Schaden mehrfach laufen darf. MUST-Verstöße ergeben FAIL und Exit 1. Für Server-Autoren rüstet [`pkg/mcptasks`](pkg/mcptasks) die Extension auf go-sdk-Servern nach, einschließlich der Bindung von Tasks an die Identität, die sie angelegt hat.
 
 #### Status-Badge für das eigene README
 

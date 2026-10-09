@@ -87,7 +87,7 @@ Because `mcp-tester` checks the server from the outside against the specificatio
 Our recommendation is clear: test against the current specification and take the findings seriously. The output names the method, field, error code and the violated rule. Modern LLMs such as Claude or Gemini usually turn that into concrete fix suggestions quickly – just hand them the output (`--format json` works well).
 
 **Do I have to reach a quality score of 100/100?**
-No. The score is based on our own experience and assessments; a value below 100 does not automatically call for a change to the MCP server. We still think the number is very useful information, which is why it is there. The `readOnlyHint` bonus only offsets quality deductions; MUST violations (failed lists, `inputSchema` not an object, cache fields, `x-mcp-header`, skills, tasks) are deducted after the score is capped at 100 and always cost points. **Protocol errors** (`inspect`) and **FAIL** (`http-check`) are different: they violate MUST rules of the specification, and real clients fail on them. Lines marked **INFO** do not count at all: they describe choices that can be legitimate, such as `ttlMs: 0` (lists immediately stale) or `cacheScope: "public"` when connected with credentials. When testing with credentials, add `--read-resources`: `inspect` then reads the first resource and warns if per-user content is marked `public`, which lets shared caches serve it to other users.
+No. The score is based on our own experience and assessments; a value below 100 does not automatically call for a change to the MCP server. We still think the number is very useful information, which is why it is there. How the score is made up, and what changed in the scoring after version 1.7.0, is described under [How the score is calculated](#how-the-score-is-calculated). **Protocol errors** (`inspect`) and **FAIL** (`http-check`) are different: they violate MUST rules of the specification, and real clients fail on them. Lines marked **INFO** do not count at all: they describe choices that can be legitimate, such as `ttlMs: 0` (lists immediately stale) or `cacheScope: "public"` when connected with credentials. When testing with credentials, add `--read-resources`: `inspect` then reads the first resource and warns if per-user content is marked `public`, which lets shared caches serve it to other users.
 
 **Why is `mcp-tester` not an MCP server itself?**
 Because it runs mainly in CI, where the exit code and `--format json` matter, not a tool call. Agents with shell access, such as Claude Code, OpenCode or Gemini CLI, call the CLI directly. The bundled skill file, which `mcp-tester agent-skill install` puts into each harness, tells them how: which command is for what, how to write `.mcp` scripts and what to watch for in CI. Usually a single server is under test anyway, so an extra server adds nothing. Then there is security: a tool that starts arbitrary processes and calls URLs would be a wide-open door, while the CLI runs only with the rights you give it. A server mode would still help hosts without a shell; the idea is noted but not planned yet.
@@ -175,7 +175,7 @@ mcp-tester list -u https://example.com/mcp --oauth-enterprise --idp-issuer https
 # Which flows does the server offer, and is the metadata right?
 mcp-tester auth-check -u https://example.com/mcp
 ```
-In a profile: `headers:` and `bearer:`, `${VAR}` is expanded from the environment. `./bin/test-server -addr :8080 -auth` starts a protected test server with a built-in authorization server (static token `test-token`).
+In a profile: `headers:` and `bearer:`, `${VAR}` is expanded from the environment. `./bin/test-server -addr :8080 -auth` starts a protected test server with a built-in authorization server (static tokens `test-token` and, as a second user, `test-token-2`).
 
 #### HTTP conformance (`http-check`)
 Checks a Streamable HTTP endpoint with hand-built requests against the transport rules of spec 2026-07-28: required headers (`MCP-Protocol-Version`, `Mcp-Method`, `Mcp-Name`, Base64 values, `Mcp-Param-*` from `x-mcp-header`), error codes with HTTP status (`-32020`, `-32022`, 404/`-32601`), Origin validation (403), 405 for GET/DELETE and no sessions. MUST violations: FAIL and exit 1, SHOULD violations: WARN.
@@ -200,6 +200,42 @@ mcp-tester inspect -p local --min-score 90
 mcp-tester inspect -p local --text-only render_markdown,get_source
 ```
 `inspect` sums up tools without an output schema in one HINT line (`--hints-per-tool` for one line per tool). If a tool returns plain text on purpose, `--text-only` exempts it: no hint, no deduction; an INFO line and the JSON field `textOnlyTools` name the exempted tools. In a profile, the same list goes under `text_only: [render_markdown, get_source]`.
+
+#### How the score is calculated
+
+Every server starts at 100 points. Two kinds of deductions are subtracted:
+
+- **Quality deductions**: missing descriptions, titles, output schemas or prompts, naming rules, icons, an outdated protocol revision and the like. Each category is capped, so a server with many tools is not punished for the same mistake without bound.
+- **Violations of MUST rules of the spec**: failed `*/list` calls, an `inputSchema` not of type `object`, missing cache fields, invalid `x-mcp-header`, violations of the Skills or the Tasks extension.
+
+Tools with `readOnlyHint` earn a bonus of up to 20 points. It offsets **quality deductions only**. The score is then capped at 100, and only after that are MUST violations deducted.
+
+> **Scoring changed after version 1.7.0**
+>
+> Up to and including 1.7.0 the bonus was applied against all deductions before the cap. A server with many `readOnlyHint` tools could thus hide MUST violations completely and still reach 100/100. Now every MUST violation costs points visibly. The error codes of the Tasks extension are newly checked as well, including `-32021` for `subscriptions/listen` without the extension. Servers built on the go-sdk that declare the Tasks extension violate this rule unless they add code for it, and now lose 10 points. [`pkg/mcptasks`](pkg/mcptasks) fixes this with `GuardListen` or `GuardListenHandler`.
+>
+> **What to do:** run `inspect` once with the new version. If the score drops, the output names the cause as a WARNING. If you use `--min-score` as a CI gate, check before updating that the threshold is still met; fix the cause or lower the threshold for a while. Badges showing the score change on the next run.
+
+#### Checking the Tasks extension (`tasks`)
+
+For servers with the Tasks extension, `inspect` checks only the error codes and calls no tool. `tasks` goes further:
+
+```bash
+# Error codes of tasks/get, tasks/update, tasks/cancel and subscriptions/listen, no tool call
+mcp-tester tasks -p local
+
+# Follow one task to its end: handle, durable creation, every tasks/get result,
+# status transitions, input requests and, if offered, notifications/tasks
+mcp-tester tasks -p local --tool long_job --args '{"seconds":2}' --elicit 'accept:{"name":"Ada"}'
+
+# Cancel right after the start
+mcp-tester tasks -p local --tool long_job --args '{"seconds":30}' --cancel
+
+# Over HTTP with credentials: a second identity must not reach the task
+mcp-tester tasks -u https://example.com/mcp --bearer "$TOKEN_A" --other-bearer "$TOKEN_B" --tool long_job
+```
+
+With `--tool` the tool runs **twice**, once without and once with the extension, so pick one that is safe to run more than once. MUST violations give FAIL and exit 1. For server authors, [`pkg/mcptasks`](pkg/mcptasks) adds the extension to go-sdk servers, including binding tasks to the identity that created them.
 
 #### Status badge for your README
 

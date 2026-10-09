@@ -1,6 +1,7 @@
 package main
 
 import (
+	"cmp"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -195,7 +196,12 @@ var inspectCmd = &cobra.Command{
 		sort.Strings(report.Extensions)
 
 		if format == "text" {
-			fmt.Print(i18n.T(i18n.MsgInspectionTitle, profile))
+			// The profile name, or what was connected without one
+			target := profile
+			if target == "" {
+				target = cmp.Or(u, c)
+			}
+			fmt.Print(i18n.T(i18n.MsgInspectionTitle, target))
 			fmt.Print(i18n.T(i18n.MsgServerInfo, report.ServerName, report.ServerVersion))
 			fmt.Print(i18n.T(i18n.MsgProtocolVersion, report.ProtocolVersion))
 			fmt.Println(i18n.T(i18n.MsgCapabilities))

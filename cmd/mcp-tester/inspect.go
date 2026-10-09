@@ -1,29 +1,22 @@
 package main
 
 import (
-	"cmp"
 	"context"
 	"encoding/json"
 	"fmt"
 	"os"
 	"slices"
-	"sort"
-	"strings"
 	"time"
 
 	"github.com/hmsoft0815/mlc_mcptester/internal/badge"
 	mcpclient "github.com/hmsoft0815/mlc_mcptester/internal/client"
-	"github.com/hmsoft0815/mlc_mcptester/internal/httpcheck"
 	"github.com/hmsoft0815/mlc_mcptester/internal/i18n"
-	"github.com/hmsoft0815/mlc_mcptester/internal/skillcheck"
-	"github.com/hmsoft0815/mlc_mcptester/internal/taskcheck"
 	"github.com/hmsoft0815/mlc_mcptester/internal/version"
-	"github.com/hmsoft0815/mlc_mcptester/pkg/mcpskills"
-	"github.com/hmsoft0815/mlc_mcptester/pkg/mcptasks"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/spf13/cobra"
 )
 
+// InspectionReport is the result of inspect, printed with --format json.
 type InspectionReport struct {
 	ServerName            string   `json:"serverName"`
 	ServerVersion         string   `json:"serverVersion"`
@@ -40,10 +33,6 @@ type InspectionReport struct {
 	Infos                 []string `json:"infos,omitempty"`         // observations that do not affect the score
 	TextOnlyTools         []string `json:"textOnlyTools,omitempty"` // exempt from the output schema check (--text-only)
 }
-
-// listFailurePenalty is deducted for each list request that fails although its
-// capability is declared: clients break on it, so it outweighs any style hint.
-const listFailurePenalty = 50
 
 var (
 	minScore       int
@@ -66,445 +55,97 @@ func init() {
 	rootCmd.AddCommand(inspectCmd)
 }
 
-// deductions sums penalties per category and caps each category, so that a
-// server with many tools is not punished for the same mistake without bound.
-type deductions struct {
-	sums map[string]int
-	caps map[string]int
-}
-
-// specCategories are MUST violations: they are deducted after the score is
-// capped at 100, so the safety bonus cannot hide them.
-var specCategories = map[string]bool{
-	"listFailure": true,
-	"schemaType":  true,
-	"cache":       true,
-	"xMCPHeader":  true,
-	"skills":      true,
-	"tasks":       true,
-}
-
-func newDeductions(caps map[string]int) *deductions {
-	return &deductions{sums: map[string]int{}, caps: caps}
-}
-
-func (d *deductions) add(category string, points int) { d.sums[category] += points }
-
-// total sums the capped categories, either the spec violations or the rest.
-func (d *deductions) total(spec bool) int {
-	total := 0
-	for category, sum := range d.sums {
-		if specCategories[category] != spec {
-			continue
-		}
-		if limit, ok := d.caps[category]; ok && sum > limit {
-			sum = limit
-		}
-		total += sum
-	}
-	return total
-}
-
-// finalScore applies the quality deductions to score (which carries the
-// safety bonus), caps it at 100, then deducts the spec violations.
-func finalScore(score int, d *deductions) int {
-	score = min(score-d.total(false), 100)
-	return max(score-d.total(true), 0)
-}
-
 var inspectCmd = &cobra.Command{
 	Use:   "inspect",
 	Short: "Analyze an MCP server and provide quality recommendations",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		ctx := context.Background()
-		config, _ := loadConfig("mcp-tester.yml")
-		c, u, err := resolveSettings(config, profile, command, url)
-		if err != nil {
-			return err
-		}
-		textOnly := map[string]bool{}
-		for _, name := range textOnlyTools {
+		return runInspect(cmd)
+	},
+}
+
+// runInspect connects, runs the checks and reports.
+func runInspect(cmd *cobra.Command) error {
+	ctx := context.Background()
+	config, _ := loadConfig("mcp-tester.yml")
+	c, u, err := resolveSettings(config, profile, command, url)
+	if err != nil {
+		return err
+	}
+	transport, err := getTransport(ctx, c, u)
+	if err != nil {
+		return err
+	}
+	session, err := getClient(verbose).Connect(ctx, transport, nil)
+	if err != nil {
+		return err
+	}
+	defer session.Close()
+
+	in := newInspector(ctx, session, c, u, textOnlySet(config))
+	in.run()
+	in.print()
+
+	// Written before the verdict, so a failing server gets a red badge
+	// instead of keeping the green one from its last good run.
+	if err := writeBadges(in.report); err != nil {
+		return err
+	}
+	return in.verdict(cmd)
+}
+
+// textOnlySet joins --text-only and the profile's text_only list.
+func textOnlySet(config *Config) map[string]bool {
+	textOnly := map[string]bool{}
+	for _, name := range textOnlyTools {
+		textOnly[name] = true
+	}
+	if config != nil {
+		for _, name := range config.Profiles[profile].TextOnly {
 			textOnly[name] = true
 		}
-		if config != nil {
-			for _, name := range config.Profiles[profile].TextOnly {
-				textOnly[name] = true
-			}
+	}
+	return textOnly
+}
+
+// print writes the report as JSON or as the text quality report.
+func (in *inspector) print() {
+	if format == "json" {
+		out, _ := json.MarshalIndent(in.report, "", "  ")
+		fmt.Println(string(out))
+		return
+	}
+	fmt.Println(i18n.T(i18n.MsgScore, in.report.Score))
+	for _, e := range in.protocolErrors {
+		fmt.Println("- " + e)
+	}
+	if len(in.recommendations) == 0 && len(in.protocolErrors) == 0 {
+		fmt.Println(i18n.T(i18n.MsgPerfect))
+	} else {
+		for _, rec := range in.recommendations {
+			fmt.Println("- " + rec)
 		}
-		transport, err := getTransport(ctx, c, u)
-		if err != nil {
-			return err
-		}
-		client := getClient(verbose)
-		session, err := client.Connect(ctx, transport, nil)
-		if err != nil {
-			return err
-		}
-		defer session.Close()
+	}
+	for _, i := range in.infos {
+		fmt.Println("- " + i)
+	}
+	if in.declaredOutputSchemas > 0 {
+		fmt.Println()
+		fmt.Println(i18n.T(i18n.MsgOutputSchemaUnchecked, in.declaredOutputSchemas))
+	}
+}
 
-		report := InspectionReport{LatestProtocolVersion: latestProtocolRevision}
-		recommendations := []string{}
-		protocolErrors := []string{}
-		score := 100
-		d := newDeductions(map[string]int{
-			"description":  20,
-			"outputSchema": 10,
-			"protocol":     30,
-			"toolName":     15,
-			"duplicate":    10,
-			"schemaType":   15,
-			"title":        5,
-			"icon":         15,
-			"cache":        3,
-			"cacheScope":   10,
-			"xMCPHeader":   20,
-		})
-		listFailed := func(method string, err error) {
-			protocolErrors = append(protocolErrors, i18n.T(i18n.MsgListFailed, method, err))
-			d.add("listFailure", listFailurePenalty)
-		}
-		warn := func(msg string) { recommendations = append(recommendations, msg) }
-		infos := []string{}
-		info := func(msg string) { infos = append(infos, msg) }
-		// inspect never calls a tool — it cannot know which ones are free of
-		// side effects — so a declared schema is all it can see, not whether the
-		// results honour it.
-		declaredOutputSchemas := 0
-		// Missing output schemas are collected so they cost one line, not one per tool
-		var noOutputSchema, exemptTextOnly []string
-
-		initResult := session.InitializeResult()
-		report.ServerName = initResult.ServerInfo.Name
-		report.ServerVersion = initResult.ServerInfo.Version
-		report.ProtocolVersion = initResult.ProtocolVersion
-		report.HasInstructions = initResult.Instructions != ""
-		modern := report.ProtocolVersion >= latestProtocolRevision
-
-		switch behind := revisionsBehind(report.ProtocolVersion); {
-		case behind < 0:
-			warn(i18n.T(i18n.MsgUnknownProtocol, report.ProtocolVersion))
-			d.add("protocol", 10)
-		case behind > 0:
-			warn(i18n.T(i18n.MsgOutdatedProtocol, report.ProtocolVersion, behind, latestProtocolRevision))
-			d.add("protocol", 10*behind)
-		}
-
-		caps := initResult.Capabilities
-		for name := range caps.Extensions {
-			report.Extensions = append(report.Extensions, name)
-		}
-		sort.Strings(report.Extensions)
-
-		if format == "text" {
-			// The profile name, or what was connected without one
-			target := profile
-			if target == "" {
-				target = cmp.Or(u, c)
-			}
-			fmt.Print(i18n.T(i18n.MsgInspectionTitle, target))
-			fmt.Print(i18n.T(i18n.MsgServerInfo, report.ServerName, report.ServerVersion))
-			fmt.Print(i18n.T(i18n.MsgProtocolVersion, report.ProtocolVersion))
-			fmt.Println(i18n.T(i18n.MsgCapabilities))
-
-			fmt.Print(i18n.T(i18n.MsgTools, caps.Tools != nil))
-			if caps.Tools != nil && caps.Tools.ListChanged {
-				fmt.Print(i18n.T(i18n.MsgSubscription))
-			}
-			fmt.Println()
-
-			fmt.Print(i18n.T(i18n.MsgPrompts, caps.Prompts != nil))
-			if caps.Prompts != nil && caps.Prompts.ListChanged {
-				fmt.Print(i18n.T(i18n.MsgSubscription))
-			}
-			fmt.Println()
-
-			fmt.Print(i18n.T(i18n.MsgResources, caps.Resources != nil))
-			fmt.Println()
-
-			fmt.Print(i18n.T(i18n.MsgCompletions, caps.Completions != nil))
-			//lint:ignore SA1019 logging is deprecated since 2026-07-28 (SEP-2577) but still used by servers and regular before; remove with T-20260927-05
-			fmt.Print(i18n.T(i18n.MsgLogging, caps.Logging != nil))
-			fmt.Print(i18n.T(i18n.MsgProgress))
-			fmt.Print(i18n.T(i18n.MsgCancel))
-			if report.HasInstructions {
-				fmt.Print(i18n.T(i18n.MsgInstructions, len(initResult.Instructions)))
-			} else {
-				fmt.Print(i18n.T(i18n.MsgNoInstructions))
-			}
-			if len(report.Extensions) > 0 {
-				fmt.Print(i18n.T(i18n.MsgExtensions, strings.Join(report.Extensions, ", ")))
-			}
-		}
-
-		checkIcons := func(owner string, icons []mcp.Icon) {
-			for _, icon := range icons {
-				if msg := checkIconSource(icon.Source); msg != "" {
-					warn(i18n.T(i18n.MsgInvalidIcon, owner, msg, icon.Source))
-					d.add("icon", 5)
-				}
-			}
-		}
-		// Cache hints are part of cacheable results since 2026-07-28. Read from
-		// the wire: the SDK turns a missing ttlMs into 0 and fills cacheScope.
-		authenticated := u != "" && (bearerToken != "" || len(headerFlags) > 0 ||
-			oauthEnabled || oauthClientCredentials || oauthEnterprise)
-		cacheHints := func(method string, params map[string]any) (float64, string, bool) {
-			if params == nil {
-				params = map[string]any{}
-			}
-			params["_meta"] = mcpclient.RequestMeta(session, nil)
-			result, err := mcpclient.CallRaw(ctx, session, method, params)
-			if err != nil {
-				return 0, "", false
-			}
-			ttl, scope, problems := checkCacheHints(result)
-			if len(problems) > 0 {
-				warn(i18n.T(i18n.MsgCacheHints, method, strings.Join(problems, "; ")))
-				d.add("cache", 1)
-			}
-			return ttl, scope, true
-		}
-		// Collected per finding, so the INFO lines name all lists at once
-		var staleLists, publicLists []string
-		checkCache := func(method string) {
-			if !modern {
-				return
-			}
-			ttl, scope, ok := cacheHints(method, nil)
-			if !ok {
-				return
-			}
-			if ttl == 0 {
-				staleLists = append(staleLists, method)
-			}
-			if scope == "public" && authenticated {
-				publicLists = append(publicLists, method)
-			}
-		}
-
-		checkIcons("server "+report.ServerName, initResult.ServerInfo.Icons)
-
-		prompts, err := mcpclient.ListAllPrompts(ctx, session)
-		if err != nil && caps.Prompts != nil {
-			listFailed("prompts/list", err)
-		}
-		if err == nil {
-			report.PromptsFound = len(prompts)
-			if report.PromptsFound == 0 {
-				warn(i18n.T(i18n.MsgNoPrompts))
-				score -= 20
-			} else if format == "text" {
-				fmt.Print(i18n.T(i18n.MsgFound, report.PromptsFound, "prompts"))
-			}
-			for _, p := range prompts {
-				checkIcons("prompt '"+p.Name+"'", p.Icons)
-			}
-			checkCache("prompts/list")
-		}
-
-		tools, err := mcpclient.ListAllTools(ctx, session)
-		if err != nil && caps.Tools != nil {
-			listFailed("tools/list", err)
-		}
-		if err == nil {
-			report.ToolsFound = len(tools)
-			if report.ToolsFound > 0 {
-				if format == "text" {
-					fmt.Print(i18n.T(i18n.MsgFound, report.ToolsFound, "tools"))
-				}
-
-				totalDeductionInputSchema := 0
-				totalBonusSafety := 0
-				seen := map[string]bool{}
-
-				for _, t := range tools {
-					if msg := checkToolName(t.Name); msg != "" {
-						warn(i18n.T(i18n.MsgInvalidToolName, t.Name, msg))
-						d.add("toolName", 3)
-					}
-					if seen[t.Name] {
-						warn(i18n.T(i18n.MsgDuplicateToolName, t.Name))
-						d.add("duplicate", 5)
-					}
-					seen[t.Name] = true
-					if t.Title == "" && (t.Annotations == nil || t.Annotations.Title == "") {
-						warn(i18n.T(i18n.MsgNoTitle, t.Name))
-						d.add("title", 1)
-					}
-					if t.Description == "" {
-						warn(i18n.T(i18n.MsgNoDescription, t.Name))
-						d.add("description", 5)
-					}
-					if t.InputSchema == nil {
-						warn(i18n.T(i18n.MsgNoInputSchema, t.Name))
-						totalDeductionInputSchema += 10
-					} else if !inputSchemaIsObject(t.InputSchema) {
-						warn(i18n.T(i18n.MsgInputSchemaNotObject, t.Name))
-						d.add("schemaType", 5)
-					}
-					switch {
-					case t.OutputSchema != nil:
-						declaredOutputSchemas++
-					case textOnly[t.Name]:
-						exemptTextOnly = append(exemptTextOnly, t.Name)
-					default:
-						noOutputSchema = append(noOutputSchema, t.Name)
-						d.add("outputSchema", 1)
-					}
-					checkIcons("tool '"+t.Name+"'", t.Icons)
-					if _, problems := httpcheck.XMCPHeaders(t.InputSchema); len(problems) > 0 {
-						warn(i18n.T(i18n.MsgInvalidXMCPHeader, t.Name, strings.Join(problems, "; ")))
-						d.add("xMCPHeader", 10)
-					}
-
-					// Bonus for safety annotations (readOnlyHint)
-					if t.Annotations != nil {
-						if t.Annotations.ReadOnlyHint {
-							totalBonusSafety += 2
-						}
-					}
-				}
-
-				if hintsPerTool {
-					for _, name := range noOutputSchema {
-						warn(i18n.T(i18n.MsgNoOutputSchema, name))
-					}
-				} else if len(noOutputSchema) > 0 {
-					warn(i18n.T(i18n.MsgNoOutputSchemaSummary, len(noOutputSchema), strings.Join(noOutputSchema, ", ")))
-				}
-				if len(exemptTextOnly) > 0 {
-					info(i18n.T(i18n.MsgTextOnlyTools, strings.Join(exemptTextOnly, ", ")))
-					report.TextOnlyTools = exemptTextOnly
-				}
-
-				// The spec asks for a deterministic order so clients can cache the list
-				if again, err := listToolsAgain(ctx, session, c, u); err == nil && !sameToolOrder(tools, again) {
-					warn(i18n.T(i18n.MsgToolOrderUnstable))
-					score -= 5
-				}
-
-				if totalBonusSafety > 20 {
-					totalBonusSafety = 20
-				}
-				score -= totalDeductionInputSchema
-				score += totalBonusSafety
-			}
-			checkCache("tools/list")
-		}
-
-		resources, err := mcpclient.ListAllResources(ctx, session)
-		if err != nil && caps.Resources != nil {
-			listFailed("resources/list", err)
-		}
-		if err == nil {
-			report.ResourcesFound = len(resources)
-			if report.ResourcesFound > 0 && format == "text" {
-				fmt.Print(i18n.T(i18n.MsgFound, report.ResourcesFound, "resources"))
-			}
-			for _, r := range resources {
-				checkIcons("resource '"+r.URI+"'", r.Icons)
-			}
-			checkCache("resources/list")
-			// Resource contents are typically per user: "public" under
-			// credentials can leak them through shared caches
-			switch {
-			case !modern || len(resources) == 0:
-			case readResources:
-				uri := resources[0].URI
-				if _, scope, ok := cacheHints("resources/read", map[string]any{"uri": uri}); !ok {
-					info(i18n.T(i18n.MsgResourceReadFailed, uri, "no result"))
-				} else if scope == "public" && authenticated {
-					warn(i18n.T(i18n.MsgCachePublicResource, uri))
-					d.add("cacheScope", 10)
-				}
-			case authenticated:
-				info(i18n.T(i18n.MsgReadResourcesHint))
-			}
-		}
-
-		if len(staleLists) > 0 {
-			info(i18n.T(i18n.MsgCacheStale, strings.Join(staleLists, ", ")))
-		}
-		if len(publicLists) > 0 {
-			info(i18n.T(i18n.MsgCachePublicList, strings.Join(publicLists, ", ")))
-		}
-
-		// Skills are instructions that reach the model: count them, details via 'skills'
-		if _, ok := caps.Extensions[mcpskills.Extension]; ok {
-			skillsReport := (&skillcheck.Checker{Session: session}).Run(ctx)
-			if format == "text" {
-				fmt.Print(i18n.T(i18n.MsgFound, len(skillsReport.Skills), "skills"))
-			}
-			if skillsReport.Failed() {
-				warn(i18n.T(i18n.MsgSkillsInvalid))
-				d.add("skills", 10)
-			}
-		}
-
-		// Tasks: only the tasks/* error codes, no tool runs; the life of a
-		// task needs a tool chosen by the user ('tasks --tool')
-		if _, ok := caps.Extensions[mcptasks.Extension]; ok {
-			if failed := (&taskcheck.Checker{Session: session}).Run(ctx).FailedNames(); len(failed) > 0 {
-				warn(i18n.T(i18n.MsgTasksInvalid, strings.Join(failed, ", ")))
-				d.add("tasks", 10)
-			}
-		}
-
-		// Logging is deprecated as of 2026-07-28 (SEP-2577): no deduction
-		// either way, but a server that still declares it should know that
-		// support is running out. Older revisions keep it as a regular feature.
-		//lint:ignore SA1019 logging is deprecated since 2026-07-28 (SEP-2577) but still used by servers and regular before; remove with T-20260927-05
-		if modern && caps.Logging != nil {
-			info(i18n.T(i18n.MsgDeprecatedLogging))
-		}
-
-		score = finalScore(score, d)
-		report.Score = score
-		report.Recommendations = recommendations
-		report.Errors = protocolErrors
-		report.Infos = infos
-
-		if format == "json" {
-			out, _ := json.MarshalIndent(report, "", "  ")
-			fmt.Println(string(out))
-		} else {
-			fmt.Println(i18n.T(i18n.MsgScore, score))
-			for _, e := range protocolErrors {
-				fmt.Println("- " + e)
-			}
-			if len(recommendations) == 0 && len(protocolErrors) == 0 {
-				fmt.Println(i18n.T(i18n.MsgPerfect))
-			} else {
-				for _, rec := range recommendations {
-					fmt.Println("- " + rec)
-				}
-			}
-			for _, i := range infos {
-				fmt.Println("- " + i)
-			}
-			if declaredOutputSchemas > 0 {
-				fmt.Println()
-				fmt.Println(i18n.T(i18n.MsgOutputSchemaUnchecked, declaredOutputSchemas))
-			}
-		}
-
-		// Written before the verdict, so a failing server gets a red badge
-		// instead of keeping the green one from its last good run.
-		if err := writeBadges(report); err != nil {
-			return err
-		}
-
-		// A finished inspection that finds problems is a result, not a usage mistake
-		if len(protocolErrors) > 0 {
-			cmd.SilenceUsage = true
-			return fmt.Errorf("%s", i18n.T(i18n.MsgInspectFailed, len(protocolErrors)))
-		}
-		if score < minScore {
-			cmd.SilenceUsage = true
-			return fmt.Errorf("%s", i18n.T(i18n.MsgScoreBelowMin, score, minScore))
-		}
-		return nil
-	},
+// verdict fails the command on protocol errors or a score below --min-score.
+// A finished inspection that finds problems is a result, not a usage mistake.
+func (in *inspector) verdict(cmd *cobra.Command) error {
+	if len(in.protocolErrors) > 0 {
+		cmd.SilenceUsage = true
+		return fmt.Errorf("%s", i18n.T(i18n.MsgInspectFailed, len(in.protocolErrors)))
+	}
+	if in.report.Score < minScore {
+		cmd.SilenceUsage = true
+		return fmt.Errorf("%s", i18n.T(i18n.MsgScoreBelowMin, in.report.Score, minScore))
+	}
+	return nil
 }
 
 // writeBadges writes the badge files the --badge flags ask for.

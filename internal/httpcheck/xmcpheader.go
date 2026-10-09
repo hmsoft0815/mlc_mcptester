@@ -22,36 +22,43 @@ var tcharPattern = regexp.MustCompile("^[!#$%&'*+.^_`|~0-9A-Za-z-]+$")
 // integer or boolean properties, and only reachable through a chain of
 // "properties" keys. It returns the valid annotations and the problems.
 func XMCPHeaders(schema any) ([]ParamHeader, []string) {
-	var found []ParamHeader
-	var problems []string
-	var walk func(node map[string]any, path []string)
-	walk = func(node map[string]any, path []string) {
-		props, _ := node["properties"].(map[string]any)
-		for name, raw := range props {
-			prop, ok := raw.(map[string]any)
-			if !ok {
-				continue
-			}
-			p := append(append([]string{}, path...), name)
-			if v, ok := prop["x-mcp-header"]; ok {
-				header, _ := v.(string)
-				typ, _ := prop["type"].(string)
-				found = append(found, ParamHeader{Header: header, Path: p, Type: typ})
-			}
-			walk(prop, p)
-		}
-	}
 	root, _ := schema.(map[string]any)
 	if root == nil {
 		return nil, nil
 	}
-	walk(root, nil)
-
+	found := collectHeaders(root, nil)
+	var problems []string
 	if total := countKey(root, "x-mcp-header"); total > len(found) {
 		problems = append(problems, fmt.Sprintf("%d annotation(s) outside a plain \"properties\" chain (items, oneOf, $ref, ...)", total-len(found)))
 	}
+	valid, invalid := validateHeaders(found)
+	return valid, append(problems, invalid...)
+}
 
-	var valid []ParamHeader
+// collectHeaders gathers the x-mcp-header annotations reachable from node
+// through "properties" keys only.
+func collectHeaders(node map[string]any, path []string) []ParamHeader {
+	var found []ParamHeader
+	props, _ := node["properties"].(map[string]any)
+	for name, raw := range props {
+		prop, ok := raw.(map[string]any)
+		if !ok {
+			continue
+		}
+		p := append(append([]string{}, path...), name)
+		if v, ok := prop["x-mcp-header"]; ok {
+			header, _ := v.(string)
+			typ, _ := prop["type"].(string)
+			found = append(found, ParamHeader{Header: header, Path: p, Type: typ})
+		}
+		found = append(found, collectHeaders(prop, p)...)
+	}
+	return found
+}
+
+// validateHeaders splits annotations into valid ones and problems: an HTTP
+// token, unique ignoring case, on a string, integer or boolean property.
+func validateHeaders(found []ParamHeader) (valid []ParamHeader, problems []string) {
 	seen := map[string]bool{}
 	for _, h := range found {
 		where := strings.Join(h.Path, ".")

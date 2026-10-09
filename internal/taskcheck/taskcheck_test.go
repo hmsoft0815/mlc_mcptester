@@ -56,8 +56,19 @@ func conformingServer(t *testing.T) *mcp.Server {
 
 func connect(t *testing.T, s *mcp.Server) *mcp.ClientSession {
 	t.Helper()
-	ct, st := mcp.NewInMemoryTransports()
-	if _, err := s.Connect(context.Background(), st, nil); err != nil {
+	return connectVia(t, s, mcptasks.GuardListen, nil)
+}
+
+// connectVia wraps the server side of the connection with wrap and, with a
+// tap, the client side too.
+func connectVia(t *testing.T, s *mcp.Server, wrap func(mcp.Transport) mcp.Transport, tap *client.NotificationTap) *mcp.ClientSession {
+	t.Helper()
+	var ct, st mcp.Transport
+	ct, st = mcp.NewInMemoryTransports()
+	if tap != nil {
+		ct = tap.Wrap(ct)
+	}
+	if _, err := s.Connect(context.Background(), wrap(st), nil); err != nil {
 		t.Fatal(err)
 	}
 	cs, err := mcp.NewClient(&mcp.Implementation{Name: "c", Version: "1"}, nil).Connect(context.Background(), ct, nil)

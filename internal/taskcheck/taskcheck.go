@@ -89,6 +89,10 @@ type Checker struct {
 	// Responder answers input requests; without one an input_required task
 	// is cancelled.
 	Responder *client.Responder
+	// Tap records notifications/tasks and subscription acknowledgements; with
+	// it the task's notifications are checked too. It must wrap the
+	// session's transport.
+	Tap *client.NotificationTap
 	// Timeout bounds the wait for a terminal status (default 2 minutes).
 	Timeout time.Duration
 	// PlainWait bounds the call without the extension (default 5 seconds).
@@ -115,6 +119,7 @@ func (c *Checker) Run(ctx context.Context) *Report {
 	rep.add("extension declared", Pass, "%s", client.TasksExtension)
 	c.checkMissingCapability(ctx, rep)
 	c.checkUnknownTask(ctx, rep)
+	c.checkListenWithoutCapability(ctx, rep)
 	if c.Tool != "" {
 		c.checkPlainCall(ctx, rep)
 		c.checkLifecycle(ctx, rep)

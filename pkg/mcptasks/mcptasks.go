@@ -13,6 +13,11 @@
 //	s := mcp.NewServer(impl, &mcp.ServerOptions{Capabilities: caps})
 //	mcp.AddTool(s, tool, handler)
 //	mcptasks.Enable(s, mcptasks.NewStore(), "generate_image")
+//	s.Connect(ctx, mcptasks.GuardListen(&mcp.StdioTransport{}), nil)
+//
+// GuardListen (or GuardListenHandler for Streamable HTTP) refuses requests
+// for task notifications from clients without the extension, which the
+// go-sdk cannot do itself. Task notifications are not sent; clients poll.
 package mcptasks
 
 import (

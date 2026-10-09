@@ -9,6 +9,8 @@ All notable changes to mcp-tester. Format: [Keep a Changelog](https://keepachang
 - `inspect`: a server declaring the Tasks extension gets its `tasks/*` error codes checked; a violation costs 10 points.
 - Script command `wait_task_status <taskId> <status> [timeout]`: polls without answering input requests.
 - Test server: tool `tool_error_job` and flag `-broken-tasks`; Taskfile task `test-tasks`.
+- `tasks --tool` checks `notifications/tasks` if the server offers them; `tasks` and `inspect` check that asking for them without the extension gives `-32021`.
+- `pkg/mcptasks`: `GuardListen` and `GuardListenHandler` refuse task notification requests from clients without the extension (`-32021`), which the go-sdk cannot do.
 
 ### Changed
 - `inspect`: the `readOnlyHint` bonus no longer hides MUST violations; those are deducted after the score is capped at 100, so some scores drop.

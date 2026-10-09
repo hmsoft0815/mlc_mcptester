@@ -82,12 +82,16 @@ func (c *Checker) checkLifecycle(ctx context.Context, rep *Report) {
 		return
 	}
 	rep.add("durable creation", Pass, "tasks/get resolves the new task at once")
+	l := c.listen(ctx, rep, id)
 	if c.Cancel {
 		c.checkCancel(ctx, rep, id)
 	}
 	final := f.follow(ctx, first)
 	if final != "" {
 		c.checkTerminalStays(ctx, rep, id, final)
+	}
+	if l != nil {
+		l.finish(rep, final)
 	}
 }
 

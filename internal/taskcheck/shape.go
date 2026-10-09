@@ -12,10 +12,11 @@ var validStatus = map[string]bool{"working": true, "input_required": true, "comp
 var terminal = map[string]bool{"completed": true, "failed": true, "cancelled": true}
 
 // checkTask checks a Task as it arrives in a CreateTaskResult (resultType
-// "task") or a tasks/get result (resultType "complete"). It returns the
-// violated MUSTs and SHOULDs.
+// "task"), a tasks/get result (resultType "complete") or a notifications/tasks
+// notification (resultType "", carrying the details like tasks/get). It
+// returns the violated MUSTs and SHOULDs.
 func checkTask(t map[string]any, resultType string) (must, should []string) {
-	if t["resultType"] != resultType {
+	if resultType != "" && t["resultType"] != resultType {
 		must = append(must, fmt.Sprintf("resultType %v, must be %q", t["resultType"], resultType))
 	}
 	if id, _ := t["taskId"].(string); id == "" {
@@ -38,7 +39,7 @@ func checkTask(t map[string]any, resultType string) (must, should []string) {
 	if poll, ok := t["pollIntervalMs"]; ok && !isNonNegativeInt(poll) {
 		must = append(must, fmt.Sprintf("pollIntervalMs %v is not a non-negative integer", poll))
 	}
-	if resultType == "complete" {
+	if resultType != "task" {
 		m, s := checkDetail(t, status)
 		must, should = append(must, m...), append(should, s...)
 	}

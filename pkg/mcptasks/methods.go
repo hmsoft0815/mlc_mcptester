@@ -14,11 +14,7 @@ import (
 
 func (s *Store) lookup(meta mcp.Meta, taskID string) (*task, error) {
 	if !declaresTasks(meta) {
-		return nil, &jsonrpc.Error{
-			Code:    codeMissingRequiredCapability,
-			Message: "Missing required client capability",
-			Data:    json.RawMessage(`{"requiredCapabilities":{"extensions":{"` + Extension + `":{}}}}`),
-		}
+		return nil, missingCapability()
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()

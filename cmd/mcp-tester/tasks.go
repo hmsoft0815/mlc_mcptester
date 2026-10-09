@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hmsoft0815/mlc_mcptester/internal/client"
 	"github.com/hmsoft0815/mlc_mcptester/internal/taskcheck"
 	"github.com/spf13/cobra"
 )
@@ -38,7 +39,8 @@ With --tool the tool is called twice, so pick one without side effects or
 one you are fine to run: once without the extension (no task may come back)
 and once with it, then the task is followed to its end — handle, durable
 creation, every tasks/get result, status transitions, input requests
-(answered with --elicit/--sample, otherwise the task is cancelled).
+(answered with --elicit/--sample, otherwise the task is cancelled), and,
+if the server offers them, its notifications/tasks.
 MUST violations fail (exit 1).`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := context.Background()
@@ -55,7 +57,9 @@ MUST violations fail (exit 1).`,
 		if err != nil {
 			return err
 		}
-		session, err := getClient(verbose).Connect(ctx, transport, nil)
+		// The SDK does not know notifications/tasks: read them below it
+		tap := client.NewNotificationTap(taskcheck.NotificationTasks, taskcheck.NotificationAcked)
+		session, err := getClient(verbose).Connect(ctx, tap.Wrap(transport), nil)
 		if err != nil {
 			return err
 		}
@@ -63,7 +67,7 @@ MUST violations fail (exit 1).`,
 
 		report := (&taskcheck.Checker{
 			Session: session, Tool: tasksTool, Args: toolArgs,
-			Cancel: tasksCancel, Responder: cliResponder, Timeout: tasksTimeout,
+			Cancel: tasksCancel, Responder: cliResponder, Timeout: tasksTimeout, Tap: tap,
 		}).Run(ctx)
 		if format == "json" {
 			out, _ := json.MarshalIndent(report, "", "  ")

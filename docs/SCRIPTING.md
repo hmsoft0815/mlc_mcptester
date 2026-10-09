@@ -191,7 +191,7 @@ cancel_task $id
 ```
 If a task needs input (status `input_required`), the answers prepared with `elicit_response` / `sample_response` / `add_root` are sent via `tasks/update`. A failed task (`failed`) is an RPC error for `expect_error` / `assert_error_code`. On the command line: `mcp-tester call <tool> --task`.
 
-To check a server against the extension, `mcp-tester tasks` probes the error codes of `tasks/get`, `tasks/update` and `tasks/cancel` without calling a tool; `mcp-tester tasks --tool <name> [--args JSON] [--cancel]` follows one task to its end and checks the handle, durable creation, every `tasks/get` result and the status transitions. The tool runs twice (without and with the extension), so pick one you are fine to run. MUST violations fail (exit 1).
+To check a server against the extension, `mcp-tester tasks` probes the error codes of `tasks/get`, `tasks/update` and `tasks/cancel` without calling a tool; `mcp-tester tasks --tool <name> [--args JSON] [--cancel]` follows one task to its end and checks the handle, durable creation, every `tasks/get` result, the status transitions and, if the server offers them, its `notifications/tasks`. The tool runs twice (without and with the extension), so pick one you are fine to run. MUST violations fail (exit 1).
 
 ---
 

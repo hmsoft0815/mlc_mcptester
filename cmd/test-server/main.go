@@ -96,7 +96,7 @@ func main() {
 		streamableHandler := mcp.NewStreamableHTTPHandler(func(*http.Request) *mcp.Server { return s }, &mcp.StreamableHTTPOptions{Stateless: true})
 		// Reject foreign browser origins (DNS rebinding); the spec requires 403
 		cop := http.NewCrossOriginProtection()
-		var sseH, mcpH http.Handler = cop.Handler(sseHandler), cop.Handler(streamableHandler)
+		var sseH, mcpH http.Handler = cop.Handler(sseHandler), cop.Handler(mcptasks.GuardListenHandler(streamableHandler))
 		if *withAuth {
 			base := "http://" + *addr
 			if strings.HasPrefix(*addr, ":") {
@@ -117,7 +117,7 @@ func main() {
 		}
 	} else {
 		fmt.Fprintf(os.Stderr, "Starting Ultimate Test Server on stdio...\n")
-		transport := &mcp.StdioTransport{}
+		transport := mcptasks.GuardListen(&mcp.StdioTransport{})
 		session, err := s.Connect(ctx, transport, nil)
 		if err != nil {
 			log.Fatal(err)

@@ -94,7 +94,7 @@ func (c *TaskClient) Wait(ctx context.Context, taskID string) (map[string]any, e
 			return task, nil
 		}
 		if status == "input_required" {
-			if err := c.answer(ctx, taskID, task["inputRequests"], answered); err != nil {
+			if err := c.Answer(ctx, taskID, task["inputRequests"], answered); err != nil {
 				return nil, err
 			}
 		}
@@ -114,8 +114,9 @@ func (c *TaskClient) Wait(ctx context.Context, taskID string) (map[string]any, e
 	}
 }
 
-// answer fulfills the not yet answered input requests of a task via tasks/update.
-func (c *TaskClient) answer(ctx context.Context, taskID string, raw any, answered map[string]bool) error {
+// Answer fulfills the not yet answered input requests of a task via
+// tasks/update; answered carries the keys already answered across polls.
+func (c *TaskClient) Answer(ctx context.Context, taskID string, raw any, answered map[string]bool) error {
 	data, err := json.Marshal(raw)
 	if err != nil {
 		return err

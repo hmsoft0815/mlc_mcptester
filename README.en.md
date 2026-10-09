@@ -55,7 +55,7 @@ Because `mcp-tester` checks the server from the outside against the specificatio
 - **MCP Apps**: list and check a server's interactive UIs (`apps`): tool linkage, `ui://` resources, external domains (CSP) and requested permissions such as camera or microphone – important before enabling a server.
 - **Auth extensions**: client credentials (machine-to-machine) and enterprise login via ID-JAG; `auth-check` shows which flows a server offers.
 - **Skills extension**: list and verify a server's skills (`skills --verify`): manifest, digests, frontmatter, naming rules. The Go package [`pkg/mcpskills`](pkg/mcpskills) serves skills from a directory.
-- **Tasks extension**: start long-running tool calls as tasks, poll, cancel, supply input. For server authors, the Go package [`pkg/mcptasks`](pkg/mcptasks) adds the extension to servers built on the official go-sdk.
+- **Tasks extension**: start long-running tool calls as tasks, poll, cancel, supply input; `tasks` checks a server against the extension (error codes, task shape, status transitions). For server authors, the Go package [`pkg/mcptasks`](pkg/mcptasks) adds the extension to servers built on the official go-sdk.
 - **Server inspector** (`inspect`): spec check, best practices and quality score; `--min-score` as a CI gate, `--badge` for a README status badge.
 - **HTTP conformance** (`http-check`): required headers, error codes, Origin, sessions per spec 2026-07-28.
 - **Authorization**: bearer tokens, custom headers and the OAuth 2.1 flow (PKCE, Protected Resource Metadata, `iss` validation).

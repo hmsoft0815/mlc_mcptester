@@ -55,7 +55,7 @@ Weil `mcp-tester` den Server von außen gegen die Spezifikation prüft, findet e
 - **MCP Apps**: interaktive Oberflächen eines Servers auflisten und prüfen (`apps`): Tool-Verknüpfung, `ui://`-Resources, externe Domains (CSP) und angeforderte Berechtigungen wie Kamera oder Mikrofon – wichtig vor der Freigabe.
 - **Auth-Extensions**: Client Credentials (Maschine-zu-Maschine) und Enterprise-Login per ID-JAG; `auth-check` zeigt, welche Flows ein Server anbietet.
 - **Skills-Extension**: Skills eines Servers auflisten und verifizieren (`skills --verify`): Manifest, Digests, Frontmatter, Namensregeln. Das Go-Paket [`pkg/mcpskills`](pkg/mcpskills) stellt Skills aus einem Verzeichnis bereit.
-- **Tasks-Extension**: lang laufende Tool-Aufrufe als Task starten, pollen, abbrechen, Eingaben nachreichen. Für Server-Autoren gibt es das Go-Paket [`pkg/mcptasks`](pkg/mcptasks), das die Extension auf Servern mit dem offiziellen go-sdk nachrüstet.
+- **Tasks-Extension**: lang laufende Tool-Aufrufe als Task starten, pollen, abbrechen, Eingaben nachreichen; `tasks` prüft einen Server gegen die Extension (Fehlercodes, Task-Form, Statusübergänge). Für Server-Autoren gibt es das Go-Paket [`pkg/mcptasks`](pkg/mcptasks), das die Extension auf Servern mit dem offiziellen go-sdk nachrüstet.
 - **Server Inspector** (`inspect`): Spec-Abgleich, Best Practices und Quality Score; `--min-score` als CI-Gate, `--badge` für eine Status-Badge im README.
 - **HTTP-Konformität** (`http-check`): Pflicht-Header, Fehlercodes, Origin, Sessions nach Spec 2026-07-28.
 - **Autorisierung**: Bearer-Token, eigene Header und der OAuth-2.1-Ablauf (PKCE, Protected Resource Metadata, `iss`-Prüfung).

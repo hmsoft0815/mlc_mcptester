@@ -2,6 +2,14 @@
 
 All notable changes to mcp-tester. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versions: [SemVer](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- `tasks`: checks a server against the Tasks extension — error codes of `tasks/*`, and with `--tool` the full life of one task.
+
+### Fixed
+- Raw requests abandoned on timeout now send `notifications/cancelled`, so the server stops the work and stays responsive.
+
 ## [1.7.0] - 2026-10-05
 
 ### Added

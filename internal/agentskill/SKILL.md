@@ -1,6 +1,6 @@
 ---
 name: mcp-tester
-description: Test, inspect and gate MCP servers with the mcp-tester CLI — write and run .mcp test scripts, check spec conformance (inspect, http-check, auth-check, apps, skills) and produce CI results or an mcpcheck badge. Use when building, debugging or reviewing an MCP server, or when a CI job should verify one.
+description: Test, inspect and gate MCP servers with the mcp-tester CLI — write and run .mcp test scripts, check spec conformance (inspect, http-check, auth-check, apps, skills, tasks) and produce CI results or an mcpcheck badge. Use when building, debugging or reviewing an MCP server, or when a CI job should verify one.
 metadata:
   mcp-tester-version: "{{VERSION}}"
 ---
@@ -32,6 +32,7 @@ wrong. Run it from the shell; it is not an MCP server itself.
 | Streamable HTTP transport rules | `mcp-tester http-check -u URL` |
 | How a server is protected, OAuth flows | `mcp-tester auth-check -u URL` |
 | MCP Apps / Skills extensions | `mcp-tester apps -p X`, `mcp-tester skills -p X --verify` |
+| Tasks extension | `mcp-tester tasks -p X [--tool T --args '{}'] [--cancel]` |
 | List tools with schemas | `mcp-tester list -p X` |
 | One call | `mcp-tester call <tool> --args '{"k":"v"}' -p X` |
 | Behaviour tests | `mcp-tester test --script tests/foo.mcp -p X` |

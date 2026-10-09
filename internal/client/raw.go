@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"time"
 	"unsafe"
 
 	"github.com/modelcontextprotocol/go-sdk/jsonrpc"
@@ -91,6 +92,7 @@ func CallRaw(ctx context.Context, session *mcp.ClientSession, method string, par
 	case <-done:
 		// Call is ready
 	case <-ctx.Done():
+		cancelRaw(ctx, connPtr, asyncCall)
 		return nil, ctx.Err()
 	}
 
@@ -129,4 +131,21 @@ func CallRaw(ctx context.Context, session *mcp.ClientSession, method string, par
 	}
 
 	return resultMap, nil
+}
+
+// cancelRaw tells the server that a raw call was abandoned
+// (notifications/cancelled) and retires it, as the go-sdk does for its own
+// calls; without it the server keeps working on a request nobody awaits.
+func cancelRaw(ctx context.Context, conn, call reflect.Value) {
+	id := call.MethodByName("ID").Call(nil)[0].MethodByName("Raw").Call(nil)[0].Interface()
+	notifyCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), time.Second)
+	defer cancel()
+	conn.MethodByName("Notify").Call([]reflect.Value{
+		reflect.ValueOf(notifyCtx),
+		reflect.ValueOf("notifications/cancelled"),
+		reflect.ValueOf(&mcp.CancelledParams{Reason: ctx.Err().Error(), RequestID: id}),
+	})
+	if retire := conn.MethodByName("Retire"); retire.IsValid() {
+		retire.Call([]reflect.Value{call, reflect.ValueOf(ctx.Err())})
+	}
 }

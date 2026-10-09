@@ -4,11 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
 	"github.com/hmsoft0815/mlc_mcptester/internal/client"
 	"github.com/hmsoft0815/mlc_mcptester/internal/taskcheck"
+	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/spf13/cobra"
 )
 
@@ -17,6 +19,7 @@ var (
 	tasksArgs    string
 	tasksCancel  bool
 	tasksTimeout time.Duration
+	otherBearer  string
 )
 
 func init() {
@@ -24,6 +27,7 @@ func init() {
 	tasksCmd.Flags().StringVarP(&tasksArgs, "args", "a", "{}", "Arguments for --tool (JSON)")
 	tasksCmd.Flags().BoolVar(&tasksCancel, "cancel", false, "Cancel the task right after it was created")
 	tasksCmd.Flags().DurationVar(&tasksTimeout, "timeout", 2*time.Minute, "How long to wait for a terminal status")
+	tasksCmd.Flags().StringVar(&otherBearer, "other-bearer", os.Getenv("MCP_TESTER_OTHER_BEARER"), "Bearer token of a second identity: with --tool it must not reach the task (default $MCP_TESTER_OTHER_BEARER)")
 	rootCmd.AddCommand(tasksCmd)
 }
 
@@ -40,7 +44,9 @@ one you are fine to run: once without the extension (no task may come back)
 and once with it, then the task is followed to its end — handle, durable
 creation, every tasks/get result, status transitions, input requests
 (answered with --elicit/--sample, otherwise the task is cancelled), and,
-if the server offers them, its notifications/tasks.
+if the server offers them, its notifications/tasks. With --other-bearer a
+second identity tries to read, answer and cancel the task: servers must
+bind tasks to the caller.
 MUST violations fail (exit 1).`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := context.Background()
@@ -65,8 +71,16 @@ MUST violations fail (exit 1).`,
 		}
 		defer session.Close()
 
+		other, err := otherSession(ctx, u)
+		if err != nil {
+			return err
+		}
+		if other != nil {
+			defer other.Close()
+		}
+
 		report := (&taskcheck.Checker{
-			Session: session, Tool: tasksTool, Args: toolArgs,
+			Session: session, Tool: tasksTool, Args: toolArgs, Other: other,
 			Cancel: tasksCancel, Responder: cliResponder, Timeout: tasksTimeout, Tap: tap,
 		}).Run(ctx)
 		if format == "json" {
@@ -91,4 +105,25 @@ func printTasks(report *taskcheck.Report) {
 	for _, r := range report.Results {
 		fmt.Printf("[%s] %s  %s\n", r.Status, r.Name, strings.TrimSpace(r.Detail))
 	}
+}
+
+// otherSession connects a second identity (--other-bearer) to the same
+// Streamable HTTP server, or returns nil without the flag.
+func otherSession(ctx context.Context, u string) (*mcp.ClientSession, error) {
+	if otherBearer == "" {
+		return nil, nil
+	}
+	if u == "" {
+		return nil, fmt.Errorf("--other-bearer needs an HTTP server (--url)")
+	}
+	httpClient, err := httpClientWithBearer(otherBearer)
+	if err != nil {
+		return nil, err
+	}
+	t := &mcp.StreamableClientTransport{Endpoint: u, HTTPClient: withTaskRouting(httpClient)}
+	session, err := getClient(verbose).Connect(ctx, t, nil)
+	if err != nil {
+		return nil, fmt.Errorf("connecting with --other-bearer: %w", err)
+	}
+	return session, nil
 }

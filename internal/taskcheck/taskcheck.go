@@ -93,6 +93,9 @@ type Checker struct {
 	// it the task's notifications are checked too. It must wrap the
 	// session's transport.
 	Tap *client.NotificationTap
+	// Other is a session of a second identity (other credentials) to the same
+	// server; with it, another identity's access to the task is checked.
+	Other *mcp.ClientSession
 	// Timeout bounds the wait for a terminal status (default 2 minutes).
 	Timeout time.Duration
 	// PlainWait bounds the call without the extension (default 5 seconds).

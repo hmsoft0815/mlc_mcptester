@@ -12,7 +12,9 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
-func (s *Store) lookup(meta mcp.Meta, taskID string) (*task, error) {
+// lookup finds a task of the requesting identity; another identity's task
+// is reported as not found, so its existence does not leak.
+func (s *Store) lookup(ctx context.Context, meta mcp.Meta, taskID string) (*task, error) {
 	if !declaresTasks(meta) {
 		return nil, missingCapability()
 	}
@@ -20,14 +22,14 @@ func (s *Store) lookup(meta mcp.Meta, taskID string) (*task, error) {
 	defer s.mu.Unlock()
 	s.dropExpired(time.Now())
 	t, ok := s.tasks[taskID]
-	if !ok {
+	if !ok || t.owner != ownerFrom(ctx) {
 		return nil, &jsonrpc.Error{Code: codeInvalidParams, Message: fmt.Sprintf("Failed to retrieve task: task %q not found", taskID)}
 	}
 	return t, nil
 }
 
 func (s *Store) get(ctx context.Context, _ *mcp.ServerSession, p *TaskParams) (*TaskResult, error) {
-	t, err := s.lookup(p.Meta, p.TaskID)
+	t, err := s.lookup(ctx, p.Meta, p.TaskID)
 	if err != nil {
 		return nil, err
 	}
@@ -35,7 +37,7 @@ func (s *Store) get(ctx context.Context, _ *mcp.ServerSession, p *TaskParams) (*
 }
 
 func (s *Store) update(ctx context.Context, _ *mcp.ServerSession, p *UpdateParams) (*AckResult, error) {
-	t, err := s.lookup(p.Meta, p.TaskID)
+	t, err := s.lookup(ctx, p.Meta, p.TaskID)
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +66,7 @@ func (s *Store) update(ctx context.Context, _ *mcp.ServerSession, p *UpdateParam
 }
 
 func (s *Store) cancelTask(ctx context.Context, _ *mcp.ServerSession, p *TaskParams) (*AckResult, error) {
-	t, err := s.lookup(p.Meta, p.TaskID)
+	t, err := s.lookup(ctx, p.Meta, p.TaskID)
 	if err != nil {
 		return nil, err
 	}

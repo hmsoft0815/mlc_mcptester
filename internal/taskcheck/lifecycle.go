@@ -82,6 +82,7 @@ func (c *Checker) checkLifecycle(ctx context.Context, rep *Report) {
 		return
 	}
 	rep.add("durable creation", Pass, "tasks/get resolves the new task at once")
+	c.checkBinding(ctx, rep, id)
 	l := c.listen(ctx, rep, id)
 	if c.Cancel {
 		c.checkCancel(ctx, rep, id)

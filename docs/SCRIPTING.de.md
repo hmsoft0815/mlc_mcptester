@@ -191,7 +191,7 @@ cancel_task $id
 ```
 Braucht ein Task Eingaben (Status `input_required`), gehen die mit `elicit_response` / `sample_response` / `add_root` vorbereiteten Antworten per `tasks/update` an den Server. Ein fehlgeschlagener Task (`failed`) ist für `expect_error` / `assert_error_code` ein RPC-Fehler. Auf der Kommandozeile: `mcp-tester call <tool> --task`.
 
-Zur Prüfung eines Servers gegen die Extension testet `mcp-tester tasks` die Fehlercodes von `tasks/get`, `tasks/update` und `tasks/cancel`, ohne ein Tool aufzurufen; `mcp-tester tasks --tool <name> [--args JSON] [--cancel]` verfolgt einen Task bis zum Ende und prüft Handle, dauerhafte Anlage, jedes `tasks/get`-Ergebnis, die Statusübergänge und, falls der Server sie anbietet, seine `notifications/tasks`. Das Tool läuft zweimal (ohne und mit Extension), also eines wählen, das laufen darf. MUST-Verstöße schlagen fehl (Exit 1).
+Zur Prüfung eines Servers gegen die Extension testet `mcp-tester tasks` die Fehlercodes von `tasks/get`, `tasks/update` und `tasks/cancel`, ohne ein Tool aufzurufen; `mcp-tester tasks --tool <name> [--args JSON] [--cancel]` verfolgt einen Task bis zum Ende und prüft Handle, dauerhafte Anlage, jedes `tasks/get`-Ergebnis, die Statusübergänge und, falls der Server sie anbietet, seine `notifications/tasks`. Über HTTP fügt `--other-bearer <token>` eine zweite Identität hinzu, die den Task nicht erreichen darf. Das Tool läuft zweimal (ohne und mit Extension), also eines wählen, das laufen darf. MUST-Verstöße schlagen fehl (Exit 1).
 
 ---
 

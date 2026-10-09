@@ -132,6 +132,12 @@ func preregisteredClient() (*oauthex.ClientCredentials, error) {
 // httpClientWithAuth returns an HTTP client adding --header and --bearer to
 // every request, or nil if neither is set.
 func httpClientWithAuth() (*http.Client, error) {
+	return httpClientWithBearer(bearerToken)
+}
+
+// httpClientWithBearer is httpClientWithAuth with another bearer token, e.g.
+// for a second identity.
+func httpClientWithBearer(token string) (*http.Client, error) {
 	headers := http.Header{}
 	for _, h := range headerFlags {
 		name, value, ok := strings.Cut(h, ":")
@@ -140,8 +146,8 @@ func httpClientWithAuth() (*http.Client, error) {
 		}
 		headers.Add(strings.TrimSpace(name), strings.TrimSpace(value))
 	}
-	if bearerToken != "" {
-		headers.Set("Authorization", "Bearer "+bearerToken)
+	if token != "" {
+		headers.Set("Authorization", "Bearer "+token)
 	}
 	if len(headers) == 0 {
 		return nil, nil

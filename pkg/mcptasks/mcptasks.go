@@ -18,6 +18,10 @@
 // GuardListen (or GuardListenHandler for Streamable HTTP) refuses requests
 // for task notifications from clients without the extension, which the
 // go-sdk cannot do itself. Task notifications are not sent; clients poll.
+//
+// Tasks are bound to the identity that created them (Store.Owner, by default
+// the bearer token's user id or a digest of the token): another identity
+// gets -32602 as for an unknown task.
 package mcptasks
 
 import (
@@ -29,6 +33,7 @@ import (
 	"fmt"
 	"maps"
 	"slices"
+	"strings"
 	"sync"
 	"time"
 
@@ -74,6 +79,8 @@ type Store struct {
 	TTL time.Duration
 	// PollInterval is suggested to clients as pollIntervalMs.
 	PollInterval time.Duration
+	// Owner binds tasks to identities (default DefaultOwner).
+	Owner OwnerFunc
 
 	mu    sync.Mutex
 	tasks map[string]*task
@@ -86,6 +93,7 @@ func NewStore() *Store {
 
 type task struct {
 	id        string
+	owner     string // identity that created the task, see OwnerFunc
 	created   time.Time
 	cancel    context.CancelFunc
 	mu        sync.Mutex
@@ -155,6 +163,9 @@ func IsTask(ctx context.Context) bool {
 func (s *Store) middleware(toolNames []string) mcp.Middleware {
 	return func(next mcp.MethodHandler) mcp.MethodHandler {
 		return func(ctx context.Context, method string, req mcp.Request) (mcp.Result, error) {
+			if strings.HasPrefix(method, "tasks/") {
+				return next(context.WithValue(ctx, ownerKey{}, s.ownerOf(req)), method, req)
+			}
 			if method != methodToolsCall {
 				return next(ctx, method, req)
 			}
@@ -174,6 +185,7 @@ func (s *Store) start(ctx context.Context, method string, req mcp.Request, next 
 	now := time.Now()
 	t := &task{
 		id:        newTaskID(),
+		owner:     s.ownerOf(req),
 		created:   now,
 		updated:   now,
 		status:    Working,

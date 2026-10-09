@@ -17,8 +17,12 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/oauthex"
 )
 
-// StaticToken is always accepted in -auth mode, for tests with --bearer.
-const StaticToken = "test-token"
+// StaticToken is always accepted in -auth mode, for tests with --bearer;
+// OtherStaticToken is a second user, e.g. for tasks --other-bearer.
+const (
+	StaticToken      = "test-token"
+	OtherStaticToken = "test-token-2"
+)
 
 // authServer is a minimal OAuth 2.1 authorization server for testing MCP
 // clients: RFC 8414 metadata, dynamic client registration, an authorization
@@ -73,8 +77,11 @@ func (a *authServer) protect(h http.Handler) http.Handler {
 }
 
 func (a *authServer) verify(ctx context.Context, token string, _ *http.Request) (*auth.TokenInfo, error) {
-	if token == StaticToken {
-		return &auth.TokenInfo{Scopes: []string{"mcp"}, Expiration: time.Now().Add(time.Hour)}, nil
+	switch token {
+	case StaticToken:
+		return &auth.TokenInfo{Scopes: []string{"mcp"}, Expiration: time.Now().Add(time.Hour), UserID: "test-user"}, nil
+	case OtherStaticToken:
+		return &auth.TokenInfo{Scopes: []string{"mcp"}, Expiration: time.Now().Add(time.Hour), UserID: "other-user"}, nil
 	}
 	a.mu.Lock()
 	expiry, ok := a.tokens[token]

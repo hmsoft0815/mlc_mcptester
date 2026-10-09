@@ -15,8 +15,10 @@ import (
 	"github.com/hmsoft0815/mlc_mcptester/internal/httpcheck"
 	"github.com/hmsoft0815/mlc_mcptester/internal/i18n"
 	"github.com/hmsoft0815/mlc_mcptester/internal/skillcheck"
+	"github.com/hmsoft0815/mlc_mcptester/internal/taskcheck"
 	"github.com/hmsoft0815/mlc_mcptester/internal/version"
 	"github.com/hmsoft0815/mlc_mcptester/pkg/mcpskills"
+	"github.com/hmsoft0815/mlc_mcptester/pkg/mcptasks"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/spf13/cobra"
 )
@@ -407,6 +409,15 @@ var inspectCmd = &cobra.Command{
 			}
 			if skillsReport.Failed() {
 				warn(i18n.T(i18n.MsgSkillsInvalid))
+				score -= 10
+			}
+		}
+
+		// Tasks: only the tasks/* error codes, no tool runs; the life of a
+		// task needs a tool chosen by the user ('tasks --tool')
+		if _, ok := caps.Extensions[mcptasks.Extension]; ok {
+			if failed := (&taskcheck.Checker{Session: session}).Run(ctx).FailedNames(); len(failed) > 0 {
+				warn(i18n.T(i18n.MsgTasksInvalid, strings.Join(failed, ", ")))
 				score -= 10
 			}
 		}

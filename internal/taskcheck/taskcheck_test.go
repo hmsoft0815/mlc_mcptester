@@ -153,6 +153,9 @@ func TestBrokenServer(t *testing.T) {
 	if !rep.Failed() {
 		t.Fatal("broken server passed")
 	}
+	if failed := strings.Join(rep.FailedNames(), ", "); !strings.Contains(failed, "tasks/get of an unknown task") || strings.Contains(failed, "tasks/cancel of an unknown task") {
+		t.Errorf("FailedNames: %s", failed)
+	}
 	want := map[string]Status{
 		"tasks/get without the extension":    Fail,
 		"tasks/get of an unknown task":       Fail,

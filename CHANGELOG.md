@@ -6,6 +6,7 @@ All notable changes to mcp-tester. Format: [Keep a Changelog](https://keepachang
 
 ### Added
 - `tasks`: checks a server against the Tasks extension — error codes of `tasks/*`, and with `--tool` the full life of one task.
+- `inspect`: a server declaring the Tasks extension gets its `tasks/*` error codes checked; a violation costs 10 points.
 
 ### Fixed
 - Raw requests abandoned on timeout now send `notifications/cancelled`, so the server stops the work and stays responsive.

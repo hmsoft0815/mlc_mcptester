@@ -61,6 +61,17 @@ func (r *Report) Failed() bool {
 	return false
 }
 
+// FailedNames returns the names of the failed checks.
+func (r *Report) FailedNames() []string {
+	var names []string
+	for _, res := range r.Results {
+		if res.Status == Fail {
+			names = append(names, res.Name)
+		}
+	}
+	return names
+}
+
 func (r *Report) add(name string, status Status, format string, args ...any) {
 	r.Results = append(r.Results, Result{Name: name, Status: status, Detail: fmt.Sprintf(format, args...)})
 }

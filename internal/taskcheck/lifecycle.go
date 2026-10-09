@@ -11,7 +11,9 @@ import (
 
 const (
 	defaultTimeout = 2 * time.Minute
-	defaultMaxPoll = 5 * time.Second
+	// maxPoll caps the server's pollIntervalMs, so a slow suggestion does not
+	// stretch a check run
+	maxPoll = 5 * time.Second
 	// A task handle comes at once; a call still running after this answers
 	// synchronously, and is cancelled instead of awaited.
 	defaultPlainWait = 5 * time.Second
@@ -231,7 +233,7 @@ func (f *follower) interval(t map[string]any) time.Duration {
 	if ms, ok := t["pollIntervalMs"].(float64); ok && ms > 0 {
 		d = time.Duration(ms) * time.Millisecond
 	}
-	return min(d, durationOr(f.c.MaxPoll, defaultMaxPoll))
+	return min(d, maxPoll)
 }
 
 // addShape reports the MUST and SHOULD violations of one task object.

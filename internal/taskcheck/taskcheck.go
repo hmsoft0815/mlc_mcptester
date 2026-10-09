@@ -100,8 +100,6 @@ type Checker struct {
 	Timeout time.Duration
 	// PlainWait bounds the call without the extension (default 5 seconds).
 	PlainWait time.Duration
-	// MaxPoll caps the server's pollIntervalMs (default 5 seconds).
-	MaxPoll time.Duration
 }
 
 // Run probes the tasks/* methods and, with a tool, the life of one task.

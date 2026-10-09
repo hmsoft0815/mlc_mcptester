@@ -25,8 +25,6 @@ type TaskClient struct {
 	//lint:ignore SA1019 roots are deprecated since 2026-07-28 (SEP-2577) but still used by servers and regular before; remove with T-20260927-05
 	Roots []*mcp.Root
 	Out   io.Writer // one line per status change; optional
-	// MaxPoll caps the server's pollIntervalMs, to keep tests fast.
-	MaxPoll time.Duration
 
 	logged map[any]any // last logged status per task
 }
@@ -102,9 +100,6 @@ func (c *TaskClient) Wait(ctx context.Context, taskID string) (map[string]any, e
 		interval := time.Second
 		if ms, ok := task["pollIntervalMs"].(float64); ok && ms > 0 {
 			interval = time.Duration(ms) * time.Millisecond
-		}
-		if c.MaxPoll > 0 && interval > c.MaxPoll {
-			interval = c.MaxPoll
 		}
 		select {
 		case <-ctx.Done():

@@ -98,6 +98,8 @@ Weil er vor allem in CI läuft, und dort zählen Exit-Code und `--format json`, 
 
 Im Projekt ist ein Referenz-Server (`cmd/test-server`) enthalten, der die Möglichkeiten des MCP-Protokolls vorführt: Tools mit Output-Schemata, Resources und Templates, Prompts, Completion, Logging, Progress, Elicitation, Sampling, Roots, Notifications über `subscriptions/listen`, `x-mcp-header`, Elicitation im URL-Modus, Tool-Annotations, `instructions`, Cache-Hinweise und Paginierung (fünf Einträge pro Seite). `task test-inspect` verlangt für ihn 100/100. Mit `-addr :8080` läuft er über HTTP, mit `-auth` zusätzlich OAuth-geschützt mit eingebautem Test-Autorisierungsserver.
 
+Damit der Tester nicht nur gegen das go-sdk geprüft wird, gibt es einen zweiten, kleineren Referenz-Server auf Basis des TypeScript-SDK v2 (`tests/interop/ts-server`). Er ist eine unabhängige Umsetzung von 2026-07-28. `task test-interop-ts-server` verlangt für ihn über stdio und HTTP dieselben Ergebnisse wie für den Go-Server: 100/100 in `inspect`, kein FAIL in `http-check`, bestandenes Skript (braucht Node 20+).
+
 ---
 
 ## Benutzung

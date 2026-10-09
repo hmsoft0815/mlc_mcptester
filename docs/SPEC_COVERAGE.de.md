@@ -6,6 +6,8 @@ Die MCP-Spezifikation ändert sich laufend. Diese Seite hält fest, was mcp-test
 
 Quellen: [Changelog 2026-07-28](https://modelcontextprotocol.io/specification/2026-07-28/changelog), [Deprecated-Registry](https://modelcontextprotocol.io/specification/2026-07-28/deprecated), [go-sdk Releases](https://github.com/modelcontextprotocol/go-sdk/releases).
 
+Die Prüfungen laufen gegen zwei unabhängige Server-Implementierungen: den Referenzserver auf dem go-sdk (`cmd/test-server`) und einen Referenzserver auf dem TypeScript-SDK v2 (`tests/interop/ts-server`, `task test-interop-ts-server`); der offizielle TypeScript-Tasks-Client läuft gegen den Go-Server (`task test-interop-ts`).
+
 Legende: ✅ abgedeckt · ⚠️ teilweise · ❌ fehlt · — nicht anwendbar oder von außen nicht prüfbar
 
 ## Protokoll-Revisionen

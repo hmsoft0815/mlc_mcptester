@@ -98,6 +98,8 @@ Because it runs mainly in CI, where the exit code and `--format json` matter, no
 
 This project includes a reference server (`cmd/test-server`) that demonstrates the MCP protocol: tools with output schemas, resources and templates, prompts, completion, logging, progress, elicitation, sampling, roots, notifications via `subscriptions/listen`, `x-mcp-header`, URL-mode elicitation, tool annotations, `instructions`, cache hints and pagination (five entries per page). `task test-inspect` requires 100/100 for it. With `-addr :8080` it runs over HTTP, with `-auth` additionally OAuth-protected by a built-in test authorization server.
 
+So the tester is not checked against the go-sdk alone, a second, smaller reference server on the TypeScript SDK v2 lives in `tests/interop/ts-server`, an independent implementation of 2026-07-28. `task test-interop-ts-server` requires the same verdicts for it as for the Go server, over stdio and HTTP: 100/100 in `inspect`, no FAIL in `http-check`, a passing script (needs Node 20+).
+
 ---
 
 ## Usage

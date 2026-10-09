@@ -215,7 +215,7 @@ tasks:
         echo "Waiting for SSE server to start..."
         sleep 2
         # Use trap to ensure server is killed even if tests fail
-        trap 'status=$?; pkill -f "./bin/test-server -addr :18081" || true; [ $status -eq 0 ] || cat "$log"; rm -f "$log"' EXIT
+        trap 'status=$?; pkill -f "^./bin/test-server -addr :18081" || true; [ $status -eq 0 ] || cat "$log"; rm -f "$log"' EXIT
         ./bin/mcp-tester inspect --url http://localhost:18081/sse
         ./bin/mcp-tester test --url http://localhost:18081/sse --script tests/01_simple.mcp
 
@@ -230,7 +230,7 @@ tasks:
         echo "Waiting for Streamable HTTP server to start..."
         sleep 2
         # Use trap to ensure server is killed even if tests fail
-        trap 'status=$?; pkill -f "./bin/test-server -addr :18082" || true; [ $status -eq 0 ] || cat "$log"; rm -f "$log"' EXIT
+        trap 'status=$?; pkill -f "^./bin/test-server -addr :18082" || true; [ $status -eq 0 ] || cat "$log"; rm -f "$log"' EXIT
         ./bin/mcp-tester inspect --url http://localhost:18082/mcp
         ./bin/mcp-tester test --url http://localhost:18082/mcp --script tests/01_simple.mcp
 
@@ -242,7 +242,7 @@ tasks:
         log=$(mktemp)
         ./bin/test-server -addr :18083 -auth > "$log" 2>&1 &
         sleep 2
-        trap 'status=$?; pkill -f "./bin/test-server -addr :18083" || true; [ $status -eq 0 ] || cat "$log"; rm -f "$log"' EXIT
+        trap 'status=$?; pkill -f "^./bin/test-server -addr :18083" || true; [ $status -eq 0 ] || cat "$log"; rm -f "$log"' EXIT
         ./bin/mcp-tester tasks --url http://localhost:18083/mcp --bearer test-token --other-bearer test-token-2 --tool long_job --args '{"seconds":1}'
 
   test-interop-ts:
@@ -265,6 +265,28 @@ tasks:
         trap 'status=$?; pkill -f "^../../../bin/test-server -addr :1808[56]" || true; [ $status -eq 0 ] || cat "$log"; rm -f "$log"' EXIT
         node interop.mjs --http http://localhost:18085/mcp
         node interop.mjs --http http://localhost:18086/mcp --bearer test-token
+
+  test-interop-ts-server:
+    desc: Cross-check mcp-tester against a reference server on the TypeScript SDK v2, over stdio and Streamable HTTP (needs Node 20+, npm)
+    deps: [all]
+    preconditions:
+      - sh: command -v node && command -v npm
+        msg: test-interop-ts-server needs Node.js 20+ and npm
+    cmds:
+      - npm ci --prefix tests/interop/ts-server --no-audit --no-fund --silent
+      - |
+        # A second SDK must get the same verdicts as the go reference server
+        log=$(mktemp)
+        node tests/interop/ts-server/server.mjs --http 127.0.0.1:18087 > "$log" 2>&1 &
+        sleep 2
+        # Anchored, so it matches the server only, not a shell whose command line contains the text
+        trap 'status=$?; pkill -f "^node tests/interop/ts-server/server.mjs --http 127.0.0.1:18087" || true; [ $status -eq 0 ] || cat "$log"; rm -f "$log"' EXIT
+        for target in "--command=node tests/interop/ts-server/server.mjs" "--url=http://127.0.0.1:18087/mcp"; do
+          ./bin/mcp-tester inspect "$target" --min-score 100
+          ./bin/mcp-tester test "$target" --script tests/01_simple.mcp
+          ./bin/mcp-tester tasks "$target"
+        done
+        ./bin/mcp-tester http-check -u http://127.0.0.1:18087/mcp
 
   test-json-output:
     desc: With --format json, stdout must be pure JSON even when the server sends progress and logs

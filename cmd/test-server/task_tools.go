@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/hmsoft0815/mlc_mcptester/pkg/mcptasks"
@@ -17,8 +18,9 @@ type askNameResult struct {
 }
 
 // registerTaskTools adds tools that run as tasks (io.modelcontextprotocol/tasks)
-// for clients that declare the extension, and synchronously otherwise.
-func registerTaskTools(s *mcp.Server) {
+// for clients that declare the extension, and synchronously otherwise. With
+// broken set, every tasks/* request fails with -32603 (wrong on purpose).
+func registerTaskTools(s *mcp.Server, broken bool) {
 	// No output schema: the result only reports that the job finished.
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "long_job",
@@ -83,8 +85,32 @@ func registerTaskTools(s *mcp.Server) {
 		return nil, nil, &jsonrpc.Error{Code: -32603, Message: "the backend is not reachable"}
 	})
 
+	// No output schema: the result is a tool error, nothing structured.
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "tool_error_job",
+		Title:       "Tool Error Job",
+		Description: "Returns a tool error (isError); as a task it ends completed, not failed",
+	}, func(ctx context.Context, req *mcp.CallToolRequest, args struct{}) (*mcp.CallToolResult, any, error) {
+		res := textResult("the input could not be processed")
+		res.IsError = true
+		return res, nil, nil
+	})
+
 	store := &mcptasks.Store{TTL: time.Hour, PollInterval: 200 * time.Millisecond}
-	if err := mcptasks.Enable(s, store, "long_job", "ask_name", "failing_job"); err != nil {
+	if err := mcptasks.Enable(s, store, "long_job", "ask_name", "failing_job", "tool_error_job"); err != nil {
 		log.Fatalf("enabling tasks: %v", err)
+	}
+	if broken {
+		s.AddReceivingMiddleware(breakTasks)
+	}
+}
+
+// breakTasks fails every tasks/* request with an internal error.
+func breakTasks(next mcp.MethodHandler) mcp.MethodHandler {
+	return func(ctx context.Context, method string, req mcp.Request) (mcp.Result, error) {
+		if strings.HasPrefix(method, "tasks/") {
+			return nil, &jsonrpc.Error{Code: -32603, Message: "tasks are broken on purpose (-broken-tasks)"}
+		}
+		return next(ctx, method, req)
 	}
 }

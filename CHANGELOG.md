@@ -7,8 +7,11 @@ All notable changes to mcp-tester. Format: [Keep a Changelog](https://keepachang
 ### Added
 - `tasks`: checks a server against the Tasks extension — error codes of `tasks/*`, and with `--tool` the full life of one task.
 - `inspect`: a server declaring the Tasks extension gets its `tasks/*` error codes checked; a violation costs 10 points.
+- Script command `wait_task_status <taskId> <status> [timeout]`: polls without answering input requests.
+- Test server: tool `tool_error_job` and flag `-broken-tasks`; Taskfile task `test-tasks`.
 
 ### Fixed
+- `pkg/mcptasks`: partial answers in `tasks/update` were dropped, so clients answering keys one by one hung.
 - Raw requests abandoned on timeout now send `notifications/cancelled`, so the server stops the work and stays responsive.
 
 ## [1.7.0] - 2026-10-05

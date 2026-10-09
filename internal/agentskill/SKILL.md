@@ -92,7 +92,7 @@ wait_notification resources/updated mcp://time 2s
 
 More commands: `call_tool_raw` (unchecked JSON arguments), `timeout 5000 <cmd>` (milliseconds),
 `complete`, `sample_response`, `add_root`, `assert_sampled`, `start_task` /
-`wait_task` / `get_task` / `cancel_task`, `list_skills` / `verify_skills`,
+`wait_task` / `wait_task_status` / `get_task` / `cancel_task`, `list_skills` / `verify_skills`,
 `verify_apps`, `assert_number`, `assert_string_length`, `echo`. Full reference:
 https://github.com/hmsoft0815/mlc_mcptester/blob/main/docs/SCRIPTING.md
 (update this skill with `mcp-tester agent-skill install` after upgrading).

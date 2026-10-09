@@ -253,6 +253,8 @@ func (r *Runner) dispatchParts(ctx context.Context, i int, parts []string) error
 		return r.handleTaskCallCommand(ctx, i, parts, taskStart)
 	case "wait_task":
 		return r.handleWaitTaskCommand(ctx, i, parts)
+	case "wait_task_status":
+		return r.handleWaitTaskStatusCommand(ctx, i, parts)
 	case "get_task":
 		return r.handleGetTaskCommand(ctx, i, parts)
 	case "cancel_task":

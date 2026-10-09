@@ -34,3 +34,34 @@ assert_task_status cancelled
 echo "--- unknown task id ---"
 expect_error get_task no-such-task
 assert_error_code -32602
+
+echo "--- tool error inside a task: completed, not failed ---"
+expect_error call_task tool_error_job
+assert_tool_error
+assert_task_status completed
+
+echo "--- declined input: the task still completes ---"
+elicit_response decline
+call_task ask_name
+assert_task_status completed
+assert_contains "No name given"
+
+echo "--- cancel while waiting for input ---"
+start_task ask_name
+set_var waiting taskId
+wait_task_status $waiting input_required 5s
+assert_task_status input_required
+cancel_task $waiting
+wait_task_status $waiting cancelled 5s
+
+echo "--- two tasks side by side ---"
+start_task long_job seconds:0.5
+set_var first taskId
+start_task long_job seconds:0.2
+set_var second taskId
+wait_task $second 5s
+assert_task_status completed
+get_task $first
+assert_task_status working
+wait_task $first 5s
+assert_task_status completed

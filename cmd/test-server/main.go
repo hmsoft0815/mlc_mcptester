@@ -40,6 +40,7 @@ func main() {
 	showVersion := flag.Bool("version", false, "print the version and exit")
 	addr := flag.String("addr", "", "Listen address for HTTP/SSE (e.g. \":8080\"). If empty, uses stdio.")
 	withAuth := flag.Bool("auth", false, "With -addr: require OAuth bearer tokens and serve a built-in test authorization server")
+	brokenTasks := flag.Bool("broken-tasks", false, "Answer every tasks/* request with an internal error, to test the Tasks checks")
 	flag.Parse()
 
 	if *showVersion {
@@ -81,7 +82,7 @@ func main() {
 	registerInputTools(s)
 	registerNotifyTools(s)
 	registerHeaderTools(s)
-	registerTaskTools(s)
+	registerTaskTools(s, *brokenTasks)
 	registerSkills(s)
 	registerApps(s)
 	registerResources(s)

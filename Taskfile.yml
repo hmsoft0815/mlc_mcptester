@@ -182,6 +182,19 @@ tasks:
       # The reference server is the example: any finding fails the build
       - ./bin/mcp-tester inspect --profile local --min-score 100
 
+  test-tasks:
+    desc: Check the Tasks extension of the reference server, and that a broken one is caught
+    deps: [all]
+    cmds:
+      - ./bin/mcp-tester tasks --command ./bin/test-server
+      - ./bin/mcp-tester tasks --command ./bin/test-server --tool long_job --args '{"seconds":0.3}'
+      - ./bin/mcp-tester tasks --command ./bin/test-server --tool ask_name --elicit 'accept:{"name":"Ada"}'
+      - ./bin/mcp-tester tasks --command ./bin/test-server --tool tool_error_job
+      - ./bin/mcp-tester tasks --command ./bin/test-server --tool long_job --args '{"seconds":30}' --cancel
+      # A broken server must fail the check and draw a warning in inspect
+      - "! ./bin/mcp-tester tasks --command './bin/test-server -broken-tasks' > /dev/null 2>&1"
+      - ./bin/mcp-tester inspect --command './bin/test-server -broken-tasks' | grep -q 'violates the Tasks extension'
+
   badge:
     desc: Write the mcpcheck badge of the reference server (docs/mcpcheck.svg, docs/mcpcheck.json)
     deps: [all]
@@ -240,6 +253,7 @@ tasks:
       - task: test-vars
       - task: test-scripts
       - task: test-inspect
+      - task: test-tasks
       - task: test-json-output
       - task: test-sse
       - task: test-streamable-http

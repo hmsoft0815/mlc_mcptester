@@ -95,13 +95,9 @@ func (r *Runner) handleWaitTaskCommand(ctx context.Context, i int, parts []strin
 	if len(parts) < 2 || len(parts) > 3 {
 		return fmt.Errorf("line %d: usage: wait_task <taskId> [timeout]", i+1)
 	}
-	timeout := defaultTaskTimeout
-	if len(parts) == 3 {
-		d, err := time.ParseDuration(parts[2])
-		if err != nil {
-			return fmt.Errorf("line %d: invalid timeout %q", i+1, parts[2])
-		}
-		timeout = d
+	timeout, err := taskTimeout(i, parts, 3)
+	if err != nil {
+		return err
 	}
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
@@ -111,6 +107,54 @@ func (r *Runner) handleWaitTaskCommand(ctx context.Context, i int, parts []strin
 	}
 	r.storeTask(task)
 	return nil
+}
+
+// handleWaitTaskStatusCommand runs "wait_task_status <taskId> <status>
+// [timeout]": it polls without answering input requests, so a task can be
+// held in input_required, and stores the state once the status is reached.
+func (r *Runner) handleWaitTaskStatusCommand(ctx context.Context, i int, parts []string) error {
+	if len(parts) < 3 || len(parts) > 4 {
+		return fmt.Errorf("line %d: usage: wait_task_status <taskId> <status> [timeout]", i+1)
+	}
+	timeout, err := taskTimeout(i, parts, 4)
+	if err != nil {
+		return err
+	}
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+	tc := r.taskClient()
+	for {
+		task, err := tc.Get(ctx, parts[1])
+		if err != nil {
+			return fmt.Errorf("line %d: %w", i+1, err)
+		}
+		status := fmt.Sprint(task["status"])
+		if status == parts[2] {
+			r.storeTask(task)
+			return nil
+		}
+		if status == "completed" || status == "failed" || status == "cancelled" {
+			r.storeTask(task)
+			return fmt.Errorf("line %d: task ended %s before reaching %s", i+1, status, parts[2])
+		}
+		select {
+		case <-ctx.Done():
+			return fmt.Errorf("line %d: task still %s, not %s: %w", i+1, status, parts[2], ctx.Err())
+		case <-time.After(50 * time.Millisecond):
+		}
+	}
+}
+
+// taskTimeout reads the optional timeout at position n-1 of parts.
+func taskTimeout(i int, parts []string, n int) (time.Duration, error) {
+	if len(parts) < n {
+		return defaultTaskTimeout, nil
+	}
+	d, err := time.ParseDuration(parts[n-1])
+	if err != nil {
+		return 0, fmt.Errorf("line %d: invalid timeout %q", i+1, parts[n-1])
+	}
+	return d, nil
 }
 
 // handleGetTaskCommand runs "get_task <taskId>" (one tasks/get).

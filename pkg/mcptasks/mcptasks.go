@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"maps"
 	"slices"
 	"sync"
 	"time"
@@ -88,7 +89,8 @@ type task struct {
 	updated   time.Time
 	result    json.RawMessage
 	err       *jsonrpc.Error
-	requests  mcp.InputRequestMap
+	requests  mcp.InputRequestMap  // outstanding requests only
+	collected mcp.InputResponseMap // answers so far to the current requests
 	responses chan mcp.InputResponseMap
 	answered  map[string]bool
 }
@@ -104,44 +106,6 @@ func Enable(s *mcp.Server, store *Store, toolNames ...string) error {
 		return err
 	}
 	return mcp.AddReceivingCustomMethod(s, methodTasksCancel, store.cancelTask)
-}
-
-// wire types
-
-// TaskParams are the params of tasks/get and tasks/cancel.
-type TaskParams struct {
-	mcp.ParamsBase
-	TaskID string `json:"taskId"`
-}
-
-// UpdateParams are the params of tasks/update.
-type UpdateParams struct {
-	mcp.ParamsBase
-	TaskID         string          `json:"taskId"`
-	InputResponses json.RawMessage `json:"inputResponses"`
-}
-
-// TaskResult is a Task as returned by tools/call (resultType "task") and
-// tasks/get (resultType "complete", with the status-specific fields).
-type TaskResult struct {
-	mcp.ResultBase
-	ResultType     string              `json:"resultType"`
-	TaskID         string              `json:"taskId"`
-	Status         string              `json:"status"`
-	StatusMessage  string              `json:"statusMessage,omitempty"`
-	CreatedAt      string              `json:"createdAt"`
-	LastUpdatedAt  string              `json:"lastUpdatedAt"`
-	TTLMs          *int64              `json:"ttlMs"`
-	PollIntervalMs int64               `json:"pollIntervalMs,omitempty"`
-	Result         json.RawMessage     `json:"result,omitempty"`
-	Error          *jsonrpc.Error      `json:"error,omitempty"`
-	InputRequests  mcp.InputRequestMap `json:"inputRequests,omitempty"`
-}
-
-// AckResult is the empty acknowledgement of tasks/update and tasks/cancel.
-type AckResult struct {
-	mcp.ResultBase
-	ResultType string `json:"resultType"`
 }
 
 // ctxKey carries the running task into the tool handler for RequestInput.
@@ -164,7 +128,8 @@ func RequestInput(ctx context.Context, requests mcp.InputRequestMap) (mcp.InputR
 			return nil, fmt.Errorf("mcptasks: input request key %q was already used", key)
 		}
 	}
-	t.requests = requests
+	t.requests = maps.Clone(requests)
+	t.collected = mcp.InputResponseMap{}
 	t.setStatus(InputRequired, "waiting for client input")
 	t.mu.Unlock()
 
@@ -298,79 +263,10 @@ func (s *Store) view(t *task, resultType string) *TaskResult {
 		case Failed:
 			res.Error = t.err
 		case InputRequired:
-			res.InputRequests = t.requests
+			res.InputRequests = maps.Clone(t.requests)
 		}
 	}
 	return res
-}
-
-func (s *Store) lookup(meta mcp.Meta, taskID string) (*task, error) {
-	if !declaresTasks(meta) {
-		return nil, &jsonrpc.Error{
-			Code:    codeMissingRequiredCapability,
-			Message: "Missing required client capability",
-			Data:    json.RawMessage(`{"requiredCapabilities":{"extensions":{"` + Extension + `":{}}}}`),
-		}
-	}
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.dropExpired(time.Now())
-	t, ok := s.tasks[taskID]
-	if !ok {
-		return nil, &jsonrpc.Error{Code: codeInvalidParams, Message: fmt.Sprintf("Failed to retrieve task: task %q not found", taskID)}
-	}
-	return t, nil
-}
-
-func (s *Store) get(ctx context.Context, _ *mcp.ServerSession, p *TaskParams) (*TaskResult, error) {
-	t, err := s.lookup(p.Meta, p.TaskID)
-	if err != nil {
-		return nil, err
-	}
-	return s.view(t, resultComplete), nil
-}
-
-func (s *Store) update(ctx context.Context, _ *mcp.ServerSession, p *UpdateParams) (*AckResult, error) {
-	t, err := s.lookup(p.Meta, p.TaskID)
-	if err != nil {
-		return nil, err
-	}
-	var responses mcp.InputResponseMap
-	if err := json.Unmarshal(p.InputResponses, &responses); err != nil {
-		return nil, &jsonrpc.Error{Code: codeInvalidParams, Message: "invalid inputResponses: " + err.Error()}
-	}
-
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	// Answers to keys that are not outstanding are ignored
-	accepted := mcp.InputResponseMap{}
-	for key, resp := range responses {
-		if _, pending := t.requests[key]; pending && !t.answered[key] {
-			accepted[key] = resp
-		}
-	}
-	if len(accepted) > 0 && len(accepted) == len(t.requests) {
-		for key := range accepted {
-			t.answered[key] = true
-		}
-		t.setStatus(Working, "input received, the operation continues")
-		t.responses <- accepted
-	}
-	return &AckResult{ResultType: resultComplete}, nil
-}
-
-func (s *Store) cancelTask(ctx context.Context, _ *mcp.ServerSession, p *TaskParams) (*AckResult, error) {
-	t, err := s.lookup(p.Meta, p.TaskID)
-	if err != nil {
-		return nil, err
-	}
-	t.mu.Lock()
-	if t.status == Working || t.status == InputRequired {
-		t.setStatus(Cancelled, "cancelled by the client")
-	}
-	t.mu.Unlock()
-	t.cancel()
-	return &AckResult{ResultType: resultComplete}, nil
 }
 
 // dropExpired must be called with s.mu held.

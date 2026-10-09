@@ -173,61 +173,19 @@ func (c *Checker) checkResultShape(add func(string, Status, string, ...any), met
 }
 
 func (c *Checker) checkEntry(ctx context.Context, e entry, directoryRead bool, add func(string, Status, string, ...any)) SkillInfo {
-	name, _ := e.Frontmatter["name"].(string)
-	info := SkillInfo{URI: e.URI, Name: name}
-	info.Description, _ = e.Frontmatter["description"].(string)
-	info.License, _ = e.Frontmatter["license"].(string)
-	info.AllowedTools, _ = e.Frontmatter["allowed-tools"].(string)
+	info := infoOf(e)
 	label := "skill " + e.URI
-	var problems []string
-
 	root, isSkillMD := strings.CutSuffix(e.URI, "/SKILL.md")
-	if !isSkillMD {
-		problems = append(problems, "uri must end with /SKILL.md")
-	}
-	problems = append(problems, mcpskills.ValidateFrontmatter(e.Frontmatter)...)
-	if isSkillMD && path.Base(root) != name {
-		problems = append(problems, fmt.Sprintf("last path segment %q must equal the frontmatter name %q", path.Base(root), name))
-	}
-
-	// resources: a complete manifest, or "dynamic"
-	var manifest []mcpskills.SkillResource
-	var dynamic string
-	switch {
-	case json.Unmarshal(e.Resources, &dynamic) == nil && dynamic == "dynamic":
-		info.Dynamic, info.Files = true, -1
-		add(label+" integrity", Warn, "resources is \"dynamic\": no digests, the content cannot be verified or bound to an approval")
-	case json.Unmarshal(e.Resources, &manifest) == nil && manifest != nil:
-		info.Files = len(manifest)
-		problems = append(problems, checkManifest(e.URI, root, manifest, &info.Bytes)...)
-		if len(manifest) > mcpskills.MaxResources || info.Bytes > mcpskills.MaxTotalSize {
-			add(label+" limits", Warn, "%d files / %d bytes exceed %d files / %d bytes; not every host will load it", len(manifest), info.Bytes, mcpskills.MaxResources, mcpskills.MaxTotalSize)
-		}
-	default:
-		problems = append(problems, "resources must be an array or \"dynamic\"; hosts must not load this skill")
-	}
-
+	problems := identityProblems(e, root, isSkillMD, info.Name)
+	manifest, more := checkResources(label, e, root, &info, add)
+	problems = append(problems, more...)
 	if len(problems) > 0 {
 		add(label, Fail, "%s", strings.Join(problems, "; "))
 	} else {
-		add(label, Pass, "%s: %d file(s), %d bytes", name, info.Files, info.Bytes)
+		add(label, Pass, "%s: %d file(s), %d bytes", info.Name, info.Files, info.Bytes)
 	}
 
-	// skills/get must return the same entry
-	if res, err := c.call(ctx, "skills/get", map[string]any{"uri": e.URI}); err != nil {
-		add(label+" skills/get", Fail, "%v", err)
-	} else {
-		c.checkResultShape(add, "skills/get", res)
-		var got struct {
-			Skill entry `json:"skill"`
-		}
-		if remarshal(res, &got) != nil || !sameEntry(got.Skill, e) {
-			add(label+" skills/get", Fail, "the entry differs from the skills/list entry")
-		} else {
-			add(label+" skills/get", Pass, "same entry")
-		}
-	}
-
+	c.checkGet(ctx, label, e, add)
 	if c.Verify && manifest != nil {
 		c.verifyFiles(ctx, label, e, manifest, add)
 	}
@@ -237,109 +195,67 @@ func (c *Checker) checkEntry(ctx context.Context, e entry, directoryRead bool, a
 	return info
 }
 
-// checkManifest checks completeness and form of a skill's resources array.
-func checkManifest(skillURI, root string, manifest []mcpskills.SkillResource, total *int64) []string {
+// infoOf summarizes an entry from its frontmatter.
+func infoOf(e entry) SkillInfo {
+	info := SkillInfo{URI: e.URI}
+	info.Name, _ = e.Frontmatter["name"].(string)
+	info.Description, _ = e.Frontmatter["description"].(string)
+	info.License, _ = e.Frontmatter["license"].(string)
+	info.AllowedTools, _ = e.Frontmatter["allowed-tools"].(string)
+	return info
+}
+
+// identityProblems checks the URI, the frontmatter and that the last path
+// segment is the skill's name.
+func identityProblems(e entry, root string, isSkillMD bool, name string) []string {
 	var problems []string
-	seen := map[string]bool{}
-	hasSkillMD := false
-	for _, r := range manifest {
-		switch {
-		case seen[r.URI]:
-			problems = append(problems, fmt.Sprintf("%s is listed twice", r.URI))
-		case !strings.HasPrefix(r.URI, root+"/"):
-			problems = append(problems, fmt.Sprintf("%s is outside the skill directory", r.URI))
-		case !mcpskills.ValidDigest(r.Digest):
-			problems = append(problems, fmt.Sprintf("%s: digest %q must be sha256:<64 lowercase hex>", r.URI, r.Digest))
-		case r.Size < 0:
-			problems = append(problems, fmt.Sprintf("%s: negative size", r.URI))
-		}
-		seen[r.URI] = true
-		hasSkillMD = hasSkillMD || r.URI == skillURI
-		*total += r.Size
+	if !isSkillMD {
+		problems = append(problems, "uri must end with /SKILL.md")
 	}
-	if !hasSkillMD {
-		problems = append(problems, "the manifest does not list SKILL.md itself")
+	problems = append(problems, mcpskills.ValidateFrontmatter(e.Frontmatter)...)
+	if isSkillMD && path.Base(root) != name {
+		problems = append(problems, fmt.Sprintf("last path segment %q must equal the frontmatter name %q", path.Base(root), name))
 	}
 	return problems
 }
 
-// verifyFiles reads every listed file and compares it with the manifest.
-func (c *Checker) verifyFiles(ctx context.Context, label string, e entry, manifest []mcpskills.SkillResource, add func(string, Status, string, ...any)) {
-	var problems []string
-	for _, r := range manifest {
-		data, err := c.readFile(ctx, r.URI)
-		if err != nil {
-			problems = append(problems, fmt.Sprintf("%s: %v", r.URI, err))
-			continue
+// checkResources reads resources: a complete manifest, or "dynamic". It
+// returns the manifest (nil if there is none) and the problems found.
+func checkResources(label string, e entry, root string, info *SkillInfo, add func(string, Status, string, ...any)) ([]mcpskills.SkillResource, []string) {
+	var manifest []mcpskills.SkillResource
+	var dynamic string
+	switch {
+	case json.Unmarshal(e.Resources, &dynamic) == nil && dynamic == "dynamic":
+		info.Dynamic, info.Files = true, -1
+		add(label+" integrity", Warn, "resources is \"dynamic\": no digests, the content cannot be verified or bound to an approval")
+		return nil, nil
+	case json.Unmarshal(e.Resources, &manifest) == nil && manifest != nil:
+		info.Files = len(manifest)
+		problems := checkManifest(e.URI, root, manifest, &info.Bytes)
+		if len(manifest) > mcpskills.MaxResources || info.Bytes > mcpskills.MaxTotalSize {
+			add(label+" limits", Warn, "%d files / %d bytes exceed %d files / %d bytes; not every host will load it", len(manifest), info.Bytes, mcpskills.MaxResources, mcpskills.MaxTotalSize)
 		}
-		if int64(len(data)) != r.Size {
-			problems = append(problems, fmt.Sprintf("%s: %d bytes, manifest says %d", r.URI, len(data), r.Size))
-		} else if mcpskills.Digest(data) != r.Digest {
-			problems = append(problems, fmt.Sprintf("%s: digest does not match the manifest", r.URI))
-		}
-		if r.URI == e.URI {
-			fm, err := mcpskills.ParseFrontmatter(data)
-			switch {
-			case err != nil:
-				problems = append(problems, err.Error())
-			case !sameJSON(fm, e.Frontmatter):
-				problems = append(problems, "the SKILL.md frontmatter differs from the entry's frontmatter")
-			}
-		}
-	}
-	if len(problems) > 0 {
-		add(label+" verify", Fail, "%s", strings.Join(problems, "; "))
-	} else {
-		add(label+" verify", Pass, "%d file(s): sizes, digests and frontmatter match", len(manifest))
+		return manifest, problems
+	default:
+		return nil, []string{"resources must be an array or \"dynamic\"; hosts must not load this skill"}
 	}
 }
 
-// readFile returns the raw bytes of a resource.
-func (c *Checker) readFile(ctx context.Context, uri string) ([]byte, error) {
-	res, err := c.Session.ReadResource(ctx, &mcp.ReadResourceParams{URI: uri})
+// checkGet: skills/get must return the same entry as skills/list.
+func (c *Checker) checkGet(ctx context.Context, label string, e entry, add func(string, Status, string, ...any)) {
+	res, err := c.call(ctx, "skills/get", map[string]any{"uri": e.URI})
 	if err != nil {
-		return nil, err
-	}
-	if len(res.Contents) != 1 {
-		return nil, fmt.Errorf("%d contents, want 1", len(res.Contents))
-	}
-	if res.Contents[0].Blob != nil {
-		return res.Contents[0].Blob, nil
-	}
-	return []byte(res.Contents[0].Text), nil
-}
-
-// checkDirectory compares the direct children of the skill root with the manifest.
-func (c *Checker) checkDirectory(ctx context.Context, label, root string, manifest []mcpskills.SkillResource, add func(string, Status, string, ...any)) {
-	res, err := c.call(ctx, "resources/directory/read", map[string]any{"uri": root})
-	if err != nil {
-		add(label+" directory read", Fail, "%v", err)
+		add(label+" skills/get", Fail, "%v", err)
 		return
 	}
-	var body struct {
-		Resources []struct {
-			URI      string `json:"uri"`
-			MIMEType string `json:"mimeType"`
-		} `json:"resources"`
+	c.checkResultShape(add, "skills/get", res)
+	var got struct {
+		Skill entry `json:"skill"`
 	}
-	if err := remarshal(res, &body); err != nil {
-		add(label+" directory read", Fail, "invalid result: %v", err)
-		return
-	}
-	listed := map[string]bool{}
-	for _, r := range manifest {
-		listed[r.URI] = true
-	}
-	var unlisted []string
-	for _, child := range body.Resources {
-		if child.MIMEType != mcpskills.DirectoryMIMEType && manifest != nil && !listed[child.URI] {
-			unlisted = append(unlisted, child.URI)
-		}
-	}
-	if len(unlisted) > 0 {
-		add(label+" directory read", Warn, "files not in the manifest (stale entry or changed skill): %s", strings.Join(unlisted, ", "))
+	if remarshal(res, &got) != nil || !sameEntry(got.Skill, e) {
+		add(label+" skills/get", Fail, "the entry differs from the skills/list entry")
 	} else {
-		add(label+" directory read", Pass, "%d child(ren), consistent with the manifest", len(body.Resources))
+		add(label+" skills/get", Pass, "same entry")
 	}
 }
 

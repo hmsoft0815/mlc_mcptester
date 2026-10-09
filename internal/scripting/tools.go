@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
-	"sort"
 	"strings"
 
 	"github.com/hmsoft0815/mlc_mcptester/internal/client"
@@ -96,73 +95,14 @@ func (r *Runner) callToolPositional(ctx context.Context, name string, args []str
 	if err != nil {
 		return err
 	}
-
-	var targetTool *mcp.Tool
-	for _, t := range tools {
-		if t.Name == name {
-			targetTool = t
-			break
-		}
+	tool := findTool(tools, name)
+	toolArgs, err := buildToolArgs(tool, name, args)
+	if err != nil {
+		return err
 	}
-
-	var properties map[string]any
-	if targetTool != nil && targetTool.InputSchema != nil {
-		if schema, ok := targetTool.InputSchema.(map[string]any); ok {
-			if props, ok := schema["properties"].(map[string]any); ok {
-				properties = props
-			}
-		}
-	}
-
-	if properties == nil {
-		properties = make(map[string]any)
-	}
-
-	var propNames []string
-	for k := range properties {
-		propNames = append(propNames, k)
-	}
-	sort.Strings(propNames)
-
-	toolArgs := make(map[string]any)
-	var positionalArgs []string
-
-	// First pass: extract named arguments and collect positional ones
-	for _, arg := range args {
-		if key, val, ok := namedArg(arg); ok {
-			if propSchema, ok := properties[key].(map[string]any); ok {
-				toolArgs[key] = convertValue(val, propSchema)
-				continue
-			}
-			// A typo in a name must not land silently in another field
-			if targetTool != nil {
-				return &scriptError{fmt.Errorf("unknown argument %q: %s takes %s (call_tool_raw sends arguments unchecked)",
-					key, name, strings.Join(propNames, ", "))}
-			}
-		}
-		positionalArgs = append(positionalArgs, arg)
-	}
-
-	// Second pass: fill remaining properties with positional arguments
-	posIdx := 0
-	for _, propName := range propNames {
-		if _, alreadySet := toolArgs[propName]; alreadySet {
-			continue
-		}
-		if posIdx < len(positionalArgs) {
-			propSchema, _ := properties[propName].(map[string]any)
-			toolArgs[propName] = convertValue(positionalArgs[posIdx], propSchema)
-			posIdx++
-		}
-	}
-	if targetTool != nil && posIdx < len(positionalArgs) {
-		return &scriptError{fmt.Errorf("too many arguments for %s: %q has no field left (fields: %s)",
-			name, positionalArgs[posIdx], strings.Join(propNames, ", "))}
-	}
-
 	var outputSchema any
-	if targetTool != nil {
-		outputSchema = targetTool.OutputSchema
+	if tool != nil {
+		outputSchema = tool.OutputSchema
 	}
 	return r.call(ctx, name, toolArgs, outputSchema)
 }

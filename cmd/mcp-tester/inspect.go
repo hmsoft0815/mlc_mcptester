@@ -72,21 +72,43 @@ type deductions struct {
 	caps map[string]int
 }
 
+// specCategories are MUST violations: they are deducted after the score is
+// capped at 100, so the safety bonus cannot hide them.
+var specCategories = map[string]bool{
+	"listFailure": true,
+	"schemaType":  true,
+	"cache":       true,
+	"xMCPHeader":  true,
+	"skills":      true,
+	"tasks":       true,
+}
+
 func newDeductions(caps map[string]int) *deductions {
 	return &deductions{sums: map[string]int{}, caps: caps}
 }
 
 func (d *deductions) add(category string, points int) { d.sums[category] += points }
 
-func (d *deductions) total() int {
+// total sums the capped categories, either the spec violations or the rest.
+func (d *deductions) total(spec bool) int {
 	total := 0
 	for category, sum := range d.sums {
+		if specCategories[category] != spec {
+			continue
+		}
 		if limit, ok := d.caps[category]; ok && sum > limit {
 			sum = limit
 		}
 		total += sum
 	}
 	return total
+}
+
+// finalScore applies the quality deductions to score (which carries the
+// safety bonus), caps it at 100, then deducts the spec violations.
+func finalScore(score int, d *deductions) int {
+	score = min(score-d.total(false), 100)
+	return max(score-d.total(true), 0)
 }
 
 var inspectCmd = &cobra.Command{
@@ -123,13 +145,6 @@ var inspectCmd = &cobra.Command{
 		recommendations := []string{}
 		protocolErrors := []string{}
 		score := 100
-		listFailed := func(method string, err error) {
-			protocolErrors = append(protocolErrors, i18n.T(i18n.MsgListFailed, method, err))
-			score -= listFailurePenalty
-		}
-		warn := func(msg string) { recommendations = append(recommendations, msg) }
-		infos := []string{}
-		info := func(msg string) { infos = append(infos, msg) }
 		d := newDeductions(map[string]int{
 			"description":  20,
 			"outputSchema": 10,
@@ -143,6 +158,13 @@ var inspectCmd = &cobra.Command{
 			"cacheScope":   10,
 			"xMCPHeader":   20,
 		})
+		listFailed := func(method string, err error) {
+			protocolErrors = append(protocolErrors, i18n.T(i18n.MsgListFailed, method, err))
+			d.add("listFailure", listFailurePenalty)
+		}
+		warn := func(msg string) { recommendations = append(recommendations, msg) }
+		infos := []string{}
+		info := func(msg string) { infos = append(infos, msg) }
 		// inspect never calls a tool — it cannot know which ones are free of
 		// side effects — so a declared schema is all it can see, not whether the
 		// results honour it.
@@ -409,7 +431,7 @@ var inspectCmd = &cobra.Command{
 			}
 			if skillsReport.Failed() {
 				warn(i18n.T(i18n.MsgSkillsInvalid))
-				score -= 10
+				d.add("skills", 10)
 			}
 		}
 
@@ -418,7 +440,7 @@ var inspectCmd = &cobra.Command{
 		if _, ok := caps.Extensions[mcptasks.Extension]; ok {
 			if failed := (&taskcheck.Checker{Session: session}).Run(ctx).FailedNames(); len(failed) > 0 {
 				warn(i18n.T(i18n.MsgTasksInvalid, strings.Join(failed, ", ")))
-				score -= 10
+				d.add("tasks", 10)
 			}
 		}
 
@@ -430,16 +452,7 @@ var inspectCmd = &cobra.Command{
 			info(i18n.T(i18n.MsgDeprecatedLogging))
 		}
 
-		score -= d.total()
-
-		// Clamp score to 0-100
-		if score < 0 {
-			score = 0
-		}
-		if score > 100 {
-			score = 100
-		}
-
+		score = finalScore(score, d)
 		report.Score = score
 		report.Recommendations = recommendations
 		report.Errors = protocolErrors

@@ -60,7 +60,7 @@ Legend: ✅ covered · ⚠️ partial · ❌ missing · — not applicable or no
 |---|---|---|
 | `tools/list`, `tools/call` | ✅ | `list`, `call`, scripts |
 | `outputSchema` ↔ `structuredContent` | ✅ | `call` and scripts check like a strict client |
-| Tool quality in `inspect` | ✅ | `description`, `title`, naming rules (1–128 chars, `A-Z a-z 0-9 _ - .`), uniqueness, `inputSchema` of type `object`, `outputSchema`, deterministic `tools/list` order, bonus for `readOnlyHint` |
+| Tool quality in `inspect` | ✅ | `description`, `title`, naming rules (1–128 chars, `A-Z a-z 0-9 _ - .`), uniqueness, `inputSchema` of type `object`, `outputSchema`, deterministic `tools/list` order, bonus for `readOnlyHint` (offsets quality deductions only; MUST violations are deducted after the cap at 100) |
 | Tool errors (`isError`) vs. protocol errors | ✅ | `assert_tool_error`, `assert_error_code` |
 | Icons | ✅ | `inspect` checks URI schemes (`https`, `data:` only) on server, tools, prompts and resources; `--check-icons` / `--download-icons` check reachability |
 | Prompts `list` / `get` | ✅ | |

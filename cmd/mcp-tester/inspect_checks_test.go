@@ -95,3 +95,34 @@ func TestCheckCacheHints(t *testing.T) {
 		})
 	}
 }
+
+func TestFinalScore(t *testing.T) {
+	tests := []struct {
+		name    string
+		bonus   int
+		quality int // outputSchema points
+		spec    int // tasks points
+		want    int
+	}{
+		{"clean", 0, 0, 0, 100},
+		{"bonus offsets quality", 10, 5, 0, 100},
+		{"bonus does not hide a spec violation", 20, 0, 10, 90},
+		{"quality beyond the bonus", 2, 7, 0, 95},
+		{"both", 20, 3, 10, 90},
+		{"never below zero", 0, 0, 150, 0},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			d := newDeductions(map[string]int{"outputSchema": 10})
+			if tt.quality > 0 {
+				d.add("outputSchema", tt.quality)
+			}
+			if tt.spec > 0 {
+				d.add("tasks", tt.spec)
+			}
+			if got := finalScore(100+tt.bonus, d); got != tt.want {
+				t.Errorf("finalScore = %d, want %d", got, tt.want)
+			}
+		})
+	}
+}

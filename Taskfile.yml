@@ -194,6 +194,9 @@ tasks:
       # A broken server must fail the check and draw a warning in inspect
       - "! ./bin/mcp-tester tasks --command './bin/test-server -broken-tasks' > /dev/null 2>&1"
       - ./bin/mcp-tester inspect --command './bin/test-server -broken-tasks' | grep -q 'violates the Tasks extension'
+      # The safety bonus must not hide the deduction for a MUST violation
+      - >-
+        ./bin/mcp-tester inspect --command './bin/test-server -broken-tasks' --format json | grep -q '"score": 90'
 
   badge:
     desc: Write the mcpcheck badge of the reference server (docs/mcpcheck.svg, docs/mcpcheck.json)

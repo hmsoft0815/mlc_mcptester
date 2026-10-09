@@ -60,7 +60,7 @@ Legende: ✅ abgedeckt · ⚠️ teilweise · ❌ fehlt · — nicht anwendbar o
 |---|---|---|
 | `tools/list`, `tools/call` | ✅ | `list`, `call`, Skripte |
 | `outputSchema` ↔ `structuredContent` | ✅ | `call` und Skripte prüfen wie ein strikter Client |
-| Tool-Qualität in `inspect` | ✅ | `description`, `title`, Namensregeln (1–128 Zeichen, `A-Z a-z 0-9 _ - .`), Eindeutigkeit, `inputSchema` vom Typ `object`, `outputSchema`, deterministische Reihenfolge von `tools/list`, Bonus für `readOnlyHint` |
+| Tool-Qualität in `inspect` | ✅ | `description`, `title`, Namensregeln (1–128 Zeichen, `A-Z a-z 0-9 _ - .`), Eindeutigkeit, `inputSchema` vom Typ `object`, `outputSchema`, deterministische Reihenfolge von `tools/list`, Bonus für `readOnlyHint` (gleicht nur Qualitätsabzüge aus; MUST-Verstöße werden nach der Kappung auf 100 abgezogen) |
 | Tool-Fehler (`isError`) vs. Protokollfehler | ✅ | `assert_tool_error`, `assert_error_code` |
 | Icons | ✅ | `inspect` prüft die URI-Schemata (nur `https`, `data:`) bei Server, Tools, Prompts und Resources; `--check-icons` / `--download-icons` prüfen die Erreichbarkeit |
 | Prompts `list` / `get` | ✅ | |

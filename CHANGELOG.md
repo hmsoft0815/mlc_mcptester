@@ -10,6 +10,9 @@ All notable changes to mcp-tester. Format: [Keep a Changelog](https://keepachang
 - Script command `wait_task_status <taskId> <status> [timeout]`: polls without answering input requests.
 - Test server: tool `tool_error_job` and flag `-broken-tasks`; Taskfile task `test-tasks`.
 
+### Changed
+- `inspect`: the `readOnlyHint` bonus no longer hides MUST violations; those are deducted after the score is capped at 100, so some scores drop.
+
 ### Fixed
 - `pkg/mcptasks`: partial answers in `tasks/update` were dropped, so clients answering keys one by one hung.
 - Raw requests abandoned on timeout now send `notifications/cancelled`, so the server stops the work and stays responsive.

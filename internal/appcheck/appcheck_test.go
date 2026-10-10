@@ -105,3 +105,16 @@ func TestBrokenApps(t *testing.T) {
 		}
 	}
 }
+
+func TestNoApps(t *testing.T) {
+	for _, declare := range []bool{false, true} {
+		rep := Run(context.Background(), appServer(t, declare, map[string]mcp.Meta{"plain": nil}))
+		want := Info
+		if declare {
+			want = Warn // declares the extension but uses it nowhere
+		}
+		if len(rep.Results) != 1 || rep.Results[0].Name != "UI tools" || rep.Results[0].Status != want || len(rep.Apps) != 0 {
+			t.Errorf("declare=%v: %+v", declare, rep)
+		}
+	}
+}

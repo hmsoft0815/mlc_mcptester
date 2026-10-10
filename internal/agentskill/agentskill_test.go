@@ -6,6 +6,9 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/hmsoft0815/mlc_mcptester/pkg/mcpskills"
+	"github.com/hmsoft0815/mlc_mcptester/skills"
 )
 
 func testEnv(t *testing.T) Env {
@@ -18,11 +21,45 @@ func TestContent(t *testing.T) {
 	if !strings.HasPrefix(string(c), "---\nname: mcp-tester\n") {
 		t.Errorf("skill does not start with its frontmatter:\n%.80s", c)
 	}
-	if strings.Contains(string(c), "{{VERSION}}") {
-		t.Error("version placeholder left in the skill")
-	}
 	if got := InstalledVersion(c); got != "1.6.0" {
 		t.Errorf("InstalledVersion = %q, want 1.6.0", got)
+	}
+	if n := len(versionLine.FindAll(c, -1)); n != 1 {
+		t.Errorf("%d version lines, want exactly one", n)
+	}
+}
+
+// The skill at skills/mcp-tester/SKILL.md follows the Agent Skills format,
+// as mcp-tester itself checks it for servers that publish skills.
+func TestSkillFormat(t *testing.T) {
+	fm, err := mcpskills.ParseFrontmatter([]byte(skills.MCPTester))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if problems := mcpskills.ValidateFrontmatter(fm); len(problems) > 0 {
+		t.Errorf("frontmatter: %v", problems)
+	}
+	if fm["name"] != Name {
+		t.Errorf("name %v, want the directory name %q", fm["name"], Name)
+	}
+	for _, field := range []string{"license", "compatibility"} {
+		if _, ok := fm[field]; !ok {
+			t.Errorf("frontmatter lacks %s", field)
+		}
+	}
+	if lines := strings.Count(skills.MCPTester, "\n"); lines > 500 {
+		t.Errorf("%d lines; keep a skill under 500 and move details to references", lines)
+	}
+}
+
+// release-prep keeps the skill's version in step with VERSION.
+func TestSkillVersionMatchesRelease(t *testing.T) {
+	data, err := os.ReadFile("../../VERSION")
+	if err != nil {
+		t.Skip("no VERSION file")
+	}
+	if got, want := InstalledVersion([]byte(skills.MCPTester)), strings.TrimSpace(string(data)); got != want {
+		t.Errorf("skills/mcp-tester/SKILL.md names %q, VERSION is %q: run task release-prep", got, want)
 	}
 }
 

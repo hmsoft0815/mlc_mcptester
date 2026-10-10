@@ -32,6 +32,11 @@ for f in docs/SPEC_COVERAGE.md docs/SPEC_COVERAGE.de.md; do
   echo "$f: mcp-tester $version"
 done
 
+# Agent skill: the version it was written for (the binary stamps its own on install)
+skill=skills/mcp-tester/SKILL.md
+sed -i -E "s/^(  mcp-tester-version: )\"$semver\"/\1\"$version\"/" "$skill"
+echo "$skill: mcp-tester-version $version"
+
 # Product page: a separate private clone, absent in public checkouts
 meta=mlcprodweb/meta.yaml
 if [ -f "$meta" ]; then

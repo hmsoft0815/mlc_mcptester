@@ -282,7 +282,7 @@ Führe komplexe Test-Szenarien aus:
 - [Das MCP-Handbuch (Online)](https://mlcgo.eu/books/mcp-handbuch/) — Die umfassende Einführung und Referenz in das Model Context Protocol (Deutsch).
 - [Scripting Referenz (DE)](docs/SCRIPTING.de.md) — Detaillierte Dokumentation der Test-Grammatik.
 - [Scripting Reference (EN)](docs/SCRIPTING.md) — Detailed documentation of the test grammar.
-- [Agent-Skill](internal/agentskill/SKILL.md) — Kompakte Anleitung für KI-Agents (Englisch); installieren mit `mcp-tester agent-skill install`.
+- [Agent-Skill](skills/mcp-tester/SKILL.md) — Kompakte Anleitung für KI-Agents (Englisch); installieren mit `mcp-tester agent-skill install`.
 - [Changelog](CHANGELOG.md) — Änderungen je Version (Added/Changed/Fixed).
 - [Spec-Abdeckung (DE)](docs/SPEC_COVERAGE.de.md) — Welche Features der aktuellen MCP-Spezifikation geprüft werden, mit Datum.
 

@@ -7,7 +7,6 @@
 package agentskill
 
 import (
-	_ "embed"
 	"errors"
 	"fmt"
 	"os"
@@ -15,17 +14,18 @@ import (
 	"regexp"
 	"slices"
 	"strings"
+
+	"github.com/hmsoft0815/mlc_mcptester/skills"
 )
 
 // Name is the skill's directory name and frontmatter name.
 const Name = "mcp-tester"
 
-//go:embed SKILL.md
-var source string
-
-// Content returns the skill with the tester version filled in.
+// Content returns the skill (skills/mcp-tester/SKILL.md) with the running
+// tester's version in metadata.mcp-tester-version, so a development build
+// installs a skill that names it.
 func Content(version string) []byte {
-	return []byte(strings.ReplaceAll(source, "{{VERSION}}", version))
+	return []byte(versionLine.ReplaceAllString(skills.MCPTester, `  mcp-tester-version: "`+version+`"`))
 }
 
 var versionLine = regexp.MustCompile(`(?m)^\s*mcp-tester-version:\s*"?([^"\n]*)"?\s*$`)

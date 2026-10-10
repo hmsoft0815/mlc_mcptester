@@ -2,6 +2,7 @@ package skillcheck
 
 import (
 	"context"
+	"os"
 	"strings"
 	"testing"
 	"testing/fstest"
@@ -132,5 +133,26 @@ func TestFormat(t *testing.T) {
 	}
 	if !mcpskills.ValidDigest(mcpskills.Digest([]byte("x"))) || mcpskills.ValidDigest("sha256:ABC") {
 		t.Error("digest format check is wrong")
+	}
+}
+
+// The repository's own skills (skills/) pass the checks mcp-tester applies
+// to servers that publish skills.
+func TestRepositorySkills(t *testing.T) {
+	caps := &mcp.ServerCapabilities{}
+	mcpskills.Declare(caps, true)
+	s := mcp.NewServer(&mcp.Implementation{Name: "repo", Version: "1"}, &mcp.ServerOptions{Capabilities: caps})
+	served, err := mcpskills.Serve(s, os.DirFS("../../skills"), nil)
+	if err != nil {
+		t.Fatalf("skills/ cannot be served: %v", err)
+	}
+	if len(served) == 0 {
+		t.Fatal("no skill under skills/")
+	}
+	rep := (&Checker{Session: connect(t, s), Verify: true}).Run(context.Background())
+	for _, r := range rep.Results {
+		if r.Status == Fail || r.Status == Warn {
+			t.Errorf("%s %s: %s", r.Status, r.Name, r.Detail)
+		}
 	}
 }

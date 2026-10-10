@@ -4,6 +4,9 @@ All notable changes to mcp-tester. Format: [Keep a Changelog](https://keepachang
 
 ## [Unreleased]
 
+### Changed
+- The agent skill lives at the standard location `skills/mcp-tester/SKILL.md`, with `license`, `compatibility` and install hints.
+
 ### Fixed
 - Test server `-auth`: authorization codes were not bound to the client they were issued to.
 - `list`: annotations showed memory addresses for `destructiveHint` and `openWorldHint` instead of their values.

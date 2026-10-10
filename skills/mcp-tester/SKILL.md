@@ -4,7 +4,7 @@ description: Test, inspect and gate MCP servers with the mcp-tester CLI — writ
 license: MIT
 compatibility: Needs the mcp-tester CLI on PATH (single Go binary, Linux, macOS, Windows). Tests servers over stdio, SSE or Streamable HTTP.
 metadata:
-  mcp-tester-version: "1.8.0"
+  mcp-tester-version: "1.8.1"
 ---
 
 # mcp-tester

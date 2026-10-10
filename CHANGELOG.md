@@ -2,7 +2,7 @@
 
 All notable changes to mcp-tester. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versions: [SemVer](https://semver.org/).
 
-## [Unreleased]
+## [1.8.1] - 2026-10-10
 
 ### Changed
 - The agent skill lives at the standard location `skills/mcp-tester/SKILL.md`, with `license`, `compatibility` and install hints.

@@ -145,7 +145,7 @@ var messages = map[string]map[MessageKey]string{
 		MsgSchema:               "Schema: %+v\n",
 		MsgInputSchema:          "Input Schema: %+v\n",
 		MsgOutputSchema:         "Output Schema: %+v\n",
-		MsgAnnotations:          "Annotations: %+v\n",
+		MsgAnnotations:          "Annotations: %s\n",
 
 		MsgCacheStale: "INFO: %s: marked immediately stale (ttlMs 0), so clients fetch these lists again every time. " +
 			"If a list stays the same for a while, a TTL spares them that; list_changed notifications still announce changes.",
@@ -222,7 +222,7 @@ var messages = map[string]map[MessageKey]string{
 		MsgSchema:               "Schema: %+v\n",
 		MsgInputSchema:          "Input-Schema: %+v\n",
 		MsgOutputSchema:         "Output-Schema: %+v\n",
-		MsgAnnotations:          "Annotationen: %+v\n",
+		MsgAnnotations:          "Annotationen: %s\n",
 
 		MsgCacheStale: "INFO: %s: als sofort veraltet markiert (ttlMs 0), Clients holen die Listen also jedes Mal neu. " +
 			"Bleibt eine Liste eine Weile gleich, erspart ihnen eine TTL das; Änderungen kündigen list_changed-Notifications weiterhin an.",

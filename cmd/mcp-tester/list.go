@@ -42,6 +42,12 @@ var listCmd = &cobra.Command{
 			return fmt.Errorf("failed to list tools: %w", err)
 		}
 
+		if format == "json" {
+			for _, tool := range tools {
+				checkIconsOf(tool.Icons)
+			}
+			return printJSON(map[string]any{"tools": tools})
+		}
 		for _, tool := range tools {
 			fmt.Print(i18n.T(i18n.MsgTool, tool.Name))
 			fmt.Print(i18n.T(i18n.MsgDescription, tool.Description))
@@ -59,7 +65,7 @@ var listCmd = &cobra.Command{
 				fmt.Print(i18n.T(i18n.MsgOutputSchema, tool.OutputSchema))
 			}
 			if tool.Annotations != nil {
-				fmt.Print(i18n.T(i18n.MsgAnnotations, tool.Annotations))
+				fmt.Print(i18n.T(i18n.MsgAnnotations, formatAnnotations(tool.Annotations)))
 			}
 			fmt.Println("---")
 		}

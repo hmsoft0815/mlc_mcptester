@@ -265,6 +265,7 @@ mcp-tester inspect -p local --badge docs/mcpcheck.svg --badge-json docs/mcpcheck
 #### Tools, Resources & Prompts
 ```bash
 mcp-tester list -p local
+mcp-tester list -p local --format json   # alle Tools mit Schemas als JSON (ebenso resources list/templates, prompts list)
 mcp-tester resources list --cursor "NEXT_TOKEN" -p local
 mcp-tester prompts get code_review --args '{"file_path": "main.go"}' -p local
 mcp-tester complete prompt:code_review file_path ma -p local

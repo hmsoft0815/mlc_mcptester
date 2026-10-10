@@ -6,6 +6,8 @@ All notable changes to mcp-tester. Format: [Keep a Changelog](https://keepachang
 
 ### Fixed
 - Test server `-auth`: authorization codes were not bound to the client they were issued to.
+- `list`: annotations showed memory addresses for `destructiveHint` and `openWorldHint` instead of their values.
+- `list`, `resources list`, `resources templates`, `prompts list`: `--format json` printed text instead of JSON.
 
 ## [1.8.0] - 2026-10-09
 

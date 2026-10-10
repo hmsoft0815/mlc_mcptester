@@ -55,6 +55,12 @@ var promptsListCmd = &cobra.Command{
 			return err
 		}
 
+		if format == "json" {
+			for _, p := range res.Prompts {
+				checkIconsOf(p.Icons)
+			}
+			return printJSON(res)
+		}
 		for _, p := range res.Prompts {
 			fmt.Print(i18n.T(i18n.MsgPrompt, p.Name))
 			fmt.Print(i18n.T(i18n.MsgDescription, p.Description))

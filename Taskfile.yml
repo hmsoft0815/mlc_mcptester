@@ -294,6 +294,11 @@ tasks:
     cmds:
       - ./bin/mcp-tester --format json test --profile local --script tests/05_progress.mcp 2>/dev/null | python3 -m json.tool > /dev/null
       - ./bin/mcp-tester --format json call echo --log-level debug --args '{"message":"x"}' --profile local 2>/dev/null | python3 -m json.tool > /dev/null
+      # list commands, also with icon checks (which report on stderr then)
+      - ./bin/mcp-tester --format json list --check-icons --profile local 2>/dev/null | python3 -m json.tool > /dev/null
+      - ./bin/mcp-tester --format json resources list --check-icons --profile local 2>/dev/null | python3 -m json.tool > /dev/null
+      - ./bin/mcp-tester --format json resources templates --profile local 2>/dev/null | python3 -m json.tool > /dev/null
+      - ./bin/mcp-tester --format json prompts list --check-icons --profile local 2>/dev/null | python3 -m json.tool > /dev/null
 
   test-all:
     desc: Run all tests

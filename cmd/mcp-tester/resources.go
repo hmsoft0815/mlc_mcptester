@@ -56,6 +56,12 @@ var resourcesListCmd = &cobra.Command{
 			return err
 		}
 
+		if format == "json" {
+			for _, r := range res.Resources {
+				checkIconsOf(r.Icons)
+			}
+			return printJSON(res)
+		}
 		for _, r := range res.Resources {
 			fmt.Print(i18n.T(i18n.MsgResource, r.Name))
 			fmt.Printf("  URI:      %s\n", r.URI)
@@ -107,6 +113,12 @@ var resourcesTemplatesListCmd = &cobra.Command{
 			return err
 		}
 
+		if format == "json" {
+			for _, t := range res.ResourceTemplates {
+				checkIconsOf(t.Icons)
+			}
+			return printJSON(res)
+		}
 		for _, t := range res.ResourceTemplates {
 			fmt.Print(i18n.T(i18n.MsgTemplate, t.Name))
 			fmt.Printf("  URI:  %s\n", t.URITemplate)

@@ -11,28 +11,37 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
+// iconOut is where icon checks report: stderr with --format json, so that
+// stdout stays pure JSON.
+func iconOut() io.Writer {
+	if format == "json" {
+		return os.Stderr
+	}
+	return os.Stdout
+}
+
 func checkAndDownloadIcons(icons []mcp.Icon, downloadDir string) {
 	if len(icons) == 0 {
 		return
 	}
 	for _, icon := range icons {
-		fmt.Printf("  Checking Icon: %s\n", icon.Source)
+		fmt.Fprintf(iconOut(), "  Checking Icon: %s\n", icon.Source)
 		if strings.HasPrefix(icon.Source, "data:") {
-			fmt.Println("    - Info: Data URI (embedded base64)")
+			fmt.Fprintln(iconOut(), "    - Info: Data URI (embedded base64)")
 			continue
 		}
 
 		resp, err := http.Head(icon.Source)
 		if err != nil {
-			fmt.Printf("    - Error: Failed to reach icon: %v\n", err)
+			fmt.Fprintf(iconOut(), "    - Error: Failed to reach icon: %v\n", err)
 			continue
 		}
 		resp.Body.Close()
 
 		if resp.StatusCode >= 400 {
-			fmt.Printf("    - Error: Icon returned HTTP %d\n", resp.StatusCode)
+			fmt.Fprintf(iconOut(), "    - Error: Icon returned HTTP %d\n", resp.StatusCode)
 		} else {
-			fmt.Printf("    - Success: Reachable (%s)\n", resp.Header.Get("Content-Type"))
+			fmt.Fprintf(iconOut(), "    - Success: Reachable (%s)\n", resp.Header.Get("Content-Type"))
 		}
 
 		if downloadDir != "" {
@@ -44,13 +53,13 @@ func checkAndDownloadIcons(icons []mcp.Icon, downloadDir string) {
 func downloadIcon(url, dir string) {
 	err := os.MkdirAll(dir, 0755)
 	if err != nil {
-		fmt.Printf("    - Error creating dir: %v\n", err)
+		fmt.Fprintf(iconOut(), "    - Error creating dir: %v\n", err)
 		return
 	}
 
 	resp, err := http.Get(url)
 	if err != nil {
-		fmt.Printf("    - Download failed: %v\n", err)
+		fmt.Fprintf(iconOut(), "    - Download failed: %v\n", err)
 		return
 	}
 	defer resp.Body.Close()
@@ -63,15 +72,15 @@ func downloadIcon(url, dir string) {
 
 	out, err := os.Create(path)
 	if err != nil {
-		fmt.Printf("    - File creation failed: %v\n", err)
+		fmt.Fprintf(iconOut(), "    - File creation failed: %v\n", err)
 		return
 	}
 	defer out.Close()
 
 	_, err = io.Copy(out, resp.Body)
 	if err != nil {
-		fmt.Printf("    - Save failed: %v\n", err)
+		fmt.Fprintf(iconOut(), "    - Save failed: %v\n", err)
 		return
 	}
-	fmt.Printf("    - Saved to: %s\n", path)
+	fmt.Fprintf(iconOut(), "    - Saved to: %s\n", path)
 }

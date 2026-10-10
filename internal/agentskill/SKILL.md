@@ -33,7 +33,7 @@ wrong. Run it from the shell; it is not an MCP server itself.
 | How a server is protected, OAuth flows | `mcp-tester auth-check -u URL` |
 | MCP Apps / Skills extensions | `mcp-tester apps -p X`, `mcp-tester skills -p X --verify` |
 | Tasks extension | `mcp-tester tasks -p X [--tool T --args '{}'] [--cancel]` |
-| List tools with schemas | `mcp-tester list -p X` |
+| List tools with schemas | `mcp-tester list -p X` (`--format json` for the raw tools/list entries) |
 | One call | `mcp-tester call <tool> --args '{"k":"v"}' -p X` |
 | Behaviour tests | `mcp-tester test --script tests/foo.mcp -p X` |
 

@@ -7,6 +7,7 @@ import (
 	mcpclient "github.com/hmsoft0815/mlc_mcptester/internal/client"
 	"github.com/hmsoft0815/mlc_mcptester/internal/httpcheck"
 	"github.com/hmsoft0815/mlc_mcptester/internal/i18n"
+	"github.com/hmsoft0815/mlc_mcptester/internal/mcpdocs"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
@@ -62,6 +63,9 @@ func (in *inspector) checkToolList(tools []*mcp.Tool) {
 		}
 	}
 	in.summarizeOutputSchemas()
+	if len(in.undescribedParams) > 0 {
+		in.warn(i18n.T(i18n.MsgUndescribedParams, len(in.undescribedParams), strings.Join(in.undescribedParams, ", ")))
+	}
 
 	// The spec asks for a deterministic order so clients can cache the list
 	if again, err := listToolsAgain(in.ctx, in.session, in.cmdArg, in.urlArg); err == nil && !sameToolOrder(tools, again) {
@@ -98,6 +102,7 @@ func (in *inspector) checkTool(t *mcp.Tool, seen map[string]bool) (inputSchemaDe
 		in.warn(i18n.T(i18n.MsgInputSchemaNotObject, t.Name))
 		in.d.add("schemaType", 5)
 	}
+	in.undescribedParams = append(in.undescribedParams, mcpdocs.UndescribedParams(t.Name, t.InputSchema)...)
 	in.classifyOutputSchema(t)
 	in.checkIcons("tool '"+t.Name+"'", t.Icons)
 	if _, problems := httpcheck.XMCPHeaders(t.InputSchema); len(problems) > 0 {

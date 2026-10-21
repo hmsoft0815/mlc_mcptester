@@ -39,6 +39,8 @@ type inspector struct {
 	declaredOutputSchemas int
 	// Missing output schemas are collected so they cost one line, not one per tool
 	noOutputSchema, exemptTextOnly []string
+	// Parameters without a description, as tool.param; a hint without deduction
+	undescribedParams []string
 	// Collected per finding, so the INFO lines name all lists at once
 	staleLists, publicLists []string
 }

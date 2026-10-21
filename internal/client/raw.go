@@ -51,6 +51,20 @@ func CallToolRaw(ctx context.Context, session *mcp.ClientSession, toolName strin
 // CallRaw sends any request on the session's connection and returns the raw
 // result. Nothing is added to params, not even the per-request metadata.
 func CallRaw(ctx context.Context, session *mcp.ClientSession, method string, params any) (map[string]any, error) {
+	rawJSON, err := CallRawJSON(ctx, session, method, params)
+	if err != nil {
+		return nil, err
+	}
+	var resultMap map[string]any
+	if err := json.Unmarshal(rawJSON, &resultMap); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal raw response: %w", err)
+	}
+	return resultMap, nil
+}
+
+// CallRawJSON is CallRaw returning the result exactly as it came over the
+// wire, which keeps the key order of objects that a map would lose.
+func CallRawJSON(ctx context.Context, session *mcp.ClientSession, method string, params any) (json.RawMessage, error) {
 	// 1. Get the internal jsonrpc2.Connection via reflection on unexported field
 	sVal := reflect.ValueOf(session).Elem()
 	connField := sVal.FieldByName("conn")
@@ -123,14 +137,7 @@ func CallRaw(ctx context.Context, session *mcp.ClientSession, method string, par
 	// Result check
 	resultField := respVal.FieldByName("Result")
 	// resultField is json.RawMessage ([]byte)
-	rawJSON := resultField.Bytes()
-
-	var resultMap map[string]any
-	if err := json.Unmarshal(rawJSON, &resultMap); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal raw response: %w", err)
-	}
-
-	return resultMap, nil
+	return json.RawMessage(resultField.Bytes()), nil
 }
 
 // cancelRaw tells the server that a raw call was abandoned

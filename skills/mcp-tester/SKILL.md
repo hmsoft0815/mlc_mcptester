@@ -42,6 +42,7 @@ should match `mcp-tester-version` above; if not, refresh this skill with
 | MCP Apps / Skills extensions | `mcp-tester apps -p X`, `mcp-tester skills -p X --verify` |
 | Tasks extension | `mcp-tester tasks -p X [--tool T --args '{}'] [--cancel] [--other-bearer TOKEN]` |
 | List tools, resources, prompts | `mcp-tester list -p X`, `resources list`, `prompts list` (`--format json` for the raw entries) |
+| Markdown reference of tools, prompts, resources | `mcp-tester docs -p X -o docs/mcp-tools.md`; CI: `--check docs/mcp-tools.md` |
 | One call | `mcp-tester call <tool> --args '{"k":"v"}' -p X` |
 | Behaviour tests | `mcp-tester test --script tests/foo.mcp -p X` |
 
@@ -125,6 +126,7 @@ Pitfalls:
 ```bash
 mcp-tester --format json test --script tests/smoke.mcp -p local   # stdout: summary incl. failures
 mcp-tester inspect -p local --min-score 90 --badge docs/mcpcheck.svg
+mcp-tester docs -p local --check docs/mcp-tools.md                 # reference out of date → exit 1
 ```
 
 Exit code 1 on any failed command, protocol error or score below the minimum.

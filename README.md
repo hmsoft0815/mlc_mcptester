@@ -57,6 +57,7 @@ Weil `mcp-tester` den Server von außen gegen die Spezifikation prüft, findet e
 - **Skills-Extension**: Skills eines Servers auflisten und verifizieren (`skills --verify`): Manifest, Digests, Frontmatter, Namensregeln. Das Go-Paket [`pkg/mcpskills`](pkg/mcpskills) stellt Skills aus einem Verzeichnis bereit.
 - **Tasks-Extension**: lang laufende Tool-Aufrufe als Task starten, pollen, abbrechen, Eingaben nachreichen; `tasks` prüft einen Server gegen die Extension (Fehlercodes, Task-Form, Statusübergänge). Für Server-Autoren gibt es das Go-Paket [`pkg/mcptasks`](pkg/mcptasks), das die Extension auf Servern mit dem offiziellen go-sdk nachrüstet.
 - **Server Inspector** (`inspect`): Spec-Abgleich, Best Practices und Quality Score; `--min-score` als CI-Gate, `--badge` für eine Status-Badge im README.
+- **Markdown-Referenz** (`docs`): Tools, Prompts, Resources und instructions als Markdown-Datei, gelesen über das Protokoll; `--check` lässt CI scheitern, wenn die Datei veraltet ist.
 - **HTTP-Konformität** (`http-check`): Pflicht-Header, Fehlercodes, Origin, Sessions nach Spec 2026-07-28.
 - **Autorisierung**: Bearer-Token, eigene Header und der OAuth-2.1-Ablauf (PKCE, Protected Resource Metadata, `iss`-Prüfung).
 - **Strikte Ergebnisprüfung**: Jedes Ergebnis wird gegen das `outputSchema` geprüft, so streng wie das offizielle TypeScript-SDK.
@@ -261,6 +262,18 @@ mcp-tester inspect -p local --badge docs/mcpcheck.svg --badge-json docs/mcpcheck
 - **Farbe**: grün; gelb bei Score unter 80 oder älterer Revision; rot („failing“) bei Protokollfehlern, unabhängig vom Score.
 - Testdatum und Tester-Version stehen im Tooltip der SVG und in der JSON-Datei. Verlinkt die Badge auf die JSON, dann ist nachvollziehbar, wann und womit geprüft wurde.
 - Die Badge wird auch bei fehlgeschlagener Prüfung geschrieben (rot), damit keine veraltete grüne Badge stehen bleibt. Die SVG ist eigenständig und braucht keinen externen Dienst. Die JSON folgt dem [shields.io-Endpoint-Schema](https://shields.io/badges/endpoint-badge) und funktioniert daher auch mit `https://img.shields.io/endpoint?url=<Raw-URL der JSON>`.
+
+#### Markdown-Referenz (`docs`)
+
+`docs` schreibt, was ein Client vom Server sieht, als Markdown-Datei: eine Übersicht der Tools (Titel, strukturiertes oder Text-Ergebnis, Annotations), je Tool die Beschreibung wörtlich, eine Parametertabelle aus dem `inputSchema` in der Reihenfolge des Servers (Typ, Pflicht, format, enum, Bereich, pattern, default) und die Ergebnisfelder aus dem `outputSchema`; dazu Prompts mit Argumenten, Resources, Resource-Templates und die instructions.
+
+```bash
+mcp-tester docs -p local -o docs/mcp-tools.md
+# CI: Exit 1, wenn die Datei nicht mehr zum Server passt
+mcp-tester docs -p local --check docs/mcp-tools.md
+```
+
+Gelesen wird das Protokoll, nicht der Quelltext; das funktioniert daher für jeden Server, unabhängig von Sprache und SDK. Die Datei ist immer englisch und enthält kein Datum und keine Version, `--check` schlägt also nur an, wenn sich Tools, Prompts oder Resources geändert haben. Parameter ohne Beschreibung werden auf stderr genannt; `inspect` meldet sie ebenfalls als Hinweis.
 
 #### Tools, Resources & Prompts
 ```bash

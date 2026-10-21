@@ -2,6 +2,12 @@
 
 All notable changes to mcp-tester. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versions: [SemVer](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- `docs`: writes a Markdown reference of a server's tools, prompts and resources; `--check` fails on an outdated file.
+- `inspect` names input parameters without a description in one hint line, without deduction.
+
 ## [1.8.1] - 2026-10-10
 
 ### Changed

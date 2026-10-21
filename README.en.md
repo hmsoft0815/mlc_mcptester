@@ -57,6 +57,7 @@ Because `mcp-tester` checks the server from the outside against the specificatio
 - **Skills extension**: list and verify a server's skills (`skills --verify`): manifest, digests, frontmatter, naming rules. The Go package [`pkg/mcpskills`](pkg/mcpskills) serves skills from a directory.
 - **Tasks extension**: start long-running tool calls as tasks, poll, cancel, supply input; `tasks` checks a server against the extension (error codes, task shape, status transitions). For server authors, the Go package [`pkg/mcptasks`](pkg/mcptasks) adds the extension to servers built on the official go-sdk.
 - **Server inspector** (`inspect`): spec check, best practices and quality score; `--min-score` as a CI gate, `--badge` for a README status badge.
+- **Markdown reference** (`docs`): tools, prompts, resources and instructions as a Markdown file, read over the protocol; `--check` fails CI when the file is out of date.
 - **HTTP conformance** (`http-check`): required headers, error codes, Origin, sessions per spec 2026-07-28.
 - **Authorization**: bearer tokens, custom headers and the OAuth 2.1 flow (PKCE, Protected Resource Metadata, `iss` validation).
 - **Strict result checks**: every result is checked against the `outputSchema`, as strictly as the official TypeScript SDK.
@@ -260,6 +261,18 @@ mcp-tester inspect -p local --badge docs/mcpcheck.svg --badge-json docs/mcpcheck
 - **Colour**: green; yellow for a score below 80 or an older revision; red ("failing") on protocol errors, whatever the score.
 - The test date and the tester version appear in the SVG tooltip and in the JSON file. Link the badge to the JSON so readers can see when and with what the server was checked.
 - The badge is written even when the check fails (red), so a stale green badge does not stay behind. The SVG is self-contained and needs no external service. The JSON follows the [shields.io endpoint schema](https://shields.io/badges/endpoint-badge), so it also works with `https://img.shields.io/endpoint?url=<raw URL of the JSON>`.
+
+#### Markdown reference (`docs`)
+
+`docs` writes what a client sees of the server as a Markdown file: an overview of the tools (title, structured or text result, annotations), per tool the description verbatim, a parameter table from the `inputSchema` in the server's order (type, required, format, enum, range, pattern, default) and the result fields from the `outputSchema`; then prompts with their arguments, resources, resource templates and the instructions.
+
+```bash
+mcp-tester docs -p local -o docs/mcp-tools.md
+# CI: exit 1 if the file no longer matches the server
+mcp-tester docs -p local --check docs/mcp-tools.md
+```
+
+It reads the protocol, not the source, so it works for any server, whatever its language or SDK. The file is always English and contains no date or version, so `--check` fails only when the tools, prompts or resources have changed. Parameters without a description are named on stderr; `inspect` reports them as a hint too.
 
 #### Tools, Resources & Prompts
 ```bash

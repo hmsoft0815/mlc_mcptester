@@ -81,6 +81,14 @@ tasks:
     cmds:
       - ./bin/mcp-tester list --command "./bin/test-server"
 
+  test-docs:
+    desc: Write the Markdown reference of the test server and check it against a fresh run
+    deps: [all]
+    cmds:
+      - ./bin/mcp-tester docs --command "./bin/test-server" -o task_docs.md
+      - ./bin/mcp-tester docs --command "./bin/test-server" --check task_docs.md
+      - rm task_docs.md
+
   test-profile:
     desc: Test the profile functionality
     deps: [all]
@@ -309,6 +317,7 @@ tasks:
       - task: unit-test
       - task: test-list
       - task: test-call
+      - task: test-docs
       - task: test-profile
       - task: test-types
       - task: test-assertions

@@ -28,6 +28,8 @@ const (
 	// MsgNoOutputSchemaSummary names all tools without output schema in one line
 	MsgNoOutputSchemaSummary MessageKey = "no_output_schema_summary"
 	MsgTextOnlyTools         MessageKey = "text_only_tools"
+	// MsgUndescribedParams names all input parameters without a description
+	MsgUndescribedParams MessageKey = "undescribed_params"
 	// MsgOutputSchemaUnchecked says what inspect cannot see: whether the
 	// results of tools with a declared schema actually honour it.
 	MsgOutputSchemaUnchecked MessageKey = "output_schema_unchecked"
@@ -105,7 +107,8 @@ var messages = map[string]map[MessageKey]string{
 		MsgNoOutputSchema:  "HINT: Tool '%s' has no output schema. Structured returns help the LLM process results precisely.",
 		MsgNoOutputSchemaSummary: "HINT: %d tools have no output schema: %s. Structured returns help the LLM process results precisely. " +
 			"Tools that return plain text on purpose: --text-only <tool,...>",
-		MsgTextOnlyTools: "INFO: No output schema expected (--text-only): %s",
+		MsgTextOnlyTools:     "INFO: No output schema expected (--text-only): %s",
+		MsgUndescribedParams: "HINT: %d parameters have no description: %s. Without one the LLM has to guess what to pass.",
 		MsgOutputSchemaUnchecked: "NOTE: %d tools declare an output schema. inspect calls no tools, so it cannot tell whether their results " +
 			"carry matching structuredContent; strict clients (official TypeScript SDK, e.g. OpenCode) reject calls that do not. " +
 			"Check with `mcp-tester call <tool>` or a test script.",
@@ -182,7 +185,8 @@ var messages = map[string]map[MessageKey]string{
 		MsgNoOutputSchema:  "HINT: Tool '%s' hat kein Output-Schema. Strukturierte Rückgaben helfen dem LLM.",
 		MsgNoOutputSchemaSummary: "HINT: %d Tools haben kein Output-Schema: %s. Strukturierte Rückgaben helfen dem LLM. " +
 			"Tools, die bewusst nur Text liefern: --text-only <tool,...>",
-		MsgTextOnlyTools: "INFO: Kein Output-Schema erwartet (--text-only): %s",
+		MsgTextOnlyTools:     "INFO: Kein Output-Schema erwartet (--text-only): %s",
+		MsgUndescribedParams: "HINT: %d Parameter haben keine Beschreibung: %s. Ohne sie muss das LLM raten, was es übergeben soll.",
 		MsgOutputSchemaUnchecked: "HINWEIS: %d Tools geben ein Output-Schema an. inspect ruft keine Tools auf und kann daher nicht prüfen, " +
 			"ob ihre Ergebnisse passendes structuredContent liefern; strikte Clients (offizielles TypeScript-SDK, z. B. OpenCode) " +
 			"lehnen solche Aufrufe ab. Prüfen mit `mcp-tester call <tool>` oder einem Testskript.",

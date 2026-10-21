@@ -1,0 +1,10 @@
+# Built and third-party artefacts: otherwise semgrep scans for minutes and
+# reports findings in code we did not write.
+node_modules/
+bin/
+dist/
+tmp/
+docs/
+mlcprodweb/
+.mlcai/
+*.min.js

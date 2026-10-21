@@ -8,6 +8,7 @@ vars_test.mcp
 .task/
 coverage.html
 coverage.out
+reports/
 dist/
 AGENTS.md
 CLAUDE.md

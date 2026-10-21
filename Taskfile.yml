@@ -330,6 +330,43 @@ tasks:
       - task: test-sse
       - task: test-streamable-http
 
+  semgrep:
+    desc: 'Static security check (semgrep OSS): report, summary and verdict check; fails on findings without a verdict'
+    # The mlc-semgrep-* helpers live once in mlcintegration (`task install-all`)
+    preconditions:
+      - sh: command -v mlc-semgrep-baseline
+        msg: "mlc-semgrep-* missing from PATH — run `task install-all` (or `task bin-link`) in mlcintegration once."
+    cmds:
+      - mkdir -p reports
+      # Written atomically, so an aborted run leaves no half report. `|| true`
+      # because semgrep exits non-zero on findings; a failed run (0 files
+      # scanned) is caught by mlc-semgrep-baseline. --jobs 4: semgrep-core opens
+      # an io_uring ring per worker, which fails under a low RLIMIT_MEMLOCK.
+      - |
+        args=""; for c in {{.CONFIG | default "p/golang $HOME/.local/share/mlc-semgrep/rules"}}; do args="$args --config $c"; done
+        semgrep scan $args --jobs {{.JOBS | default 4}} --metrics off --json --quiet --output reports/.semgrep.tmp.json . || true
+      - mv reports/.semgrep.tmp.json reports/semgrep.json
+      - mlc-semgrep-summary reports/semgrep.json
+      # Fails on findings without a verdict, not on their number
+      - mlc-semgrep-baseline --report reports/semgrep.json --baseline semgrep-baseline.yaml
+
+  semgrep:review:
+    desc: 'Add new semgrep findings to .mlcai/semgrep-baseline.yaml for a verdict (verdict/reason by hand)'
+    cmds:
+      - mlc-semgrep-baseline --report reports/semgrep.json --baseline semgrep-baseline.yaml --update
+
+  semgrep:ticket:
+    desc: 'File one finding judged real as a backlog ticket, e.g. task semgrep:ticket KEY=internal/x.go RULE=rule-id'
+    cmds:
+      - mlc-semgrep-ticket --key {{.KEY}} --rule {{.RULE}} --priority {{.PRIO | default 2}} {{.DRY}}
+
+  semgrep:new:
+    desc: 'Only findings added since a reference point (default: main); fails on any — before every merge'
+    cmds:
+      - |
+        args=""; for c in {{.CONFIG | default "p/golang $HOME/.local/share/mlc-semgrep/rules"}}; do args="$args --config $c"; done
+        semgrep scan $args --jobs {{.JOBS | default 4}} --metrics off --baseline-commit {{.SEIT | default "main"}} --error --quiet .
+
   format:
     desc: Format Go source code
     cmds:

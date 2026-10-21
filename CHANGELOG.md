@@ -2,11 +2,14 @@
 
 All notable changes to mcp-tester. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versions: [SemVer](https://semver.org/).
 
-## [Unreleased]
+## [1.9.0] - 2026-10-21
 
 ### Added
 - `docs`: writes a Markdown reference of a server's tools, prompts and resources; `--check` fails on an outdated file.
 - `inspect` names input parameters without a description in one hint line, without deduction.
+
+### Fixed
+- Built with Go 1.26.10 and `golang.org/x/sys` 0.44.0, closing known standard library vulnerabilities.
 
 ## [1.8.1] - 2026-10-10
 

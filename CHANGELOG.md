@@ -2,6 +2,11 @@
 
 All notable changes to mcp-tester. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versions: [SemVer](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+- Error messages appeared twice on stderr; failed runs no longer print the usage text.
+
 ## [1.9.0] - 2026-10-21
 
 ### Added

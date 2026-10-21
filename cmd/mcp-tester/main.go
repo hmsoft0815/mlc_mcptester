@@ -34,6 +34,9 @@ var rootCmd = &cobra.Command{
 	Long:    fmt.Sprintf("MCP-Tester v%s - Developed by %s\n\nA command-line tool to test various MCP server transports, list tool schemas, and invoke tools for testing purposes.", version.Version, version.Author),
 	Version: version.Version,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		// Flags and arguments are parsed by now: an error from here on is a
+		// failed run, not a usage mistake, and the help text would bury it
+		cmd.SilenceUsage = true
 		i18n.Lang = lang
 		for _, a := range elicitAnswers {
 			res, err := mcpclient.ParseElicitAnswer(a, "")
@@ -51,6 +54,8 @@ var rootCmd = &cobra.Command{
 
 func init() {
 	rootCmd.SetVersionTemplate(version.VersionTemplate())
+	// main prints the error; cobra printing it too showed every error twice
+	rootCmd.SilenceErrors = true
 
 	// Persistent flags are available to every subcommand.
 	rootCmd.PersistentFlags().StringVarP(&command, "command", "c", "", "Command to run the MCP server (stdio)")

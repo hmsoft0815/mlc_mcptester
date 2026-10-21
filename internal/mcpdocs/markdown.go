@@ -13,9 +13,9 @@ func (w *writer) prompts(prompts []Prompt) {
 	}
 	w.p("`prompts/get` returns the finished messages; the client runs them with the tools above.\n\n")
 	for _, p := range prompts {
-		w.heading(3, cell(p.Name))
+		w.heading(3, p.Name)
 		if p.Title != "" {
-			w.p("**%s**\n\n", cell(p.Title))
+			w.p("**%s**\n\n", inline(p.Title))
 		}
 		if d := strings.TrimSpace(p.Description); d != "" {
 			w.p("%s\n\n", d)
@@ -92,10 +92,25 @@ func cell(s string) string {
 	return strings.ReplaceAll(s, "|", `\|`)
 }
 
+// inline escapes text outside a table so Markdown shows it literally, e.g.
+// a tool named _debug_ not in italics; line breaks become spaces.
+func inline(s string) string {
+	s = strings.Join(strings.Fields(s), " ")
+	var b strings.Builder
+	for _, r := range s {
+		if strings.ContainsRune("\\`*_[]<>#|~", r) {
+			b.WriteRune('\\')
+		}
+		b.WriteRune(r)
+	}
+	return b.String()
+}
+
 // code writes an inline code span; a value that contains backticks gets a
-// longer delimiter. | is escaped, which GitHub tables honour inside code too.
+// longer delimiter. | is escaped, which GitHub tables honour inside code too;
+// line breaks become spaces, since a code span shows <br> literally.
 func code(s string) string {
-	s = cell(s)
+	s = strings.ReplaceAll(strings.Join(strings.Fields(s), " "), "|", `\|`)
 	if s == "" {
 		return ""
 	}
@@ -114,14 +129,15 @@ func yes(b bool) string {
 }
 
 // anchor is the id GitHub gives a heading: lower case, spaces to hyphens,
-// punctuation other than - and _ dropped.
+// letters, marks, numbers, connector punctuation (_) and - kept, the rest
+// dropped.
 func anchor(heading string) string {
 	var b strings.Builder
 	for _, r := range strings.ToLower(heading) {
 		switch {
 		case r == ' ':
 			b.WriteRune('-')
-		case r == '-' || r == '_' || unicode.IsLetter(r) || unicode.IsDigit(r):
+		case r == '-' || unicode.In(r, unicode.L, unicode.M, unicode.N, unicode.Pc):
 			b.WriteRune(r)
 		}
 	}

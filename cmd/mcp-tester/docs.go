@@ -18,6 +18,7 @@ var (
 func init() {
 	docsCmd.Flags().StringVarP(&docsOutput, "output", "o", "", "Write the reference to this file instead of stdout")
 	docsCmd.Flags().StringVar(&docsCheck, "check", "", "Exit with an error if this file no longer matches the server")
+	docsCmd.MarkFlagsMutuallyExclusive("output", "check")
 	rootCmd.AddCommand(docsCmd)
 }
 
@@ -32,7 +33,10 @@ var docsCmd = &cobra.Command{
 
 func runDocs(cmd *cobra.Command, args []string) error {
 	ctx := context.Background()
-	config, _ := loadConfig("mcp-tester.yml")
+	config, err := loadConfig("mcp-tester.yml")
+	if err != nil {
+		return fmt.Errorf("failed to load config: %w", err)
+	}
 	c, u, err := resolveSettings(config, profile, command, url)
 	if err != nil {
 		return err
@@ -61,7 +65,10 @@ func runDocs(cmd *cobra.Command, args []string) error {
 	case docsCheck != "":
 		return checkDocs(cmd, md)
 	case docsOutput != "":
-		return os.WriteFile(docsOutput, []byte(md), 0o644)
+		if err := os.WriteFile(docsOutput, []byte(md), 0o644); err != nil {
+			return fmt.Errorf("writing %s: %w", docsOutput, err)
+		}
+		return nil
 	}
 	fmt.Print(md)
 	return nil

@@ -6,6 +6,7 @@ package mcpdocs
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	mcpclient "github.com/hmsoft0815/mlc_mcptester/internal/client"
@@ -14,6 +15,9 @@ import (
 
 // maxPages stops a server whose nextCursor never runs out.
 const maxPages = 1000
+
+// methodNotFound is the JSON-RPC code of a method the server does not offer.
+const methodNotFound = -32601
 
 // Server is what the reference is written from.
 type Server struct {
@@ -69,17 +73,17 @@ type Resource struct {
 // Fetch reads everything the reference shows from a connected session. A
 // list fails the fetch only if the server declares its capability.
 func Fetch(ctx context.Context, session *mcp.ClientSession) (*Server, error) {
-	init := session.InitializeResult()
-	caps := init.Capabilities
+	ir := session.InitializeResult()
+	caps := ir.Capabilities
 	srv := &Server{
-		Name:         init.ServerInfo.Name,
-		Instructions: init.Instructions,
+		Name:         ir.ServerInfo.Name,
+		Instructions: ir.Instructions,
 		HasTools:     caps.Tools != nil,
 		HasPrompts:   caps.Prompts != nil,
 		HasResources: caps.Resources != nil,
 	}
-	if init.ServerInfo.Title != "" {
-		srv.Name = init.ServerInfo.Title
+	if ir.ServerInfo.Title != "" {
+		srv.Name = ir.ServerInfo.Title
 	}
 	var err error
 	if srv.HasTools {
@@ -96,7 +100,12 @@ func Fetch(ctx context.Context, session *mcp.ClientSession) (*Server, error) {
 		if srv.Resources, err = listAll[Resource](ctx, session, "resources/list", "resources"); err != nil {
 			return nil, err
 		}
-		if srv.Templates, err = listAll[Resource](ctx, session, "resources/templates/list", "resourceTemplates"); err != nil {
+		// Templates are optional within the resources capability
+		srv.Templates, err = listAll[Resource](ctx, session, "resources/templates/list", "resourceTemplates")
+		if rpcErr := (*mcpclient.RPCError)(nil); errors.As(err, &rpcErr) && rpcErr.Code == methodNotFound {
+			err = nil
+		}
+		if err != nil {
 			return nil, err
 		}
 	}

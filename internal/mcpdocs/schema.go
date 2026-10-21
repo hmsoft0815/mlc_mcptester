@@ -2,6 +2,7 @@ package mcpdocs
 
 import (
 	"bytes"
+	"cmp"
 	"encoding/json"
 	"fmt"
 	"slices"
@@ -12,27 +13,28 @@ import (
 // schema is the part of a JSON Schema the reference shows. Nested schemas
 // stay raw, so their properties can be read in source order.
 type schema struct {
-	Type             json.RawMessage   `json:"type"`
-	Format           string            `json:"format"`
-	Enum             []json.RawMessage `json:"enum"`
-	Const            json.RawMessage   `json:"const"`
-	Pattern          string            `json:"pattern"`
-	Minimum          *float64          `json:"minimum"`
-	Maximum          *float64          `json:"maximum"`
-	ExclusiveMinimum json.RawMessage   `json:"exclusiveMinimum"` // a number, or a bool before draft 6
-	ExclusiveMaximum json.RawMessage   `json:"exclusiveMaximum"`
-	MinLength        *int              `json:"minLength"`
-	MaxLength        *int              `json:"maxLength"`
-	MinItems         *int              `json:"minItems"`
-	MaxItems         *int              `json:"maxItems"`
-	Default          json.RawMessage   `json:"default"`
-	Description      string            `json:"description"`
-	Items            json.RawMessage   `json:"items"`
-	Properties       json.RawMessage   `json:"properties"`
-	Required         []string          `json:"required"`
-	AnyOf            []json.RawMessage `json:"anyOf"`
-	OneOf            []json.RawMessage `json:"oneOf"`
-	Ref              string            `json:"$ref"`
+	Type             json.RawMessage
+	Format           string
+	Enum             []json.RawMessage
+	Const            json.RawMessage
+	Pattern          string
+	Minimum          *float64
+	Maximum          *float64
+	ExclusiveMinimum json.RawMessage // a number, or a bool before draft 6
+	ExclusiveMaximum json.RawMessage
+	MinLength        *float64
+	MaxLength        *float64
+	MinItems         *float64
+	MaxItems         *float64
+	Default          json.RawMessage
+	Description      string
+	Items            json.RawMessage
+	Properties       json.RawMessage
+	Required         []string
+	AnyOf            []json.RawMessage
+	OneOf            []json.RawMessage
+	AllOf            []json.RawMessage
+	Ref              string
 }
 
 // property is one entry of a schema's properties, in source order.
@@ -42,15 +44,32 @@ type property struct {
 	Required bool
 }
 
-func parseSchema(raw json.RawMessage) (schema, error) {
+// parseSchema reads a schema leniently: the reference describes what a
+// server sends, so a boolean schema, a draft-3 "required": true or a
+// minLength of 1.0 must not stop it. A field of unexpected shape is left out.
+func parseSchema(raw json.RawMessage) schema {
 	var s schema
-	if len(raw) == 0 || string(raw) == "null" {
-		return s, nil
+	var m map[string]json.RawMessage
+	if json.Unmarshal(raw, &m) != nil {
+		return s // true, false, null or not an object: any value
 	}
-	if err := json.Unmarshal(raw, &s); err != nil {
-		return s, fmt.Errorf("parsing schema: %w", err)
-	}
-	return s, nil
+	get := func(key string, dst any) { _ = json.Unmarshal(m[key], dst) }
+	s.Type, s.Const, s.Default = m["type"], m["const"], m["default"]
+	s.ExclusiveMinimum, s.ExclusiveMaximum = m["exclusiveMinimum"], m["exclusiveMaximum"]
+	s.Items, s.Properties = m["items"], m["properties"]
+	get("format", &s.Format)
+	get("enum", &s.Enum)
+	get("pattern", &s.Pattern)
+	get("description", &s.Description)
+	get("required", &s.Required)
+	get("anyOf", &s.AnyOf)
+	get("oneOf", &s.OneOf)
+	get("allOf", &s.AllOf)
+	get("$ref", &s.Ref)
+	s.Minimum, s.Maximum = number(m["minimum"]), number(m["maximum"])
+	s.MinLength, s.MaxLength = number(m["minLength"]), number(m["maxLength"])
+	s.MinItems, s.MaxItems = number(m["minItems"]), number(m["maxItems"])
+	return s
 }
 
 // properties returns the schema's properties in the order the server sent
@@ -60,8 +79,12 @@ func (s schema) properties() ([]property, error) {
 		return nil, nil
 	}
 	dec := json.NewDecoder(bytes.NewReader(s.Properties))
-	if tok, err := dec.Token(); err != nil || tok != json.Delim('{') {
-		return nil, fmt.Errorf("properties is not an object")
+	tok, err := dec.Token()
+	if err != nil {
+		return nil, fmt.Errorf("reading properties: %w", err)
+	}
+	if tok != json.Delim('{') {
+		return nil, nil // not an object: nothing to list
 	}
 	var props []property
 	for dec.More() {
@@ -74,11 +97,7 @@ func (s schema) properties() ([]property, error) {
 			return nil, fmt.Errorf("reading property %v: %w", tok, err)
 		}
 		name, _ := tok.(string)
-		sub, err := parseSchema(raw)
-		if err != nil {
-			return nil, fmt.Errorf("property %s: %w", name, err)
-		}
-		props = append(props, property{Name: name, Schema: sub, Required: slices.Contains(s.Required, name)})
+		props = append(props, property{Name: name, Schema: parseSchema(raw), Required: slices.Contains(s.Required, name)})
 	}
 	return props, nil
 }
@@ -99,22 +118,26 @@ func (s schema) baseType() string {
 	var parts []string
 	for _, t := range s.types() {
 		if t == "array" {
-			if items, err := parseSchema(s.Items); err == nil && items.baseType() != "any" {
-				t = "array of " + items.baseType()
+			if items := parseSchema(s.Items).baseType(); items != "any" {
+				t = "array of " + items
 			}
 		}
 		parts = append(parts, t)
 	}
 	for _, alt := range append(slices.Clone(s.AnyOf), s.OneOf...) {
-		if sub, err := parseSchema(alt); err == nil {
-			parts = append(parts, sub.baseType())
-		}
+		parts = append(parts, parseSchema(alt).baseType())
+	}
+	var all []string
+	for _, sub := range s.AllOf {
+		all = append(all, parseSchema(sub).baseType())
 	}
 	switch {
 	case len(parts) > 0:
 		return strings.Join(parts, " | ")
+	case len(all) > 0:
+		return strings.Join(all, " & ")
 	case s.Ref != "":
-		return s.Ref[strings.LastIndex(s.Ref, "/")+1:]
+		return cmp.Or(s.Ref[strings.LastIndex(s.Ref, "/")+1:], s.Ref)
 	case len(s.Const) > 0:
 		return "constant"
 	case len(s.Properties) > 0:
@@ -123,11 +146,12 @@ func (s schema) baseType() string {
 	return "any"
 }
 
-// typeText is the type with its constraints, as shown in the Type column.
+// typeText is the type with its constraints, as shown in the Type column;
+// it is ready for a table cell.
 func (s schema) typeText() string {
 	var details []string
 	if s.Format != "" {
-		details = append(details, s.Format)
+		details = append(details, cell(s.Format))
 	}
 	if len(s.Enum) > 0 {
 		values := make([]string, len(s.Enum))
@@ -147,9 +171,9 @@ func (s schema) typeText() string {
 		details = append(details, "default "+code(jsonValue(s.Default)))
 	}
 	if len(details) == 0 {
-		return s.baseType()
+		return cell(s.baseType())
 	}
-	return s.baseType() + " (" + strings.Join(details, ", ") + ")"
+	return cell(s.baseType()) + " (" + strings.Join(details, ", ") + ")"
 }
 
 // ranges describes minimum/maximum, string length and item count.
@@ -157,22 +181,35 @@ func (s schema) ranges() []string {
 	var out []string
 	lo, hi := s.Minimum, s.Maximum
 	loText, hiText := "≥ ", "≤ "
-	if v := number(s.ExclusiveMinimum); v != nil {
+	if v, exclusive := exclusiveBound(s.ExclusiveMinimum, lo); exclusive {
 		lo, loText = v, "> "
 	}
-	if v := number(s.ExclusiveMaximum); v != nil {
+	if v, exclusive := exclusiveBound(s.ExclusiveMaximum, hi); exclusive {
 		hi, hiText = v, "< "
 	}
 	if r := span(lo, hi, loText, hiText, loText == "≥ " && hiText == "≤ "); r != "" {
 		out = append(out, r)
 	}
-	if r := span(intPtr(s.MinLength), intPtr(s.MaxLength), "≥ ", "≤ ", true); r != "" {
+	if r := span(s.MinLength, s.MaxLength, "≥ ", "≤ ", true); r != "" {
 		out = append(out, "length "+r)
 	}
-	if r := span(intPtr(s.MinItems), intPtr(s.MaxItems), "≥ ", "≤ ", true); r != "" {
+	if r := span(s.MinItems, s.MaxItems, "≥ ", "≤ ", true); r != "" {
 		out = append(out, "items "+r)
 	}
 	return out
+}
+
+// exclusiveBound reads exclusiveMinimum/-Maximum: a number since draft 6,
+// before that true makes minimum/maximum itself exclusive.
+func exclusiveBound(raw json.RawMessage, inclusive *float64) (*float64, bool) {
+	if v := number(raw); v != nil {
+		return v, true
+	}
+	var flag bool
+	if json.Unmarshal(raw, &flag) == nil && flag && inclusive != nil {
+		return inclusive, true
+	}
+	return nil, false
 }
 
 // span writes "1–200", "≥ 1" or "≤ 200"; a closed range only when both ends
@@ -197,14 +234,6 @@ func number(raw json.RawMessage) *float64 {
 		return nil
 	}
 	return &v
-}
-
-func intPtr(v *int) *float64 {
-	if v == nil {
-		return nil
-	}
-	f := float64(*v)
-	return &f
 }
 
 func formatNumber(f float64) string { return strconv.FormatFloat(f, 'f', -1, 64) }
@@ -234,11 +263,7 @@ func UndescribedParams(toolName string, inputSchema any) []string {
 }
 
 func undescribed(toolName string, raw json.RawMessage) []string {
-	s, err := parseSchema(raw)
-	if err != nil {
-		return nil
-	}
-	props, _ := s.properties()
+	props, _ := parseSchema(raw).properties()
 	var out []string
 	for _, p := range props {
 		if strings.TrimSpace(p.Schema.Description) == "" {

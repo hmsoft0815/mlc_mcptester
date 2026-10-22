@@ -212,6 +212,25 @@ tasks:
     cmds:
       - ./bin/mcp-tester inspect --command ./bin/test-server --format json --badge docs/mcpcheck.svg --badge-json docs/mcpcheck.json > /dev/null
 
+  gallery-docs:
+    desc: Render the product page's docs gallery image from the OpticScript server (mlcprodweb/assets/docs-reference.png)
+    deps: [build]
+    vars:
+      OPTICSCRIPT: /mnt/data2tb/mlc_opticscript
+    cmds:
+      - |
+        set -e
+        # Snap Chromium reads and writes only below its own directory, not /tmp
+        work="$HOME/snap/chromium/common/mcp-tester-gallery"
+        mkdir -p "$work"
+        trap 'rm -rf "$work"' EXIT
+        (cd {{.OPTICSCRIPT}} && "{{.TASKFILE_DIR}}/bin/mcp-tester" docs -c bin/mlcos-mcp) > "$work/ref.md"
+        python3 -I scripts/docs-gallery.py "$work/ref.md" "$work/docs.html"
+        chromium-browser --headless --disable-gpu --hide-scrollbars --window-size=1280,800 \
+          --virtual-time-budget=5000 --screenshot="$work/docs-reference.png" "file://$work/docs.html" 2>/dev/null
+        mv "$work/docs-reference.png" mlcprodweb/assets/docs-reference.png
+        echo "✓ mlcprodweb/assets/docs-reference.png"
+
   test-sse:
     desc: Test the SSE transport
     deps: [all]

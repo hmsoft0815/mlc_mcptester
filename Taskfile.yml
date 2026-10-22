@@ -433,18 +433,20 @@ tasks:
     desc: "PUBLISH: upload the binaries the product page links"
     deps: [build-all]
     cmds:
-      # Only the three the page links. The Windows download there is the NSIS
-      # installer, which carries its version in the filename and is built and
-      # uploaded separately — it is already on the server.
+      # Only the four the page links. The Windows download there is the NSIS
+      # installer, which carries its version in the filename — release-prep
+      # rewrites the link, so it must go up with every release.
       - |
         set -e
-        for f in mcp-tester-linux-amd64 mcp-tester-macos-arm64 mcp-tester-macos-amd64; do
-          [ -f "bin/$f" ] || { echo "missing: bin/$f"; exit 1; }
+        installer=dist/mcp-tester-setup-v{{.VERSION}}-windows-amd64.exe
+        for f in bin/mcp-tester-linux-amd64 bin/mcp-tester-macos-arm64 bin/mcp-tester-macos-amd64 "$installer"; do
+          [ -f "$f" ] || { echo "missing: $f"; exit 1; }
         done
         ssh -o BatchMode=yes {{.VPS_HOST}} "mkdir -p {{.VPS_DIR}}"
         rsync -az --timeout=30 -e 'ssh -o BatchMode=yes -o ConnectTimeout=10' \
           bin/mcp-tester-linux-amd64 \
           bin/mcp-tester-macos-arm64 \
           bin/mcp-tester-macos-amd64 \
+          "$installer" \
           {{.VPS_HOST}}:{{.VPS_DIR}}/
         echo "✓ https://mlcgo.eu/downloads/mlc-tester/"

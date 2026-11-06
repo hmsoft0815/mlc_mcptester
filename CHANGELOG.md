@@ -4,6 +4,9 @@ All notable changes to mcp-tester. Format: [Keep a Changelog](https://keepachang
 
 ## [Unreleased]
 
+### Changed
+- Built with Go 1.27.3 and current indirect modules (`golang.org/x/sys` 0.49.0, `x/sync` 0.24.0, `x/time` 0.16.0, `pflag` 1.1.0).
+
 ### Fixed
 - Error messages appeared twice on stderr; failed runs no longer print the usage text.
 

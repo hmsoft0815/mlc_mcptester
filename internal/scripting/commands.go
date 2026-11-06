@@ -26,14 +26,6 @@ func (r *Runner) handleCallTool(ctx context.Context, lineIdx int, line string) e
 	return r.callToolPositional(ctx, toolName, args)
 }
 
-func (r *Runner) handleInputVar(lineIdx int, line string) error {
-	parts, err := r.parseArgs(line)
-	if err != nil {
-		return err
-	}
-	return r.handleInputVarParts(lineIdx, parts)
-}
-
 func (r *Runner) handleInputVarParts(lineIdx int, parts []string) error {
 	if len(parts) < 2 {
 		return fmt.Errorf("line %d: input_var expects a variable name", lineIdx+1)

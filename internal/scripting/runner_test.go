@@ -124,7 +124,7 @@ func TestConvertValue(t *testing.T) {
 
 func TestEchoCommand(t *testing.T) {
 	r := &Runner{}
-	if err := r.dispatchParts(nil, 0, []string{"echo", "Hello", "World"}); err != nil {
+	if err := r.dispatchParts(context.TODO(), 0, []string{"echo", "Hello", "World"}); err != nil {
 		t.Fatalf("dispatchParts(echo) error = %v", err)
 	}
 }

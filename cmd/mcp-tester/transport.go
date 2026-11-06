@@ -30,6 +30,7 @@ func newClient(verbose bool, responder *mcpclient.Responder, notes *mcpclient.No
 	// Notifications go to stderr: with --format json, stdout carries only the result
 	opts := &mcp.ClientOptions{
 		// Handler for logging notifications from the server
+		//lint:ignore SA1019 logging is deprecated since 2026-07-28 (SEP-2577) but still used by servers and regular before; remove with T-20260927-05
 		LoggingMessageHandler: func(ctx context.Context, req *mcp.LoggingMessageRequest) {
 			fmt.Fprintf(os.Stderr, "[SERVER LOG] [%s] %s: %v\n", req.Params.Level, req.Params.Logger, req.Params.Data)
 		},
